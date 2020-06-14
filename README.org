@@ -1,0 +1,184 @@
+
+#+include: ~/org/OSX.org::CMakeLists
+#+include: ~/org/OSX.org::compile_commands
+* CMAKE (SAHMC version)
+ #+begin_src cmake :tangle CMakeLists.txt
+ cmake_minimum_required(VERSION 3.0)
+ project(lsjm-art)
+
+ if(NOT CMAKE_BUILD_TYPE)
+   set(CMAKE_BUILD_TYPE Release)
+ endif()
+
+ set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+ set(CMAKE_CXX_FLAGS_DEBUG "-g")
+ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+
+ # set (CMAKE_CXX_STANDARD 11)
+
+ #Bring the headers into the project
+ #include_directories(/opt/arrayfire/include/)
+
+ # # STAN math lib
+ include_directories(/opt/stan/lib/stan_math/)
+ include_directories(/opt/stan/lib/stan_math/lib/sundials_4.1.0/include/)
+ include_directories(/opt/stan/lib/stan_math/lib/boost_1.69.0/)
+ include_directories(/opt/stan/lib/stan_math/lib/eigen_3.3.3/)
+ # include_directories(/opt/stan/lib/stan_math/lib/tbb_2019_U8/)
+ # include_directories(/opt/stan/lib/stan_math/lib/tbb_2019_U8/include/)
+
+ # STAN core lib
+ include_directories(/opt/src/)
+ include_directories(/opt/stan/)
+ include_directories(/opt/stan/src/)
+
+ # LLVM
+ # include_directories(/usr/local/opt/llvm/include/)
+ # include_directories(/usr/local/opt/llvm/include/c++/v1/)
+ # include_directories(/usr/local/opt/llvm/lib/clang/9.0.0/include)
+
+ # xcode commandline toolchain
+ include_directories(/Library/Developer/CommandLineTools/usr/include/c++/v1/)
+ include_directories(/Library/Developer/CommandLineTools/usr/lib/clang/11.0.0/include/)
+ include_directories(/Library/Developer/CommandLineTools/usr/include/)
+ include_directories(/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include)
+
+ # # xcode toolchain
+ # include_directories(/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1)
+ # include_directories(/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/11.0.0/include)
+ # include_directories(/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include)
+ # include_directories(/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include)
+
+ # Link directories containing library field
+ # link_directories(/usr/local/opt/llvm/lib/)
+
+ # set compiler
+ # SET(CMAKE_CXX_COMPILER "/usr/local/opt/llvm/bin/clang")
+ # SET(CMAKE_CC_COMPILER "/usr/local/opt/llvm/bin/clang")
+
+ # c++ linker
+ # SET(CMAKE_CXX_FLAGS    "-lafcpu")
+ SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -isysroot/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include")
+ # SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -isystem/Library/Developer/CommandLineTools/usr/include/c++/v1")
+ SET(CMAKE_CXX_FLAGS  "-std=c++1y -Wno-unknown-warning-option -Wno-tautological-compare -Wno-sign-compare -D_REENTRANT ${CMAKE_CXX_FLAGS}")
+ SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -DBOOST_DISABLE_ASSERTS")
+ SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-unused-parameter -Wno-unused-local-typedef -Wno-unused-function -Wno-ignored-qualifiers -Wno-unused-variable -Wno-sign-compare -Wno-infinite-recursion")
+ add_executable(main main.cpp)
+ #+end_src
+
+
+* CMakeLists
+
+ #+begin_src cmake :tangle CMakeLists.txt
+ cmake_minimum_required(VERSION 3.0)
+ project(lsjm-art)
+
+ if(NOT CMAKE_BUILD_TYPE)
+   set(CMAKE_BUILD_TYPE Release)
+ endif()
+
+ set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+ set(CMAKE_CXX_FLAGS_DEBUG "-g")
+ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+
+ # set (CMAKE_CXX_STANDARD 11)
+
+ #Bring the headers into the project
+ #include_directories(/opt/arrayfire/include/)
+
+ # # STAN math lib
+ include_directories(/Users/yunj/stan-dev/math/lib/tbb_2019_U8/include/)
+ include_directories(/Users/yunj/stan-dev/math/stan/)
+ include_directories(/Users/yunj/stan-dev/math/)
+ include_directories(/Users/yunj/stan-dev/math/lib/sundials_2.2.0/include/)
+ include_directories(/Users/yunj/stan-dev/math/lib/boost_1.72.0/)
+ include_directories(/Users/yunj/stan-dev/math/lib/eigen_3.3.7/)
+ # include_directories(/Users/yunj/stan-dev/math/lib/tbb_2019_U8/)
+ # include_directories(/Users/yunj/stan-dev/math/lib/tbb_2019_U8/include/)
+
+ # xcode commandline toolchain
+ include_directories(/Library/Developer/CommandLineTools/usr/include/c++/v1/)
+ include_directories(/Library/Developer/CommandLineTools/usr/lib/clang/11.0.0/include/)
+ include_directories(/Library/Developer/CommandLineTools/usr/include/)
+ include_directories(/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include)
+
+ # set compiler
+ # SET(CMAKE_CXX_COMPILER "/usr/local/opt/llvm/bin/clang")
+ # SET(CMAKE_CC_COMPILER "/usr/local/opt/llvm/bin/clang")
+
+ # # c++ linker
+ # # SET(CMAKE_CXX_FLAGS    "-lafcpu")
+ # SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -isysroot/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include")
+ # # SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -isystem/Library/Developer/CommandLineTools/usr/include/c++/v1")
+ # # SET(CMAKE_CXX_FLAGS  "-std=c++1y -Wno-unknown-warning-option -Wno-tautological-compare -Wno-sign-compare -D_REENTRANT ${CMAKE_CXX_FLAGS}")
+ # # SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-unused-parameter -Wno-unused-local-typedef -Wno-unused-function -Wno-ignored-qualifiers -Wno-unused-variable -Wno-sign-compare -Wno-infinite-recursion")
+ # SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=c++1y -Wno-unknown-warning-option -Wno-tautological-compare -Wno-sign-compare -D_REENTRANT")
+ # SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -DBOOST_DISABLE_ASSERTS")
+
+ SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -isysroot/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include")
+ # SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -isystem/Library/Developer/CommandLineTools/usr/include/c++/v1")
+ SET(CMAKE_CXX_FLAGS  "-std=c++1y -Wno-unknown-warning-option -Wno-tautological-compare -Wno-sign-compare -D_REENTRANT ${CMAKE_CXX_FLAGS}")
+ SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -DBOOST_DISABLE_ASSERTS")
+ #SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-unused-parameter -Wno-unused-local-typedef -Wno-unused-function -Wno-ignored-qualifiers -Wno-unused-variable -Wno-sign-compare -Wno-infinite-recursion")
+  SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wl,-L,\"/Users/yunj/stan-dev/math/lib/tbb\" -Wl,-rpath,\"/Users/yunj/stan-dev/math/lib/tbb\"")
+ add_executable(main main.cpp)
+
+ target_link_libraries(main /Users/yunj/stan-dev/math/lib/sundials_5.2.0/lib/libsundials_nvecserial.a)
+ target_link_libraries(main /Users/yunj/stan-dev/math/lib/sundials_5.2.0/lib/libsundials_cvodes.a)
+ target_link_libraries(main /Users/yunj/stan-dev/math/lib/sundials_5.2.0/lib/libsundials_idas.a)
+ target_link_libraries(main /Users/yunj/stan-dev/math/lib/sundials_5.2.0/lib/libsundials_kinsol.a)
+ target_link_libraries(main /Users/yunj/stan-dev/math/lib/tbb/libtbb.dylib)
+ target_link_libraries(main /Users/yunj/stan-dev/math/lib/tbb/libtbbmalloc.dylib)
+ target_link_libraries(main /Users/yunj/stan-dev/math/lib/tbb/libtbbmalloc_proxy.dylib)
+ #+end_src
+
+* CMakeLists
+
+ #+begin_src cmake :tangle CMakeLists.txt
+ cmake_minimum_required(VERSION 3.0)
+ project(lsjm-art)
+
+ if(NOT CMAKE_BUILD_TYPE)
+   set(CMAKE_BUILD_TYPE Release)
+ endif()
+
+ #include(/Users/yunj/stan-dev/math/make/standalone)
+ add_executable(main main.cpp)
+ add_custom_command(OUTPUT main COMMAND /usr/bin/make -f U"sers/yunj/stan-dev/math/make/standalone")
+ #add_custom_target(ALL COMMAND /usr/bin/make -f "Users/yunj/stan-dev/math/make/standalone" WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+ #+end_src
+* Project Setup for CCLS
+#+begin_src sh :results output
+ln -s Debug/compile_commands.json
+rm -rf CMakeFiles/ Debug/ cmake_install.cmake CMakeCache.txt Makefile
+
+cmake -H. -BDebug -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=YES
+#+end_src
+
+#+RESULTS:
+#+begin_example
+-- The C compiler identification is AppleClang 11.0.0.11000033
+-- The CXX compiler identification is AppleClang 11.0.0.11000033
+-- Check for working C compiler: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc
+-- Check for working C compiler: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc - works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Check for working CXX compiler: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++
+-- Check for working CXX compiler: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ - works
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /Users/yunj/Dropbox/research/lsjm-art/lsjm-code/Debug
+#+end_example
+
+#+begin_src sh :async
+cmake .
+make
+#+end_src
+
+#+RESULTS:
