@@ -1,0 +1,1011 @@
+#+TITLE: LSJM Code for accuracy and RT
+#+AUTHOR: Jonghyun Yun
+#+EMAIL: jonghyun.yun@gmail.com
+
+#+OPTIONS:   H:10 num:nil toc:nil \n:nil @:t ::t |:t ^:nil ^:{} -:t f:t *:t <:t ':nil -:nil pri:t
+#+OPTIONS:   TeX:t LaTeX:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
+
+#+STARTUP: overview indent inlineimages logdone
+
+# #+SETUPFILE: ~/setup/my-theme-readtheorg.setup
+
+#+PROPERTY: header-args :tangle
+#+PROPERTY: header-args :eval never-export
+#+PROPERTY: header-args:R :session *LSJM-ART-R* :exports both :results output :noweb yes :eval never-export
+* OrgMode :noexport:
+#+INFOJS_OPT: view:nil toc:t ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+
+#+REVEAL_ROOT: https://cdn.jsdelivr.net/npm/reveal.js
+# slide/none/fade/convex/concave/zoom
+#+REVEAL_TRANS: slide
+# solarized/black/white/league/sky/beige/simple/serif/blood/night/moon
+#+REVEAL_THEME: solarized
+#+REVEAL_HLEVEL: 1
+#+REVEAL_PLUGINS: (highlight)
+#+REVEAL_EXTRA_CSS: ./my_reveal_style.css
+
+#+HUGO_BASE_DIR: ~/website
+#+HUGO_AUTO_SET_LASTMOD: t
+#+HUGO_DATE_FORMAT: %Y-%m-%dT%T%z
+#+HUGO_FRONT_MATTER_FORMAT: toml
+
+#+HUGO_SECTION:
+#+HUGO_BUNDLE:
+#+HUGO_CATEGORIES:
+
+#+HUGO_EXPORT_RMARKDOWN:
+
+#+OPTIONS: html-link-use-abs-url:nil html-postamble:nil html-preamble:t
+#+OPTIONS: html-scripts:t html-style:t html5-fancy:t
+
+#+HTML_MATHJAX: align: left tagside: right
+#+HTML_MATHJAX: indent: 5em scale: 85
+# MATHJAX font: MathJax TeX (default) Asana-Math Neo-Euler Latin-Modern Gyre-Pagella Gyre-Termes
+# #+OPTIONS: tex:dvipng # use LaTeX to generate images for equations
+
+#+HTML_HEAD:  <!-- Global site tag (gtag.js) - Google Analytics -->
+#+HTML_HEAD:<script async src="https://www.googletagmanager.com/gtag/js?id=UA-128966866-1"></script>
+#+HTML_HEAD:<script>
+#+HTML_HEAD:  window.dataLayer = window.dataLayer || [];
+#+HTML_HEAD:  function gtag(){dataLayer.push(arguments);}
+#+HTML_HEAD:  gtag('js', new Date());
+#+HTML_HEAD:
+#+HTML_HEAD:  gtag('config', 'UA-128966866-1');
+#+HTML_HEAD:</script>
+
+# #+HTML_LINK_HOME: http://wweb.uta.edu/faculty/yunj/index.html
+# #+HTML_LINK_UP: http://wweb.uta.edu/faculty/yunj/index.html
+
+# https://scripter.co/latex-in-html/
+#+macro: latex @@html:<span class="latex">L<sup>a</sup>T<sub>e</sub>X</span>@@
+
+#+BEGIN_SRC emacs-lisp :eval no :results silent :exports none :tangle no
+(setq org-html-htmlize-output-type 'css)
+(setq org-html-htmlize-output-type 'inline-css)
+#+END_SRC
+
+#+begin_src emacs-lisp ::eval no results silent :exports none :tangle no
+(add-hook 'org-babel-after-execute-hook 'org-display-inline-images)
+(add-hook 'org-mode-hook 'org-display-inline-images)
+#+end_src
+
+* LaTeX Header                                                     :noexport:
+#+LATEX_CLASS: no-article
+#+LATEX_CLASS_OPTIONS: [a4paper,11pt]
+
+#+LATEX_COMPILER: xelatex
+
+#+LATEX_HEADER: \usepackage{geometry}
+#+LATEX_HEADER: \geometry{verbose,tmargin=1in,bmargin=1in,lmargin=0.7in,rmargin=0.7in}
+#+LATEX_HEADER: \usepackage[stretch=10,babel=true]{microtype}
+#+LATEX_HEADER: \usepackage{lmodern}
+#+LATEX_HEADER: \setlength\parindent{0pt}\linespread{1.5}
+#+LATEX_HEADER: \usepackage[mathbf=sym]{unicode-math}
+
+#+LATEX_HEADER: \setmathfont{latinmodern-math.otf}
+#+LATEX_HEADER: \setmathfont{XITS Math}[range={scr,bfscr}]
+
+# #+LATEX_HEADER: \usepackage{amsmath}
+# #+LATEX_HEADER: \usepackage{amsbsy}  %\boldsymbol %\pbm (faked bold)
+
+#+LATEX_HEADER: \usepackage{xcolor}
+#+LATEX_HEADER: \usepackage[unicode,colorlinks]{hyperref}
+# #+LATEX_HEADER: \PassOptionsToPackage{unicode,colorlinks}{hyperref}
+
+# #+LATEX_HEADER: \usepackage[unicode]{hyperref}
+# #+LATEX_HEADER: \hypersetup{
+# #+LATEX_HEADER:     colorlinks,
+# #+LATEX_HEADER:     linkcolor={red!50!black},
+# #+LATEX_HEADER:     citecolor={blue!50!black},
+# #+LATEX_HEADER:     urlcolor={blue!80!black}}
+
+* References
+#+BEGIN_SRC emacs-lisp :eval yes :results silent :exports none
+(require 'org-ref)
+(require 'org-ref-citeproc)
+
+(when (file-exists-p "readme.html")
+  (delete-file "readme.html"))
+(let ((org-export-before-parsing-hook '(orcp-citeproc)))
+  (browse-url (org-html-export-to-html)))
+#+End_src
+
+#+BEGIN_SRC emacs-lisp :eval yes :results silent :exports none
+  (add-hook 'org-export-before-parsing-hook 'orcp-citeproc)
+#+END_SRC
+
+#+Bibliography: ~/Zotero/myref.bib
+#+PANDOC_OPTIONS: csl:~/Zotero/styles/chicago-author-date.csl
+
+# #+LATEX_HEADER: \usepackage[backend=bibtex, style=numeric, natbib=true]{biblatex}
+# #+LATEX_HEADER: \addbibresource{~/Zotero/myref.bib}
+# #+LATEX_HEADER: \hypersetup{urlcolor=blue}
+# #+LATEX_HEADER: \hypersetup{colorlinks,urlcolor=blue}
+# #+LATEX_HEADER: \usepackage[authoryear]{natbib}
+
+# #+LATEX_HEADER: \usepackage[natbib=true, backend=bibtex, maxbibnames=3, doi=false, isbn=false, style=nature]{biblatex}
+#+LATEX_HEADER: \usepackage[natbib=true, backend=bibtex, maxbibnames=3, doi=false, isbn=false, style=nature]{biblatex}
+#+LATEX_HEADER: \addbibresource{~/Zotero/myref.bib}
+# #+LATEX_HEADER: \AtEveryBibitem{\clearfield{note}}
+# #+LATEX_HEADER: \AtEveryBibitem{\clearfield{month}}
+# #+LATEX_HEADER: \AtEveryBibitem{\clearfield{day}}
+# #+LATEX_HEADER: \AtEveryBibitem{\clearfield{eprint}}
+
+#+latex: \begingroup
+#+latex: \renewcommand{\section}[2]{}%
+
+# for html export with bib
+# bibliographystyle:unsrt
+# bibliography:~/Zotero/myref.bib
+
+#+latex: \printbibliography[sorting=ydnt, heading=none, type=article] % for biblatex, comment out everything else
+#+latex: \endgroup
+* PISA2015 data
+** pisa2015/README.txt
+#+BEGIN_SRC sh :results output
+cat ../pisa2015/README.txt
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+1. Variable sequence
+1) CNTSCHID: school id
+2) CNTSTUID: student id
+3) ST004D01T: gender (male, female)
+4) item response variables -> 184 items
+5) response time variables -> 184 times
+	(the order of response time variable is consistent with item response's order)
+
+,* Note that
+<1> dichotomous items are coded as 0, 1 for incorrect and correct response, respectively.
+<2> polytomous items are coded as 0, 1, 2 for no credit, partial credit, and full credit, respectively.
+ -> polytomous item list: "DS519Q01C","DS498Q04C","DS465Q01C","CS635Q01S",
+		"CS635Q04S","DS635Q05C","DS605Q04C","DS607Q03C","CS634Q02S",
+		"CS645Q01S","DS657Q04C","DS629Q01C","CS637Q02S"
+<3> missing responses are coded as NA.
+<4> response time of non-response (missing like omission) has its value.
+    they are not changed to NA.
+#+end_example
+
+** notebook
+#+BEGIN_SRC R :results none
+setwd("~/Dropbox/research/lsjm-art/lsjm-code")
+
+library(tidyverse)
+load("../pisa2015/US_PISA2015.rdata")
+df = as_tibble(US_2015)
+info = readr::read_csv("../pisa2015/ItemTimeInfo.csv")
+polytomous = c("DS519Q01C","DS498Q04C","DS465Q01C","CS635Q01S", "CS635Q04S","DS635Q05C","DS605Q04C","DS607Q03C","CS634Q02S", "CS645Q01S","DS657Q04C","DS629Q01C","CS637Q02S")
+pdx = which(colnames(df) %in% polytomous)
+pdx = c(pdx,pdx + 184)
+df[,-pdx]
+#+END_SRC
+
+#+BEGIN_SRC R
+dim(df)
+length(unique(df$CNTSTUID)) # unique STUID?
+#+END_SRC
+
+#+RESULTS:
+: [1] 5712  371
+: [1] 5712
+
+#+begin_src R
+pullit = function(info,cl) {
+it = info %>% filter(Cluster_A == cl) %>% select(Item,Time)
+item = pull(it,Item)
+time = pull(it,Time)
+return(cbind(item,time))
+}
+#+end_src
+
+#+RESULTS:
+
+#+BEGIN_SRC R
+di = df[,1:187]
+dt = df[,c(1:3,188:371)]
+its = pullit(info,"S01")
+dt01 = dt %>% select(CNTSCHID,CNTSTUID,ST004D01T,any_of(its[,2])) %>% na.omit
+di01 = di %>% select(CNTSCHID,CNTSTUID,ST004D01T,any_of(its[,1])) %>% filter(CNTSTUID %in% dt01$CNTSTUID)
+
+di01[di01 == 2] = 1
+di01[is.na(di01)] = 99
+
+di01 = di01[1:50,1:6]
+dt01 = dt01[1:50,1:6]
+#+end_src
+
+** boxplot
+#+BEGIN_SRC R
+library(reshape2)
+
+di01_long <- melt(di01, id.vars=c("CNTSCHID","CNTSTUID","ST004D01T"))
+dt01_long <- melt(dt01, id.vars=c("CNTSCHID","CNTSTUID","ST004D01T"))
+
+identical(di01_long[,1],di01_long[,1])
+identical(di01_long[,2],di01_long[,2])
+identical(di01_long[,3],di01_long[,3])
+
+dit01 = cbind(di01_long, dt01_long[,5])
+colnames(dit01)[4:6] = c("item","res","time")
+#+END_SRC
+
+#+RESULTS:
+:
+: Attaching package: 'reshape2'
+:
+: The following object is masked from 'package:tidyr':
+:
+:     smiths
+: [1] TRUE
+: [1] TRUE
+: [1] TRUE
+
+#+BEGIN_SRC R :results value
+dit01 %>% group_by(item) %>% summarise(F = sum(res == 0), T = sum(res == 1), mis = sum(res == 99))
+#+END_SRC
+
+#+RESULTS:
+| DS269Q01C | 353 | 218 | 21 |
+| DS269Q03C | 349 | 220 | 23 |
+| CS269Q04S | 421 | 167 |  4 |
+| CS408Q01S | 270 | 318 |  4 |
+| DS408Q03C | 350 | 228 | 14 |
+| CS408Q04S | 255 | 334 |  3 |
+| CS408Q05S | 429 | 158 |  5 |
+| CS466Q01S | 223 | 365 |  4 |
+| CS466Q05S | 318 | 265 |  9 |
+| CS466Q07S | 150 | 436 |  6 |
+| DS519Q01C | 297 | 275 | 20 |
+| CS519Q02S | 276 | 313 |  3 |
+| DS519Q03C | 461 | 112 | 19 |
+| CS521Q02S | 291 | 299 |  2 |
+| CS521Q06S |  77 | 511 |  4 |
+| CS527Q01S | 493 |  98 |  1 |
+| CS527Q03S | 219 | 370 |  3 |
+| CS527Q04S | 264 | 325 |  3 |
+
+#+BEGIN_SRC R
+rt_boxp <- ggplot(dit01, aes(x=factor(res),y=time,fill=factor(res)))+
+  geom_boxplot() + labs(title="RT by accuracy") + facet_wrap(~item)
+logrt_boxp <- ggplot(dit01, aes(x=factor(res),y=log(time),fill=factor(res)))+
+  geom_boxplot() + labs(title="log RT by accuracy") + facet_wrap(~item)
+#+END_SRC
+
+#+RESULTS:
+
+[[file:RTs_S01.pdf]]
+
+#+BEGIN_SRC R
+pdf("RTs_S01.pdf")
+rt_boxp
+logrt_boxp
+dev.off()
+#+END_SRC
+
+#+RESULTS:
+: null device
+:           1
+** numeric ID
+#+BEGIN_SRC R
+tabulate_id = function(chrid) {
+## reference table of charactor and numeric id
+  chr = sort(unique(chrid))
+  out = data.frame(chr = chr, num = 1:length(chr))
+  return(out)
+}
+
+tab_schid = tabulate_id(di01$CNTSCHID)
+tab_stuid = tabulate_id(di01$CNTSTUID)
+tab_item = tabulate_id(colnames(di01)[-(1:3)])
+
+to_numID = function(x, tab) {
+    sapply(x, function(x) tab$num[which(tab$chr == x)])
+}
+
+to_chrID = function(x, tab) {
+    sapply(x, function(x) tab$chr[which(tab$num == x)])
+}
+
+di01$schid = to_numID(dt01$CNTSCHID, tab_schid)
+di01$stuid = to_numID(dt01$CNTSTUID, tab_stuid)
+dt01$schid = to_numID(dt01$CNTSCHID, tab_schid)
+dt01$stuid = to_numID(dt01$CNTSTUID, tab_stuid)
+
+#+END_SRC
+
+#+RESULTS:
+
+#+BEGIN_SRC R
+library(reshape2)
+
+##di01_long <- melt(di01, id.vars=c("CNTSCHID","CNTSTUID","ST004D01T"))
+##dt01_long <- melt(dt01, id.vars=c("CNTSCHID","CNTSTUID","ST004D01T"))
+
+di01 = di01 %>% select(- CNTSCHID, - CNTSTUID)
+dt01 = dt01 %>% select(- CNTSCHID, - CNTSTUID)
+
+di01_long <- melt(di01, id.vars=c("schid","stuid","ST004D01T"))
+dt01_long <- melt(dt01, id.vars=c("schid","stuid","ST004D01T"))
+
+identical(di01_long[,1],dt01_long[,1])
+identical(di01_long[,2],dt01_long[,2])
+identical(di01_long[,3],dt01_long[,3])
+
+dit01 = cbind(di01_long, dt01_long[,5])
+colnames(dit01)[4:6] = c("item","res","time")
+
+dit01$item = to_numID(dit01$item, tab_item)
+#+END_SRC
+
+
+#+RESULTS:
+: [1] TRUE
+: [1] TRUE
+: [1] TRUE
+
+** knot selection
+#+begin_src R
+time = pull(dit01,time)
+ncut = 2
+## interval <- seq(from=0, to = max(time)+1,length.out = 8)
+pseq =  seq(from=0, to = 1, length.out = ncut + 1)
+sj = quantile(time, probs = pseq) %>% round()
+sj[1] = 0; sj[length(sj)] = sj[length(sj)] + 1
+#+end_src
+
+#+RESULTS:
+** survSplit
+#+begin_src R
+library(survival)
+status = !(dit01$res == 99)
+
+tmp <- survival::survSplit(formula = Surv(time, status) ~ ., data = dit01, cut = sj, episode ="seg_g") %>%
+    mutate(seg = factor(tstart),
+           len = time - tstart,
+           status_T = 1 * (status == 1 & res == 1),
+           status_F = 1 * (status == 1 & res == 0)
+           ) %>%
+    as_tibble
+to_stan = tmp %>% mutate(seg_g = seg_g - 1) %>% select(stuid, item, time, seg_g, len, status_F, status_T)
+## tmp %>% select(res,status,status_T,status_F)
+#+end_src
+
+#+RESULTS:
+** not used
+#+BEGIN_SRC R
+item <- pull(info, Item)
+time <- pull(info, Time)
+cname <- colnames(df)
+#+END_SRC
+
+#+RESULTS:
+
+#+begin_src R
+item = item[info$Cluster_A == "S01"]
+time = time[info$Cluster_A == "S01"]
+yi = df[,cname %in% item]
+yt = df[,cname %in% time]
+
+idx = !apply(yi,1,function(x) all(is.na(x)))
+yi = yi[idx,]
+yt = yt[idx,]
+yi[is.na(yi)] = 99
+yi[yi == 2] = 1
+#+end_src
+
+#+RESULTS:
+
+
+#+BEGIN_SRC R
+boxplot(yt)
+#+END_SRC
+
+#+RESULTS:
+
+
+#+RESULTS:
+
+* STAN optimization using LBFGS
+- [[id:343fb468-844b-4f7e-840c-30161fa57835][STAN optimization for hubViz]]
+- Limited-memory BFGS (https://en.wikipedia.org/wiki/Limited-memory_BFGS)
+- Try to fix two points, and see if multiple results are similar
+- Variational Bayes + any optimization may get trapped in local modes.
+
+
+** LSJM prior
+\begin{aligned} \pi\left(\beta_{i}\right) & \sim \mathrm{N}\left(0, \tau_{\beta}^{2}\right) \\ \pi\left(\theta_{j} | \sigma^{2}\right) & \sim \mathrm{N}\left(0, \sigma^{2}\right) \\ \pi\left(\sigma^{2}\right) & \sim \operatorname{lnv}-\operatorname{Gamma}\left(a_{\sigma}, b_{\sigma}\right) \\ \pi\left(\mathbf{z}_{j}\right) & \sim \mathrm{MVN}_{d}\left(0, I_{d}\right) \\ \pi\left(\mathbf{w}_{i}\right) & \sim \mathrm{MVN}_{d}\left(0, I_{d}\right) \\ \log \pi(\gamma) & \sim \mathrm{N}\left(\mu_{\gamma}, \tau_{\gamma}^{2}\right) \end{aligned}
+
+\[\sigma^{2}=4, \tau_{\beta}^{2}=1, a_{\sigma}=1, b_{\sigma}=1, \mu_{\gamma}=0, \text { and } \tau_{\gamma}^{2}=1\]
+** stan code
+
+- stan_code: [[./stan/art.stan]]
+
+#+begin_src R
+## data and fixed parameters
+I = nrow(tab_item)
+N = nrow(tab_stuid)
+C = 2
+
+L = nrow(to_stan)
+G = ncut
+
+with(to_stan,
+rstan::stan_rdump(c('I','N','C','L','G','stuid','item', 'G', 'seg_g','len','status_F','status_T'),"pisa_data.R"))
+
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R
+## initialization
+w_fr = matrix(rnorm(2*p),p,2)
+w = w_fr
+w_fr[1,] = c(0,0)
+w_fr[2,] = 1*c(1,1)
+theta = rnorm(n)
+sigma_w = 10
+rstan::stan_rdump(c('w','w_fr','theta','sigma_w'),"init_list.R")
+#+end_src
+
+#+begin_src sh :async :results slient
+cd ~/stan-dev/cmdstan
+make ~/workspace/lsjm-code/stan/art
+#+end_src
+
+** MCMC
+#+NAME: mdsplot
+#+BEGIN_SRC R :tangle lsjmplot.R
+library(ggplot2)
+library(ggrepel)
+
+lsjmplot <- function( z, w, myname = NULL, xlim=NA, ylim=NA, lab = "Coordinate") {
+
+  ## extract objects
+
+  x = rbind(z,w)
+  idx = rep("w", nrow(x))
+  idx[1:nrow(z)] = "z"
+  position <- as.data.frame(x)
+  ndim <- dim(x)[2]
+
+  colnames(position) <- paste("position",1:ndim,sep="")
+
+  padding = 1.05
+  if (any(is.na(xlim))) {
+    x1 <- -max(abs(position[,1]))*padding
+    x2 <- max(abs(position[,1]))*padding
+  } else {
+    x1 <- xlim[1]
+    x2 <- xlim[2]
+  }
+  if (any(is.na(ylim))) {
+    y1 <- -max(abs(position[,2]))*padding
+    y2 <- max(abs(position[,2]))*padding
+  } else {
+    y1 <- ylim[1]
+    y2 <- ylim[2]
+  }
+
+  ## plot
+  pp = ggplot(position,aes(x=position1,y=position2,colour=idx)) +
+    theme(text=element_text(size=20)) +
+    ## geom_point()+
+    xlim(x1,x2) + ylim(y1,y2) +
+    xlab(paste(lab," 1",sep="")) + ylab(paste(lab," 2",sep="")) +
+    ##xlab("Position 1") + ylab("Position 2") +
+    geom_hline(yintercept = 0, color = "gray70", linetype=2) +
+    geom_vline(xintercept = 0, color = "gray70", linetype=2)
+##  pp = pp + geom_text_repel(label=rownames(position), segment.color = "grey50", size=6)
+  if (!is.null(myname))
+    pp = pp + geom_text(label=myname, segment.color = "grey50",check_overlap = TRUE, size = 2)
+  else pp = pp + geom_point()
+pp
+}
+#+END_SRC
+
+#+RESULTS: mdsplot
+
+A function to convert mcmc.list to data.frame.
+#+begin_src R :tangle cdfa_df.R
+coda_df <- function(coda.object,
+                    parameters = NULL) {
+
+    if (!coda::is.mcmc(coda.object) && !coda::is.mcmc.list(coda.object))
+        stop("Not an mcmc or mcmc.list object")
+
+    mat     <- as.matrix(coda.object, iter = TRUE, chain = TRUE)
+    df      <- as.data.frame(mat)
+
+    names(df)[names(df) == "CHAIN"] <- "chain"
+    names(df)[names(df) == "ITER"]  <- "iter"
+
+    if(is.null(parameters))
+        out.df <- df
+
+    if(!is.null(parameters))
+        out.df <- subset(df, select = c("chain", "iter", parameters))
+
+    out.df
+}
+#+end_src
+
+#+RESULTS:
+
+#+begin_src sh :async
+cd ~/workspace/lsjm-code/stan
+~/workspace/lsjm-code/stan/art sample num_samples=10000 num_warmup=2000 \
+adapt delta=0.8 algorithm=hmc engine=nuts \
+metric=diag_e output file=single_mcmc.csv \
+data file=../pisa_data.R
+#+end_src
+
+#+RESULTS:
+
+#+begin_src sh :async
+~/stan-dev/cmdstan/bin/stansummary stan/single_mcmc.csv --sig_figs=3 > single_summary.csv
+#+end_src
+
+#+RESULTS:
+
+
+#+begin_src R
+source("lsjmplot.R")
+source("coda_df.R")
+library(rstan)
+library(coda)
+ll = As.mcmc.list(read_stan_csv("stan/single_mcmc.csv"))
+df = coda_df(ll)
+#+end_src
+
+#+RESULTS:
+
+#+BEGIN_SRC R
+colnames(df)
+#+END_SRC
+
+#+BEGIN_SRC R
+n = nrow(df)
+ethin = 100
+idx = seq(1,n,ethin)
+
+ss = df[idx,]
+star = which.max(ss$lp__)
+ss = ss[,c(111:316)]
+Xstar =matrix(unlist(ss[star,]),2,103)
+Xstar = t(Xstar)
+#+END_SRC
+
+#+RESULTS:
+
+
+#+begin_src R
+library(MCMCpack)
+mm = list()
+for (k in 1:32){
+X = t(matrix(unlist(ss[k,]),2,103))
+mm[[k]] = procrustes(X, Xstar, translation = FALSE, dilation = FALSE)$X.new
+}
+#+end_src
+
+#+RESULTS:
+
+
+[[file:latent_plot.pdf]]
+#+begin_src R
+pdf("latent_plot.pdf")
+posm = Reduce("+",mm) / 32
+myname = c(1:50,1:3)
+z = posm[1:50,]
+w = posm[101:103,]
+lsjmplot(z,w, myname)
+
+z = posm[51:100,]
+w = posm[101:103,]
+lsjmplot(z,w, myname)
+dev.off()
+#+end_src
+
+#+RESULTS:
+: Warning: Ignoring unknown parameters: segment.colour
+: Warning: Ignoring unknown parameters: segment.colour
+: null device
+:           1
+
+
+
+
+#+BEGIN_SRC R
+ss = df[10001,]
+sqrt(sum((c(ss$w.2.1, ss$w.2.2) - c(ss$z1.1.1, ss$z1.1.2)))^2)
+ss$gamma.1
+ss$theta.1.1
+ss$beta.2.1
+ss$lambda.1.1
+ss$lambda.2.1
+
+log(ss$lambda.1.1) + log(to_stan$len[1]) + ss$beta.2.1 + ss$theta.1.1 - ss$gamma.1 * sqrt(sum((c(ss$w.2.1, ss$w.2.2) - c(ss$z1.1.1, ss$z1.1.2)))^2)
+
+log(ss$lambda.2.1) + log(to_stan$len[2]) + ss$beta.2.1 + ss$theta.1.1 - ss$gamma.1 * sqrt(sum((c(ss$w.2.1, ss$w.2.2) - c(ss$z1.1.1, ss$z1.1.2)))^2)
+
+log(ss$lambda.1.2) + log(to_stan$len[1]) + ss$beta.2.2 + ss$theta.1.2 - ss$gamma.2 * sqrt(sum((c(ss$w.2.1, ss$w.2.2) - c(ss$z2.1.1, ss$z2.1.2)))^2)
+
+log(ss$lambda.2.2) + log(to_stan$len[2]) + ss$beta.2.2 + ss$theta.1.2 - ss$gamma.2 * sqrt(sum((c(ss$w.2.1, ss$w.2.2) - c(ss$z2.1.1, ss$z2.1.2)))^2)
+
+
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+[1] 69.5924
+[1] 0.660856
+[1] -64.9419
+[1] -549.73
+[1] 9.01399e+303
+[1] 1.47743e+305
+[1] 43.67395
+[1] 46.01674
+[1] 8.551764
+[1] 9.934881
+#+end_example
+
+#+begin_src R
+X = as.matrix(df)
+n = nrow(X)
+X = as.matrix(X)[,2:10]
+
+ethin = 50
+idx = seq(1,n,ethin)
+rr = length(idx)
+#+end_src
+
+#+RESULTS:
+: 6400
+
+#+begin_src R :results silent
+Z = X[idx,2:3]
+Z = rbind(Z, X[idx,4:5])
+Z = rbind(Z, X[idx,6:7])
+Z = rbind(Z, X[idx,8:9])
+sensor = c(rep("x1",rr), rep("x2",rr), rep("x3",rr), rep("x4",rr))
+Z = data.frame(x = Z[,1], y = Z[,2], sensor)
+
+require(ggplot2)
+pdf("RESULT/nuts_scatter.pdf")
+ggplot(Z, aes(x=x, y=y, color=sensor)) + geom_point(size = 0.1)
+dev.off()
+#+end_src
+
+
+** data preprocessing
+#+begin_src R
+## data, fixed parameters
+i = 2
+Y = mm[[i]]
+n = nrow(Y)
+p = ncol(Y)
+sigma_t = 10
+rstan::stan_rdump(c('n','p','Y','sigma_t'),"free_sigma.R")
+
+## initialization
+w_fr = matrix(rnorm(2*p),p,2)
+w = w_fr
+w_fr[1,] = c(0,0)
+w_fr[2,] = 1*c(1,1)
+theta = rnorm(n)
+sigma_w = 10
+rstan::stan_rdump(c('w','w_fr','theta','sigma_w'),"init_list.R")
+#+end_src
+
+A good output is saved "optim_good.csv" (lp 8887.9)
+#+begin_src sh :async :results none
+cd ~/workspace/lsjm-code/stan
+./art optimize data file=../pisa_data.R output file=optim.csv
+#+end_src
+
+#+begin_src R
+out = as.matrix(readr::read_csv("optim.csv", skip=27))
+x = out[(1+n)+2:(2+p-1)]
+y = out[(1+n)+(2+p):(2+2*p-1)]
+cname = colnames(mm[[i]])
+
+pdf("stan_optimization.pdf")
+mdsplot(data.frame(x,y), cname)
+dev.off()
+#+end_src
+
+
+** Procrustes matching
+- Do Procrustes in MCMCpack. Try two sets (each 10 results in sec) compare results.
+- https://rdrr.io/cran/MCMCpack/man/procrustes.html
+- Matching alone doesn't work. its results are still quite varying...
+
+#+begin_src sh :async :results silent
+mkdir -p out
+for i in {1..10}
+do
+./vb optimize data file=sim1_Y.R output file=out/optim$i.csv
+done
+wait
+#+end_src
+
+#+begin_src R :results value
+lp = numeric(10)
+out = list()
+cname = colnames(mm[[i]])
+
+for (k in 1:10){
+out[[k]] = as.matrix(readr::read_csv(paste0("out/optim",k,".csv"), skip=27))
+lp[k] = out[[k]][1]
+}
+#+end_src
+
+#+begin_src R :results value
+pp = list()
+for (k in 1:10){
+x = out[[k]][2:11]
+y = out[[k]][12:21]
+pp[[k]] = mdsplot(data.frame(x,y), cname)}
+#+end_src
+
+#+begin_src R
+library(MCMCpack)
+mm = list()
+tt = which.max(lp)
+Xstar = matrix(out[[tt]][2:21],10,2)
+for (k in 1:10){
+X = matrix(out[[k]][2:21],10,2)
+mm[[k]] = procrustes(X, Xstar, translation = FALSE, dilation = FALSE)$X.new
+}
+#+end_src
+
+#+begin_src R
+w = Reduce("+",mm)
+pdf("plot4.pdf")
+mdsplot(data.frame(w), cname)
+dev.off(0)
+#+end_src
+
+
+*** fixed first two rows of $w$ :ARCHIVE:
+#+begin_src stan :tangle vb.stan
+data {
+  int<lower=1> n;
+  int<lower=1> p;
+  int<lower=0,upper=1> Y[n,p];
+  real w_2;
+  real<lower=0> sigma_w;
+}
+transformed data {
+  // STAN takes row vectors for matrix initialization.
+  int<lower=0,upper=1> u[n,p,p];
+  real<lower=machine_precision()> sigma_t = 10;
+  real<lower=machine_precision()> a = 0.001;
+  real<lower=machine_precision()> b = 0.001;
+  for (k in 1:n) {
+    for (i in 1:p) {
+      for (j in 1:p) {
+        if (i != j)
+          u[k,i,j] = Y[k,i] * Y[k,j];
+        else
+          u[k,i,j] = 0; }
+    }
+  }
+}
+parameters {
+  vector[n] theta;
+  /* real<lower=0> sigma_w; */
+  matrix[p,2] w_fr;
+}
+transformed parameters {
+  matrix[p,2] w;
+  w = w_fr;
+  w[1,1] = 0;
+  w[1,2] = 0;
+  w[2,1] = w_2;
+  w[2,2] = w_2;
+}
+model {
+  for (k in 1:n) {
+    target += normal_lpdf(theta[k] | 0, sigma_t);
+    for (i in 1:p) {
+      target += normal_lpdf(w[i,1]|0,sigma_w) + normal_lpdf(w[i,2]|0,sigma_w);
+      for (j in (i+1):p) {
+        target += - log(1 + exp(theta[k] - distance(row(w, i), row(w, j))));
+        if ( u[k,i,j] != 0)
+          target += theta[k] - distance(row(w,i), row(w, j));
+      }
+    }
+  }
+  /* target += inv_gamma_lpdf(sigma_w^2 | a,b); */
+}
+#+end_src
+
+#+begin_src sh :async
+cd /opt/cmdstan
+make ~/workspace/hubViz-code/vb
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R
+## data, fixed parameters
+i = 1
+Y = mm[[i]]
+n = nrow(Y)
+p = ncol(Y)
+w_2 = 1
+sigma_w = 5
+rstan::stan_rdump(c('n','p','Y','w_2','sigma_w'),"fixedtwo.R")
+
+## initialization
+w_fr = matrix(rnorm(2*p),p,2)
+w_fr[1,] = c(0,0)
+w_fr[2,] = 1*c(1,1)
+theta = rnorm(n)
+#sigma_w = 10
+rstan::stan_rdump(c('w_fr','theta','sigma_w'),"init_list.R")
+#+end_src
+
+#+RESULTS:
+
+- put ~init=init_list.R~ for custom initialization.
+#+begin_src sh :async :results none
+cd ~/workspace/hubViz-code
+./vb optimize data file=fixedtwo.R output file=optim.csv init=init_list.R
+#+end_src
+
+#+begin_src R
+out = as.matrix(readr::read_csv("optim.csv", skip=27))
+
+x = out[(n+2*p)+2:(2+p-1)]
+y = out[(n+2*p)+(2+p):(2+2*p-1)]
+cname = colnames(mm[[i]])
+
+mdsplot(data.frame(x,y), cname)
+#+end_src
+
+#+RESULTS:
+: Parsed with column specification:
+: cols(
+:   .default = col_double()
+: )
+: See spec(...) for full column specifications.
+: #   -00:02/05:20#   -00:02/05:20#   -00:02/05:20#   -00:02/05:20#   -00:02/05:20#   -00:02/05:20
+
+
+*** no fixed points: user-defined $\sigma$'s :ARCHIVE:
+#+begin_src stan :tangle vb.stan
+data {
+  int<lower=1> n;
+  int<lower=1> p;
+  int<lower=0,upper=1> Y[n,p];
+  real<lower=machine_precision()> sigma_w;
+  real<lower=machine_precision()> sigma_t;
+}
+transformed data {
+  // STAN takes row vectors for matrix initialization.
+  int<lower=0,upper=1> u[n,p,p];
+  real<lower=machine_precision()> a = 0.001;
+  real<lower=machine_precision()> b = 0.001;
+  for (k in 1:n) {
+    for (i in 1:p) {
+      for (j in 1:p) {
+        if (i != j)
+          u[k,i,j] = Y[k,i] * Y[k,j];
+        else
+          u[k,i,j] = 0; }
+    }
+  }
+}
+parameters {
+  vector[n] theta;
+  /* real<lower=0> sigma_w; */
+  matrix[p,2] w;
+}
+model {
+  for (k in 1:n) {
+    target += normal_lpdf(theta[k] | 0, sigma_t);
+    for (i in 1:p) {
+      target += normal_lpdf(w[i,1]|0,sigma_w) + normal_lpdf(w[i,2]|0,sigma_w);
+      for (j in (i+1):p) {
+        target += - log(1 + exp(theta[k] - distance(row(w, i), row(w, j))));
+        if ( u[k,i,j] != 0)
+          target += theta[k] - distance(row(w,i), row(w, j));
+      }
+    }
+  }
+  /* target += inv_gamma_lpdf(sigma_w^2 | a,b); */
+}
+#+end_src
+
+#+begin_src sh :async
+cd /opt/cmdstan
+make ~/workspace/hubViz-code/vb
+#+end_src
+
+#+RESULTS:
+| ---       | Translating                                  | Stan                                      | model                     | to                | C++         | code | ---                                     |     |    |     |    |          |    |                     |    |                    |    |                                  |    |                                   |    |                                             |                       |                                        |                                        |                                         |                    |                                                                 |                                                             |                                                           |                                                             |                                        |                                              |                                                   |    |                                      |
+| bin/stanc | --o=/Users/yunj/workspace/hubViz-code/vb.hpp | /Users/yunj/workspace/hubViz-code/vb.stan |                           |                   |             |      |                                         |     |    |     |    |          |    |                     |    |                    |    |                                  |    |                                   |    |                                             |                       |                                        |                                        |                                         |                    |                                                                 |                                                             |                                                           |                                                             |                                        |                                              |                                                   |    |                                      |
+| ---       | Compiling,                                   | linking                                   | C++                       | code              | ---         |      |                                         |     |    |     |    |          |    |                     |    |                    |    |                                  |    |                                   |    |                                             |                       |                                        |                                        |                                         |                    |                                                                 |                                                             |                                                           |                                                             |                                        |                                              |                                                   |    |                                      |
+| clang++   | -std=c++1y                                   | -Wno-unknown-warning-option               | -Wno-tautological-compare | -Wno-sign-compare | -D_REENTRANT | -I   | stan/lib/stan_math/lib/tbb_2019_U8/include | -O3 | -I | src | -I | stan/src | -I | lib/rapidjson_1.1.0/ | -I | stan/lib/stan_math/ | -I | stan/lib/stan_math/lib/eigen_3.3.3 | -I | stan/lib/stan_math/lib/boost_1.69.0 | -I | stan/lib/stan_math/lib/sundials_4.1.0/include | -DBOOST_DISABLE_ASSERTS | -c                                     | -include-pch                           | stan/src/stan/model/model_header.hpp.gch | -x                 | c++                                                             | -o                                                          | /Users/yunj/workspace/hubViz-code/vb.o                    | /Users/yunj/workspace/hubViz-code/vb.hpp                    |                                        |                                              |                                                   |    |                                      |
+| clang++   | -std=c++1y                                   | -Wno-unknown-warning-option               | -Wno-tautological-compare | -Wno-sign-compare | -D_REENTRANT | -I   | stan/lib/stan_math/lib/tbb_2019_U8/include | -O3 | -I | src | -I | stan/src | -I | lib/rapidjson_1.1.0/ | -I | stan/lib/stan_math/ | -I | stan/lib/stan_math/lib/eigen_3.3.3 | -I | stan/lib/stan_math/lib/boost_1.69.0 | -I | stan/lib/stan_math/lib/sundials_4.1.0/include | -DBOOST_DISABLE_ASSERTS | /opt/cmdstan/stan/lib/stan_math/lib/tbb | /opt/cmdstan/stan/lib/stan_math/lib/tbb | /Users/yunj/workspace/hubViz-code/vb.o  | src/cmdstan/main.o | stan/lib/stan_math/lib/sundials_4.1.0/lib/libsundials_nvecserial.a | stan/lib/stan_math/lib/sundials_4.1.0/lib/libsundials_cvodes.a | stan/lib/stan_math/lib/sundials_4.1.0/lib/libsundials_idas.a | stan/lib/stan_math/lib/sundials_4.1.0/lib/libsundials_kinsol.a | stan/lib/stan_math/lib/tbb/libtbb.dylib | stan/lib/stan_math/lib/tbb/libtbbmalloc.dylib | stan/lib/stan_math/lib/tbb/libtbbmalloc_proxy.dylib | -o | /Users/yunj/workspace/hubViz-code/vb |
+
+#+begin_src R
+## data, fixed parameters
+i = 2
+Y = mm[[i]]
+n = nrow(Y)
+p = ncol(Y)
+sigma_w = 20
+sigma_t = 10
+rstan::stan_rdump(c('n','p','Y','sigma_t','sigma_w'),"nofixed.R")
+
+## initialization
+w_fr = sigma_w*matrix(rnorm(2*p),p,2)
+w = w_fr
+w_fr[1,] = c(0,0)
+w_fr[2,] = 1*c(1,1)
+theta = sigma_t*rnorm(n)
+#sigma_w = 10
+rstan::stan_rdump(c('w','w_fr','theta','sigma_w'),"init_list.R")
+#+end_src
+
+#+RESULTS:
+
+- put =init=init_list.R= for custom initialization.
+#+begin_src sh :async
+cd ~/workspace/hubViz-code
+./vb optimize data file=nofixed.R output file=optim.csv init=init_list.R
+#+end_src
+
+#+RESULTS:
+| method         | =          |    optimize |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| optimize       |            |             |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| algorithm      | =          |       lbfgs | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| lbfgs          |            |             |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| init_alpha      | =          |       0.001 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| tol_obj         | =          |       1e-12 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| tol_rel_obj      | =          |       10000 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| tol_grad        | =          |       1e-08 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| tol_rel_grad     | =          |    10000000 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| tol_param       | =          |       1e-08 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| history_size    | =          |           5 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| iter           | =          |        2000 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| save_iterations | =          |           0 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| id             | =          |           0 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| data           |            |             |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| file           | =          |   nofixed.R |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| init           | =          |  init_list.R |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| random         |            |             |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| seed           | =          |          -1 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| output         |            |             |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| file           | =          |   optim.csv |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| diagnostic_file | =          |   (Default) |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| refresh        | =          |         100 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| Initial        | log        |       joint | probability |         = | -36325.7 |       |           |   |   |      |   |   |       |        |   |       |       |
+| Iter           | log        |        prob |             |           |       dx |       |           |   |   | grad |   |   | alpha | alpha0 | # | evals | Notes |
+| 99             | -9512.25   |    0.110302 | 24.364      |         1 |        1 |   137 |           |   |   |      |   |   |       |        |   |       |       |
+| Iter           | log        |        prob |             |           |       dx |       |           |   |   | grad |   |   | alpha | alpha0 | # | evals | Notes |
+| 125            | -9512.02   | 5.24062e-05 | 23.602      |    0.1247 |   0.7561 |   182 |           |   |   |      |   |   |       |        |   |       |       |
+| Optimization   | terminated |   normally: |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| Convergence    | detected:  |    relative | gradient    | magnitude |       is | below | tolerance |   |   |      |   |   |       |        |   |       |       |
+
+#+begin_src R
+out = as.matrix(readr::read_csv("optim.csv", skip=27))
+
+x = out[(n)+2:(2+p-1)]
+y = out[(n)+(2+p):(2+2*p-1)]
+cname = colnames(mm[[i]])
+
+mdsplot(data.frame(x,y), cname)
+#+end_src
+
+#+RESULTS:
+: Parsed with column specification:
+: cols(
+:   .default = col_double()
+: )
+: See spec(...) for full column specifications.
+: #   -00:12/03:11#   -00:11/03:11#   -00:10/03:11#   -00:09/03:11
+
