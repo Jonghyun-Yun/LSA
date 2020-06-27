@@ -13,13 +13,27 @@ data {
   int<lower=0,upper=1> status_F[L];
 }
 transformed data {
-// STAN takes row vectors for matrix initialization.
-// hyperparameter and transformed data, etc.
   real<lower=machine_precision()> sa = 1;
   real<lower=machine_precision()> sb = 1;
   real<lower=machine_precision()> la = 0.001;
   real<lower=machine_precision()> lb = 0.001;
 }
+// transformed data {
+//   // STAN takes row vectors for matrix initialization.
+//   // hyperparameter and transformed data, etc.
+//   int<lower=0,upper=1> u[n,p,p];
+//   real<lower=machine_precision()> a = 0.001;
+//   real<lower=machine_precision()> b = 0.001;
+//   for (k in 1:n) {
+//     for (i in 1:p) {
+//       for (j in 1:p) {
+//         if (i != j)
+//           u[k,i,j] = Y[k,i] * Y[k,j];
+//         else
+//           u[k,i,j] = 0; }
+//     }
+//   }
+// }
 parameters {
   real theta[N,2];
   real beta[I,2];

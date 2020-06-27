@@ -5,7 +5,7 @@
 #+OPTIONS:   H:10 num:nil toc:nil \n:nil @:t ::t |:t ^:nil ^:{} -:t f:t *:t <:t ':nil -:nil pri:t
 #+OPTIONS:   TeX:t LaTeX:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
 
-#+STARTUP: overview indent inlineimages logdone
+#+STARTUP: overview inlineimages logdone
 
 # #+SETUPFILE: ~/setup/my-theme-readtheorg.setup
 
@@ -192,7 +192,7 @@ length(unique(df$CNTSTUID)) # unique STUID?
 
 #+begin_src R
 pullit = function(info,cl) {
-it = info %>% filter(Cluster_A == cl) %>% select(Item,Time)
+it = info %>% filter(Cluster_A == cl)# %>% select(Item,Time)
 item = pull(it,Item)
 time = pull(it,Time)
 return(cbind(item,time))
@@ -215,6 +215,8 @@ di01 = di01[1:50,1:6]
 dt01 = dt01[1:50,1:6]
 #+end_src
 
+#+RESULTS:
+
 ** boxplot
 #+BEGIN_SRC R
 library(reshape2)
@@ -231,12 +233,6 @@ colnames(dit01)[4:6] = c("item","res","time")
 #+END_SRC
 
 #+RESULTS:
-:
-: Attaching package: 'reshape2'
-:
-: The following object is masked from 'package:tidyr':
-:
-:     smiths
 : [1] TRUE
 : [1] TRUE
 : [1] TRUE
@@ -315,6 +311,7 @@ dt01$stuid = to_numID(dt01$CNTSTUID, tab_stuid)
 #+END_SRC
 
 #+RESULTS:
+:
 
 #+BEGIN_SRC R
 library(reshape2)
@@ -347,7 +344,7 @@ dit01$item = to_numID(dit01$item, tab_item)
 ** knot selection
 #+begin_src R
 time = pull(dit01,time)
-ncut = 2
+ncut = 4
 ## interval <- seq(from=0, to = max(time)+1,length.out = 8)
 pseq =  seq(from=0, to = 1, length.out = ncut + 1)
 sj = quantile(time, probs = pseq) %>% round()
@@ -372,6 +369,40 @@ to_stan = tmp %>% mutate(seg_g = seg_g - 1) %>% select(stuid, item, time, seg_g,
 #+end_src
 
 #+RESULTS:
+
+#+BEGIN_SRC R
+tt01 = dt01 %>% select(-ST004D01T,-schid,-stuid)
+nitem = ncol(tt01)
+tt01 = data.frame(time = c(as.matrix(tt01)), status = 1)
+
+tmp <- survival::survSplit(formula = Surv(time, status) ~ ., data = tt01, cut = sj, episode ="seg_g") %>%
+    mutate(seg = factor(tstart),
+           seg_g = seg_g - 1,
+           len = time - tstart
+           ) %>% filter(status == 1) %>%
+    as_tibble
+mseg = matrix(pull(tmp,seg_g),ncol=nitem) %>% t()
+mh = matrix(pull(tmp,len),ncol=nitem) %>% t()
+mlen = sj[2:(ncut+1)] - sj[1:(ncut)]
+mt = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% as.matrix %>% t()
+mi = di01 %>% select(-ST004D01T,-schid,-stuid) %>% as.matrix %>% t()
+mi[mi==99] = 2
+#+END_SRC
+
+#+RESULTS:
+
+#+begin_src R
+## data and fixed parameters
+I = nrow(mt)
+N = ncol(mt)
+C = 2
+
+G = ncut + 1
+
+rstan::stan_rdump(c('I','N','C','G', 'mseg','mlen', 'mh', 'mt','mi'),"pisa_short.R")
+
+#+end_src
+
 ** not used
 #+BEGIN_SRC R
 item <- pull(info, Item)
@@ -450,7 +481,9 @@ rstan::stan_rdump(c('w','w_fr','theta','sigma_w'),"init_list.R")
 
 #+begin_src sh :async :results slient
 cd ~/stan-dev/cmdstan
-make ~/workspace/lsjm-code/stan/art
+# make ~/workspace/lsjm-code/stan/art
+# rm ~/workspace/lsjm-code/stan/par_art
+make STAN_THREADS=TRUE ~/workspace/lsjm-code/stan/parallel_art
 #+end_src
 
 ** MCMC
@@ -487,6 +520,13 @@ lsjmplot <- function( z, w, myname = NULL, xlim=NA, ylim=NA, lab = "Coordinate")
     y2 <- ylim[2]
   }
 
+  mytheme = theme(axis.line = element_line(colour = "black"),
+                  ##panel.grid.major = element_blank(),
+                  panel.grid.minor = element_blank(),
+                  ##panel.border = element_blank(),
+                  panel.background = element_blank()
+                  )
+
   ## plot
   pp = ggplot(position,aes(x=position1,y=position2,colour=idx)) +
     theme(text=element_text(size=20)) +
@@ -496,11 +536,11 @@ lsjmplot <- function( z, w, myname = NULL, xlim=NA, ylim=NA, lab = "Coordinate")
     ##xlab("Position 1") + ylab("Position 2") +
     geom_hline(yintercept = 0, color = "gray70", linetype=2) +
     geom_vline(xintercept = 0, color = "gray70", linetype=2)
-##  pp = pp + geom_text_repel(label=rownames(position), segment.color = "grey50", size=6)
-  if (!is.null(myname))
-    pp = pp + geom_text(label=myname, segment.color = "grey50",check_overlap = TRUE, size = 2)
-  else pp = pp + geom_point()
-pp
+  ##  pp = pp + geom_text_repel(label=rownames(position), segment.color = "grey50", size=6)
+  if (!is.null(myname)) {
+    pp = pp + geom_text(label=myname, segment.color = "grey50",check_overlap = FALSE, show.legend=FALSE,size = 2)
+  } else pp = pp + geom_point()
+  pp + mytheme
 }
 #+END_SRC
 
@@ -532,12 +572,21 @@ coda_df <- function(coda.object,
 
 #+RESULTS:
 
+#+begin_src sh :async :results slient
+cd ~/stan-dev/cmdstan
+# make ~/workspace/lsjm-code/stan/art
+# rm ~/workspace/lsjm-code/stan/par_art
+make STAN_THREADS=TRUE ~/workspace/lsjm-code/stan/parallel_art
+#+end_src
+
 #+begin_src sh :async
+export STAN_NUM_THREADS=8
+
 cd ~/workspace/lsjm-code/stan
-~/workspace/lsjm-code/stan/art sample num_samples=10000 num_warmup=2000 \
+time ~/workspace/lsjm-code/stan/parallel_art sample num_samples=20000 num_warmup=5000 \
 adapt delta=0.8 algorithm=hmc engine=nuts \
 metric=diag_e output file=single_mcmc.csv \
-data file=../pisa_data.R
+data file=../pisa_short.R
 #+end_src
 
 #+RESULTS:
@@ -549,71 +598,286 @@ data file=../pisa_data.R
 #+RESULTS:
 
 
-#+begin_src R
+#+begin_src R :results silent
 source("lsjmplot.R")
 source("coda_df.R")
 library(rstan)
 library(coda)
-ll = As.mcmc.list(read_stan_csv("stan/single_mcmc.csv"))
-df = coda_df(ll)
+library(tidyverse)
+dstan = read_stan_csv("stan/single_mcmc.csv")
+##ll = As.mcmc.list(dstan)
+df = tidybayes::tidy_draws(dstan) %>% as.data.frame
 #+end_src
-
-#+RESULTS:
-
-#+BEGIN_SRC R
-colnames(df)
-#+END_SRC
 
 #+BEGIN_SRC R
 n = nrow(df)
 ethin = 100
 idx = seq(1,n,ethin)
 
-ss = df[idx,]
-star = which.max(ss$lp__)
-ss = ss[,c(111:316)]
-Xstar =matrix(unlist(ss[star,]),2,103)
+z1dx = grepl("^z1", colnames(df))
+z2dx = grepl("^z2", colnames(df))
+wdx = grepl("^w", colnames(df))
+adx = z1dx | z2dx | wdx
+nper = sum(z1dx)/2
+nitem = sum(wdx)/2
+nall = sum(adx)/2
+
+sf = df[idx,]
+star = which.max(sf$lp__)
+ss = sf[,adx]
+Xstar =matrix(unlist(ss[star,]),2,nall)
 Xstar = t(Xstar)
 #+END_SRC
 
 #+RESULTS:
 
-
-#+begin_src R
+#+begin_src R :results silent
 library(MCMCpack)
 mm = list()
-for (k in 1:32){
-X = t(matrix(unlist(ss[k,]),2,103))
+for (k in 1:nrow(ss)){
+X = t(matrix(unlist(ss[k,]),2,nall))
 mm[[k]] = procrustes(X, Xstar, translation = FALSE, dilation = FALSE)$X.new
+sf[k,adx] = c(t(mm[[k]]))
 }
-#+end_src
 
-#+RESULTS:
+#+end_src
 
 
 [[file:latent_plot.pdf]]
 #+begin_src R
+posm = Reduce("+",mm) / nrow(ss)
 pdf("latent_plot.pdf")
-posm = Reduce("+",mm) / 32
-myname = c(1:50,1:3)
-z = posm[1:50,]
-w = posm[101:103,]
-lsjmplot(z,w, myname)
+myname = c(1:nper,paste0("I.",1:nitem))
+z1= posm[1:nper,]
+w = posm[-(1:(2*nper)),]
+lsjmplot(z1,w,xlim=c(-2,2),ylim=c(-2,2),myname)
 
-z = posm[51:100,]
-w = posm[101:103,]
-lsjmplot(z,w, myname)
+z2 = posm[(nper + 1):(2*nper),]
+lsjmplot(z2,w,xlim=c(-2,2),ylim=c(-2,2),myname)
 dev.off()
 #+end_src
 
 #+RESULTS:
-: Warning: Ignoring unknown parameters: segment.colour
-: Warning: Ignoring unknown parameters: segment.colour
+: Warning message:
+: Ignoring unknown parameters: segment.colour
+: Warning message:
+: Ignoring unknown parameters: segment.colour
 : null device
 :           1
 
+#+BEGIN_SRC R
+construct_cumulative_hazard_function <- function(cutpoints, log_baseline_hazards, latent_effects) {
+
+    ## t is a vector of time points. group is {0,1} scalar
+    cumulative_hazard_function <- function(t, iper) {
+        ## Boolean for any exposed time in each interval
+        ## length(cutpoints) x length(t)
+        interval_exposed <- outer(cutpoints, t, `<`)
+
+        ## t - cutpoint. Multiply by interval exposed to avoid negative times.
+        time_exposed <-  -outer(cutpoints, t, `-`) * interval_exposed
+
+        ## Last interval is of width Inf
+        interval_widths <- c(diff(cutpoints), Inf)
+
+        ## For each interval, time exposed cannot exceed interval width.
+        time_exposed_correct  <- sweep(x = time_exposed,
+                                       MARGIN = 1,
+                                       STATS = interval_widths,
+                                       FUN = pmin)
+
+        ## Multiply by corresponding baseline hazards to get interval specific cumulative baseline hazards.
+        interval_baseline_cumulative_hazards <- sweep(x = time_exposed_correct,
+                                                      MARGIN = 1,
+                                                      STATS = exp(log_baseline_hazards),
+                                                      FUN = `*`)
+
+        ## Cumulative baseline hazard vector length(t)
+        baseline_cumulative_hazards <- colSums(interval_baseline_cumulative_hazards)
+
+        ## return after applying group effect
+        return(baseline_cumulative_hazards * exp(latent_effects[iper]))
+    }
+
+    return(cumulative_hazard_function)
+}
+#+END_SRC
+
+#+RESULTS:
 
 
+#+BEGIN_SRC R
+df = sf
+library(stringr)
+source("pisa_short.R")
+dfname = colnames(df)
+#+END_SRC
+
+#+RESULTS:
+
+#+BEGIN_SRC R
+
+#+END_SRC
+
+#+RESULTS:
+
+#+BEGIN_SRC R
+lambda1.1dx = grepl("^lambda1.1", colnames(df))
+z1dx = grepl("^z1", colnames(df))
+z2dx = grepl("^z2", colnames(df))
+thetadx = grepl("^theta", colnames(df))
+beta.1dx = grepl("^beta.1", colnames(df))
+w.1dx = grepl("^w.1", colnames(df))
+gamma.1dx = grepl("^gamma.1", colnames(df))
+#+END_SRC
+
+#+RESULTS:
+
+#+BEGIN_SRC R
+item_number = 3
+
+lvar1 = list(
+  lambda1.1 = str_subset(dfname, paste0("^lambda1.",item_number)),
+  z1 = str_subset(dfname,"^z1"),
+  theta = str_subset(str_subset(dfname,"^theta"), ".2$", negate = T),
+  beta.1 = str_subset(dfname,paste0("^beta.",item_number)) %>% str_subset(".2$", negate = T),
+  w.1 = str_subset(dfname,paste0("^w.",item_number)),
+  gamma.1 = str_subset(dfname,"^gamma.1")
+  )
+
+beta = df[lvar1$beta.1] %>% as.matrix()
+theta = df[lvar1$theta] %>% as.matrix()
+gamma = df[lvar1$gamma.1] %>% as.matrix()
+z = df[lvar1$z1] %>% as.matrix()
+w = df[lvar1$w.1] %>% as.matrix()
+
+d2 = (z - rep(w, nper))^2
+dist = apply(d2, 1, function(x) {x[seq(1,2*nper,2)] + x[seq(2,2*nper,2)]}) %>% sqrt() %>% t()
+
+prop_hazard1 = rep(beta, nper) + theta - rep(gamma,nper) * dist
+colnames(prop_hazard1) = paste0("k",1:nper,".1")
+#+END_SRC
+
+#+RESULTS:
+
+#+BEGIN_SRC R
+lvar2 = list(
+  lambda1.2 = str_subset(dfname, paste0("^lambda2.",item_number)),
+  z = str_subset(dfname,"^z2"),
+  theta = str_subset(str_subset(dfname,"^theta"), ".1$", negate = T),
+  beta.1 =  str_subset(dfname,paste0("^beta.",item_number)) %>% str_subset(".1$", negate = T),
+  w.1 = str_subset(dfname,paste0("^w.",item_number)),
+  gamma = str_subset(dfname,"^gamma.2")
+)
+
+beta = df[lvar2$beta.1] %>% as.matrix()
+theta = df[lvar2$theta] %>% as.matrix()
+gamma = df[lvar2$gamma] %>% as.matrix()
+z = df[lvar2$z] %>% as.matrix()
+w = df[lvar2$w.1] %>% as.matrix()
+
+d2 = (z - rep(w, nper))^2
+dist = apply(d2, 1, function(x) {x[seq(1,2*nper,2)] + x[seq(2,2*nper,2)]}) %>% sqrt() %>% t()
+
+prop_hazard2 = rep(beta, nper) + theta - rep(gamma,nper) * dist
+colnames(prop_hazard2) = paste0("k",1:nper,".2")
+
+#+END_SRC
+
+#+RESULTS:
+
+#+BEGIN_SRC R
+dat = tibble(prop_hazard1 = prop_hazard1,
+             prop_hazard2 = prop_hazard2,
+             lambda.1.1 = df[lvar1$lambda1.1] %>% as.matrix(),
+             lambda.1.2 = df[lvar2$lambda1.2] %>% as.matrix()
+             )
+
+dat = dat %>% mutate(acc1 = rep(lambda.1.1[,1], nper) * exp(prop_hazard1) / ( rep(lambda.1.1[,1], nper) * exp(prop_hazard1) +  rep(lambda.1.2[,1], nper) * exp(prop_hazard2)),
+  acc2 = rep(lambda.1.1[,2], nper) * exp(prop_hazard1) / ( rep(lambda.1.1[,2], nper) * exp(prop_hazard1) +  rep(lambda.1.2[,2], nper) * exp(prop_hazard2)),
+    acc3 = rep(lambda.1.1[,3], nper) * exp(prop_hazard1) / ( rep(lambda.1.1[,3], nper) * exp(prop_hazard1) +  rep(lambda.1.2[,3], nper) * exp(prop_hazard2)),
+      acc4 = rep(lambda.1.1[,4], nper) * exp(prop_hazard1) / ( rep(lambda.1.1[,4], nper) * exp(prop_hazard1) +  rep(lambda.1.2[,4], nper) * exp(prop_hazard2)),
+        acc5 = rep(lambda.1.1[,5], nper) * exp(prop_hazard1) / ( rep(lambda.1.1[,5], nper) * exp(prop_hazard1) +  rep(lambda.1.2[,5], nper) * exp(prop_hazard2)))
+#+END_SRC
+
+#+RESULTS:
+
+#+BEGIN_SRC R
+acc = dat %>% dplyr::select(acc1,acc2,acc3,acc4,acc5)
+mat = matrix(colSums(acc) / nrow(acc),nrow=50)
+sj = c(0, cumsum(mlen))
+#+END_SRC
+
+#+RESULTS:
+
+[[file:tradeoff.pdf]]
+#+BEGIN_SRC R
+accuracy = c(rep(mat[1,1],mlen[1]),rep(mat[1,2],mlen[2]),rep(mat[1,3],mlen[3]),rep(mat[1,4],mlen[4]),rep(mat[1,5],100))
+time = 0:(length(accuracy)-1)
+person = rep(1,length(accuracy))
+plotdf = cbind(accuracy,time,person)
+for (k in 2:nper) {
+  accuracy = c(rep(mat[k,1],mlen[1]),rep(mat[k,2],mlen[2]),rep(mat[k,3],mlen[3]),rep(mat[k,4],mlen[4]),rep(mat[k,5],100))
+  person = rep(k,length(accuracy))
+  plotdf = rbind(plotdf, cbind(accuracy,time,person))
+}
+
+pdf("tradeoff.pdf")
+plotdf = as.data.frame(plotdf)
+ggplot(data=plotdf, aes(x=time, y=accuracy, group=person)) +
+  geom_line(aes(color=factor(person)), show.legend=FALSE) +
+  # geom_line(group="3", col="red") +
+  ##scale_colour_grey() +
+  theme_bw()
+dev.off()
+#+END_SRC
+
+#+RESULTS:
+: null device
+:           1
+
+#+BEGIN_SRC R
+prop_hazard <- function(beta, theta, gamma, z, w) {
+  theta = matrix(theta,nrow=2)[1,]
+  return(beta + theta - gamma * colSums((z - w)^2))
+}
+#+END_SRC
+
+#+RESULTS:
+
+#+BEGIN_SRC R
+cum_haz <- df %>%
+#+END_SRC
+
+#+BEGIN_SRC R
+cum_haz <- df %>%
+  mutate(`H(t|x)` = pmap(mget(unlist(lvar)),
+                         function(mget(unlist(lvar))){
+                           construct_cumulative_hazard_function(
+                             cutpoints = c(0,cumsum(mlen)),
+                             log_baseline_hazards = mget(lvar$lambda1.1),
+                             latent_effects = prop_hazard(mget(lvar$beta.1),mget(lvar$theta),
+                                                          mget(lvar$gamma.1),mget(lvar$z1),
+                                                          mget(lvar$gamma.1)))
+                         })) %>%
+  select(.chain, .iteration, .draw, `H(t|x)`)
+#+END_SRC
+
+#+BEGIN_SRC R
+cum_haz <- df %>%
+    mutate(`H(t|x)` = pmap(list(interval0, interval14, interval31, xNonmaintained),
+                           function(interval0, interval14, interval31, xNonmaintained){
+                               cunstruct_cumulative_hazard_function(
+                                   cutpoints = c(0, cumsum(mlen)),
+                                   log_baseline_hazards = c(interval0, interval14, interval31),
+                                   group_effect = xNonmaintained)
+                           })) %>%
+    select(.chain, .iteration, .draw, `H(t|x)`)
+#+END_SRC
+
+#+RESULTS:
+: Error in tidybayes::tidy_draws(fit_leukemia_three) :
+:   object 'fit_leukemia_three' not found
 
 #+BEGIN_SRC R
 ss = df[10001,]
@@ -634,48 +898,6 @@ log(ss$lambda.2.2) + log(to_stan$len[2]) + ss$beta.2.2 + ss$theta.1.2 - ss$gamma
 
 
 #+END_SRC
-
-#+RESULTS:
-#+begin_example
-[1] 69.5924
-[1] 0.660856
-[1] -64.9419
-[1] -549.73
-[1] 9.01399e+303
-[1] 1.47743e+305
-[1] 43.67395
-[1] 46.01674
-[1] 8.551764
-[1] 9.934881
-#+end_example
-
-#+begin_src R
-X = as.matrix(df)
-n = nrow(X)
-X = as.matrix(X)[,2:10]
-
-ethin = 50
-idx = seq(1,n,ethin)
-rr = length(idx)
-#+end_src
-
-#+RESULTS:
-: 6400
-
-#+begin_src R :results silent
-Z = X[idx,2:3]
-Z = rbind(Z, X[idx,4:5])
-Z = rbind(Z, X[idx,6:7])
-Z = rbind(Z, X[idx,8:9])
-sensor = c(rep("x1",rr), rep("x2",rr), rep("x3",rr), rep("x4",rr))
-Z = data.frame(x = Z[,1], y = Z[,2], sensor)
-
-require(ggplot2)
-pdf("RESULT/nuts_scatter.pdf")
-ggplot(Z, aes(x=x, y=y, color=sensor)) + geom_point(size = 0.1)
-dev.off()
-#+end_src
-
 
 ** data preprocessing
 #+begin_src R
@@ -1009,3 +1231,148 @@ mdsplot(data.frame(x,y), cname)
 : See spec(...) for full column specifications.
 : #   -00:12/03:11#   -00:11/03:11#   -00:10/03:11#   -00:09/03:11
 
+* pseudo code
+** Initialize
+1. initialize $\lambda_{ic,j}$: I x N x 2
+** Update \lambda
+1. initialize $\log \lambda_{ic,j}$: I x N x 2
+2. for each i,k,c
+3. for each j
+4. Draw $\lambda_{ic,j}^{*} \log \sim N(\log \lambda_{ic,j}^{(t)}, jump_{\lambda_{ic,j}})$
+5. accept if $r < \log U(0,1)$
+\begin{align*}
+r &= \frac{
+   \lambda_{ic,j}^{*} \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)\Lambda_{ic}(t)^{*}]}
+   {\lambda_{ic,j}^{t} \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{1}||z_{kc} - w_{i}||)\Lambda_{ic}(t)^{t}]}
+  \frac{J(\lambda_{ic,j}^{(t)} -> \lambda_{ic,j}^{*})}{J(\lambda_{ic,j}^{(*)} -> \lambda_{ic,j}^{t})}\\
+& =
+  \frac{\lambda_{ic,j}^{*}}{\lambda_{ic,j}^{t}} \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)(\Lambda_{ic}(t)^{*} - \Lambda_{ic}(t)^{t})]   \frac{J(\lambda_{ic,j}^{(t)} -> \lambda_{ic,j}^{*})}{J(\lambda_{ic,j}^{(*)} -> \lambda_{ic,j}^{t})};
+\end{align*}
+if $Y_{ikc,j} = 1$; otherwise
+\begin{align*}
+r &=
+  \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)(\Lambda_{ic}(t)^{*} - \Lambda_{ic}(t)^{t})]   \frac{J(\lambda_{ic,j}^{(t)} -> \lambda_{ic,j}^{*})}{J(\lambda_{ic,j}^{(*)} -> \lambda_{ic,j}^{t})};
+\end{align*}
+
+** Update \theta
+prior: $\theta_{kc} | \sigma^{2} ~ N(0,\sigma^2)$
+1. initialize $\theta_{kc}$: N x 2
+2. for each k,c
+3. Draw $\theta_{kc}^{*} \sim N(\theta_{kc}^{(t)}, jump_{\theta_{kc}})$
+4. accept if $\log r < \log U(0,1)$
+\begin{align*}
+r &= \prod_{i=1}^{I} \frac{
+   \exp(\beta_{ic} + \theta_{kc}^{*} - \gamma_{c}||z_{kc} - w_{i}||)
+   \exp[-\exp(\beta_{ic} + \theta_{kc}^{*} - \gamma_{c}||z_{kc} - w_{i}||)\Lambda_{ic}(t)]
+}{
+   \exp(\beta_{ic} + \theta_{kc}^{t} - \gamma_{c}||z_{kc} - w_{i}||)
+   \exp[-\exp(\beta_{ic} + \theta_{kc}^{t} - \gamma_{c}||z_{kc} - w_{i}||)\Lambda_{ic}(t) ]
+}
+\frac{\pi(\theta_{kc}^{*})}{\pi(\theta_{kc}^{*})}
+   \frac{J(\theta_{kc}^{t} -> \theta_{kc}^{*})}{J(\theta_{kc}^{*} -> \theta_{kc}^{t})} \\
+&=
+\frac{\exp(\theta_{kc}^{*})}{\exp(\theta_{kc}^{t})}
+\frac{\pi(\theta_{kc}^{*})}{\pi(\theta_{kc}^{t})}
+# \frac{J(\theta_{kc}^{t} -> \theta_{kc}^{*})}{J(\theta_{kc}^{*} -> \theta_{kc}^{t})}
+(\exp(\theta_{kc}^{*}) - \exp(\theta_{kc}^{t}))
+\exp[-\sum_{i=1}^{I} \Lambda_{ic}(t) \exp(\beta_{ic} - \gamma_{c}||z_{kc} - w_{i}||)]
+\end{align*}
+
+** Update \beta
+1. initialize $\beta_{ic}$: I x 2
+2. for each i,c
+3. Draw $\beta_{ic}^{*} \sim N(\\beta_{ic}^{(t)}, jump_{\beta_{ic}})$
+4. accept if $\log r < \log U(0,1)$
+\begin{align*}
+r &= \prod_{k=1}^{N} \frac{
+   \exp(\beta_{ic}^{*} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)
+   \exp[-\exp(\beta_{ic}^{*} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)\Lambda_{ic}(t)]
+}{
+   \exp(\beta_{ic}^{t} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)
+   \exp[-\exp(\beta_{ic}^{t} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)\Lambda_{ic}(t) ]
+}
+\frac{\pi(\beta_{ic}^{*})}{\pi(\beta_{ic}^{t})}
+   \frac{J(\beta_{kc}^{t} -> \beta_{kc}^{*})}{J(\beta_{kc}^{*} -> \beta_{kc}^{t})} \\
+&=
+\frac{\exp(\beta_{kc}^{*})}{\exp(\beta_{kc}^{t})}
+\frac{\pi(\beta_{kc}^{*})}{\pi(\beta_{kc}^{t})}
+\frac{J(\beta_{kc}^{t} -> \beta_{kc}^{*})}{J(\beta_{kc}^{*} -> \beta_{kc}^{t})}
+\exp[-\sum_{k=1}^{N} \Lambda_{ic}(t) \exp(\beta_{ic} - \gamma_{c}||z_{kc} - w_{i}||)(\exp(\beta_{kc}^{*}) - \exp(\beta_{kc}^{t}))]
+\end{align*}
+
+** Update z
+1. initialize $z_{kc}$: N x 2
+2. for each k,c
+3. Draw $z_{ic}^{*} \sim N(\z_{kc}^{(t)}, jump_{z_{kc}})$
+4. accept if $\log r < \log U(0,1)$
+\begin{align*}
+r =& \prod_{i=1}^{I} \frac{
+   \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc}^{*} - w_{i}||)
+   \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc}^{*} - w_{i}||)\Lambda_{ic}(t)]
+}{
+   \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc}^{t} - w_{i}||)
+   \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc}^{t} - w_{i}||)\Lambda_{ic}(t) ]
+}
+\frac{\pi(z_{kc}^{*})}{\pi(z_{kc}^{t})}
+   \frac{J(z_{kc}^{t} -> z_{kc}^{*})}{J(z_{kc}^{*} -> z_{kc}^{t})} \\
+=&
+\frac{\pi(z_{kc}^{*})}{\pi(z_{kc}^{t})}
+# \frac{J(z_{kc}^{t} -> z_{kc}^{*})}{J(z_{kc}^{*} -> z_{kc}^{t})}
+\exp[\gamma_{c}\sum_{i=1}^{I}
+(||z_{kc}^{*} - w_{i}||-||z_{kc}^{t} - w_{i}||)]\\
+&\times
+   \exp[-\exp(\theta_{kc}) \sum_{i=1}^{I}\Lambda_{ic}(t)\exp(\beta_{ic}) \{\exp( - \gamma_{c}||z_{kc}^{*} - w_{i}||) - \exp(-\gamma_c||z_{kc}^{t} - w_{i}||)\}]
+\end{align*}
+
+** Update w
+1. initialize $w_{i}$: I
+2. for each I
+3. Draw $w_{i}^{*} \sim N(\w_i^{(t)}, jump_{w_i)
+4. accept if $\log r < \log U(0,1)$
+\begin{align*}
+r = &\prod_{c=1}^{2} \prod_{i=1}^{I} \frac{
+   \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}^{*}||)
+   \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}^{*}||)\Lambda_{ic}(t)]
+}{
+   \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}^{t}||)
+   \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}^{t}||)\Lambda_{ic}(t) ]
+}
+\frac{\pi(w_i^{*})}{\pi(w_i^{t})}
+   \frac{J(w_i^{t} -> w_i^{*})}{J(w_i^{*} -> w_i^{t})} \\
+=&
+\frac{\pi(w_i^{*})}{\pi(w_i^{t})}
+# \frac{J(w_i^{t} -> w_i^{*})}{J(w_i^{*} -> w_i^{t})}
+\exp[\sum_{c=1}^{2}\sum_{k=1}^{N} \gamma_{c}
+(||z_{kc} - w_{i}^{*}||-||z_{kc} - w_{i}^{t}||)] \\
+& \times \exp[-\sum_{c=1}^{2}\Lambda_{ic}(t)\exp(\beta_{ic}) \sum_{k=1}^{N}\exp(\theta_{kc})\{ \exp(- \gamma_{c}||z_{kc} - w_{i}^{*}||) - \exp(-\gamma_c ||z_{kc} - w_{i}^{t}||)\}]
+\end{align*}
+
+** Update gamma
+1. initialize $\gamma_{c}$: 2
+2. for each c
+3. Draw $\gamma_{c}^{*} \sim \log N(\log \gamma_{c}^{(t)}, jump_{\gamma_{c}})$
+4. accept if $\log r < \log U(0,1)$
+\begin{align*}
+r = & \prod_{i=1}^{I}\prod_{k=1}^{N} \frac{
+   \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}^{*}||z_{kc} - w_{i}||)
+   \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}^{*}||z_{kc} - w_{i}||)\Lambda_{ic}(t)]
+}{
+   \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}^{t}||z_{kc} - w_{i}||)
+   \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}^{t}||z_{kc} - w_{i}||)\Lambda_{ic}(t) ]
+}
+\frac{\pi(\gamma_{c}^{*})}{\pi(\gamma_c^{t})}
+   \frac{J(\gamma_{c}^{t} -> \gamma_{c}^{*})}{J(\gamma_{c}^{*} -> \gamma_{c}^{t})} \\
+=&
+\frac{\pi(w_i^{*})}{\pi(w_i^{t})}
+\frac{J(w_i^{t} -> w_i^{*})}{J(w_i^{*} -> w_i^{t})}
+\exp[\sum_{i=1}^{I}\sum_{k=1}^{N} ||z_{kc} - w_{i}||(\gamma_{c}^{t}-\gamma_{c}^{*})]\\
+& \times \exp[-\sum_{i=1}^{I}\sum_{k=1}^{N}\Lambda_{ic}(t)\exp(\beta_{ic} + \theta_{kc}) \{\exp( - \gamma_{c}^{*} ||z_{kc} - w_{i}||) -
+ \exp( -\gamma_{c}^{t} ||z_{kc} - w_{i}||)\}]
+\end{align*}
+
+** update \sigma^2
+prior: $\sigma^{2} \sim inv-gamma(a,b)$
+target: $\prod_{k,c} N(\theta_{kc}|0,\sigma^{2}) inv-gamma(\sigma^{2}|a,b)$ -> normal-(inv-gamma) model
+
+1. initialize $\sigma^{2}$
+2. Draw $\sigma^{2} \sim inv-Gamma(a + N, b + \sum_{k,c} \theta_{kc} / 2)$
