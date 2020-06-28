@@ -1,9 +1,7 @@
-#ifndef MY_CREATE_RNG_HPP
-#define MY_CREATE_RNG_HPP
+#ifndef __CREATE_RNG_HPP_
+#define __CREATE_RNG_HPP_
 
 #include <boost/random/additive_combine.hpp>
-
-namespace my {
 
 /**
  * Creates a pseudo random number generator from a random seed
@@ -28,5 +26,4 @@ inline boost::ecuyer1988 create_rng(unsigned int seed, unsigned int chain) {
   return rng;
 }
 
-} // namespace my
-#endif
+#endif // __CREATE_RNG_H_

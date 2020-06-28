@@ -161,7 +161,15 @@ clean:
  SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -isysroot ${Xcode_CLT}/SDKs/MacOSX.sdk/usr/include")
  SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk")
  # SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-unused-parameter -Wno-unused-local-typedef -Wno-unused-function -Wno-ignored-qualifiers -Wno-unused-variable -Wno-sign-compare -Wno-infinite-recursion")
- add_executable(main main.cpp)
+
+include_directories(./include)
+file(GLOB SOURCES
+    include/*.h
+    include/*.hpp
+    src/*.cpp
+)
+
+ add_executable(main main.cpp ${SOURCES})
  target_link_libraries(main ${CMAKE_CXX_FLAGS} ${MATH}/lib/sundials_5.2.0/lib/libsundials_nvecserial.a ${MATH}/lib/sundials_5.2.0/lib/libsundials_cvodes.a ${MATH}/lib/sundials_5.2.0/lib/libsundials_idas.a ${MATH}/lib/sundials_5.2.0/lib/libsundials_kinsol.a ${MATH}/lib/tbb/libtbb.dylib ${MATH}/lib/tbb/libtbbmalloc.dylib ${MATH}/lib/tbb/libtbbmalloc_proxy.dylib)
  #+end_src
 
@@ -174,6 +182,43 @@ cmake -H. -BDebug -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=YES
 ln -s Debug/compile_commands.json
 cmake .
  #+end_src
+
+ #+RESULTS:
+ | -- | The         | C     | compiler | identification | is        | AppleClang                                                                                 | 11.0.0.11000033                                       |       |
+ | -- | The         | CXX   | compiler | identification | is        | AppleClang                                                                                 | 11.0.0.11000033                                       |       |
+ | -- | Check       | for   | working  | C              | compiler: | /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc  |                                                       |       |
+ | -- | Check       | for   | working  | C              | compiler: | /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc  | -                                                     | works |
+ | -- | Detecting   | C     | compiler | ABI            | info      |                                                                                            |                                                       |       |
+ | -- | Detecting   | C     | compiler | ABI            | info      | -                                                                                          | done                                                  |       |
+ | -- | Detecting   | C     | compile  | features       |           |                                                                                            |                                                       |       |
+ | -- | Detecting   | C     | compile  | features       | -         | done                                                                                       |                                                       |       |
+ | -- | Check       | for   | working  | CXX            | compiler: | /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ |                                                       |       |
+ | -- | Check       | for   | working  | CXX            | compiler: | /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ | -                                                     | works |
+ | -- | Detecting   | CXX   | compiler | ABI            | info      |                                                                                            |                                                       |       |
+ | -- | Detecting   | CXX   | compiler | ABI            | info      | -                                                                                          | done                                                  |       |
+ | -- | Detecting   | CXX   | compile  | features       |           |                                                                                            |                                                       |       |
+ | -- | Detecting   | CXX   | compile  | features       | -         | done                                                                                       |                                                       |       |
+ | -- | Configuring | done  |          |                |           |                                                                                            |                                                       |       |
+ | -- | Generating  | done  |          |                |           |                                                                                            |                                                       |       |
+ | -- | Build       | files | have     | been           | written   | to:                                                                                        | /Users/yunj/Dropbox/research/lsjm-art/lsjm-code/Debug |       |
+ | -- | The         | C     | compiler | identification | is        | AppleClang                                                                                 | 11.0.0.11000033                                       |       |
+ | -- | The         | CXX   | compiler | identification | is        | AppleClang                                                                                 | 11.0.0.11000033                                       |       |
+ | -- | Check       | for   | working  | C              | compiler: | /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc  |                                                       |       |
+ | -- | Check       | for   | working  | C              | compiler: | /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc  | -                                                     | works |
+ | -- | Detecting   | C     | compiler | ABI            | info      |                                                                                            |                                                       |       |
+ | -- | Detecting   | C     | compiler | ABI            | info      | -                                                                                          | done                                                  |       |
+ | -- | Detecting   | C     | compile  | features       |           |                                                                                            |                                                       |       |
+ | -- | Detecting   | C     | compile  | features       | -         | done                                                                                       |                                                       |       |
+ | -- | Check       | for   | working  | CXX            | compiler: | /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ |                                                       |       |
+ | -- | Check       | for   | working  | CXX            | compiler: | /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ | -                                                     | works |
+ | -- | Detecting   | CXX   | compiler | ABI            | info      |                                                                                            |                                                       |       |
+ | -- | Detecting   | CXX   | compiler | ABI            | info      | -                                                                                          | done                                                  |       |
+ | -- | Detecting   | CXX   | compile  | features       |           |                                                                                            |                                                       |       |
+ | -- | Detecting   | CXX   | compile  | features       | -         | done                                                                                       |                                                       |       |
+ | -- | Configuring | done  |          |                |           |                                                                                            |                                                       |       |
+ | -- | Generating  | done  |          |                |           |                                                                                            |                                                       |       |
+ | -- | Build       | files | have     | been           | written   | to:                                                                                        | /Users/yunj/Dropbox/research/lsjm-art/lsjm-code       |       |
+
 * Check if CCLS works
 To see if ccls works:
 #+BEGIN_SRC sh :async

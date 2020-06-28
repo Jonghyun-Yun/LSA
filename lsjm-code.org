@@ -140,6 +140,190 @@
 
 #+latex: \printbibliography[sorting=ydnt, heading=none, type=article] % for biblatex, comment out everything else
 #+latex: \endgroup
+* pseudo code
+** Initialize
+1. initialize $\lambda_{ic,j}$: I x N x 2
+** Update \lambda
+1. initialize $\log \lambda_{ic,j}$: I x N x 2
+2. for each i,k,c
+3. for each j
+4. Draw $\lambda_{ic,j}^{* } \sim N(\log \lambda_{ic,j}^{(t)}, jump_{\lambda_{ic,j}})$
+5. accept if $r < \log U(0,1)$
+\begin{align*}
+r &= \frac{
+   \lambda_{ic,j}^{* } \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)\Lambda_{ic}(t)^{* }]}
+   {\lambda_{ic,j}^{t} \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{1}||z_{kc} - w_{i}||)\Lambda_{ic}(t)^{t}]}
+  \frac{J(\lambda_{ic,j}^{(t)} -> \lambda_{ic,j}^{* })}{J(\lambda_{ic,j}^{(*)} -> \lambda_{ic,j}^{t})}\\
+& =
+  \frac{\lambda_{ic,j}^{* }}{\lambda_{ic,j}^{t}} \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)(\Lambda_{ic}(t)^{* } - \Lambda_{ic}(t)^{t})]   \frac{J(\lambda_{ic,j}^{(t)} -> \lambda_{ic,j}^{* })}{J(\lambda_{ic,j}^{(*)} -> \lambda_{ic,j}^{t})};
+\end{align*}
+if $Y_{ikc,j} = 1$; otherwise
+\begin{align*}
+r &=
+  \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)(\Lambda_{ic}(t)^{* } - \Lambda_{ic}(t)^{t})]   \frac{J(\lambda_{ic,j}^{(t)} -> \lambda_{ic,j}^{* })}{J(\lambda_{ic,j}^{(*)} -> \lambda_{ic,j}^{t})};
+\end{align*}
+
+** Update \theta
+prior: $\theta_{kc} | \sigma^{2} ~ N(0,\sigma^2)$
+1. initialize $\theta_{kc}$: N x 2
+2. for each k,c
+3. Draw $\theta_{kc}^{* } \sim N(\theta_{kc}^{(t)}, jump_{\theta_{kc}})$
+4. accept if $\log r < \log U(0,1)$
+\begin{align*}
+r &= \prod_{i=1}^{I} \frac{
+   \exp(\beta_{ic} + \theta_{kc}^{* } - \gamma_{c}||z_{kc} - w_{i}||)
+   \exp[-\exp(\beta_{ic} + \theta_{kc}^{* } - \gamma_{c}||z_{kc} - w_{i}||)\Lambda_{ic}(t)]
+}{
+   \exp(\beta_{ic} + \theta_{kc}^{t} - \gamma_{c}||z_{kc} - w_{i}||)
+   \exp[-\exp(\beta_{ic} + \theta_{kc}^{t} - \gamma_{c}||z_{kc} - w_{i}||)\Lambda_{ic}(t) ]
+}
+\frac{\pi(\theta_{kc}^{* })}{\pi(\theta_{kc}^{* })}
+   \frac{J(\theta_{kc}^{t} -> \theta_{kc}^{* })}{J(\theta_{kc}^{* } -> \theta_{kc}^{t})} \\
+&=
+\frac{\exp(\theta_{kc}^{* })}{\exp(\theta_{kc}^{t})}
+\frac{\pi(\theta_{kc}^{* })}{\pi(\theta_{kc}^{t})}
+# \frac{J(\theta_{kc}^{t} -> \theta_{kc}^{* })}{J(\theta_{kc}^{* } -> \theta_{kc}^{t})}
+(\exp(\theta_{kc}^{* }) - \exp(\theta_{kc}^{t}))
+\exp[-\sum_{i=1}^{I} \Lambda_{ic}(t) \exp(\beta_{ic} - \gamma_{c}||z_{kc} - w_{i}||)]
+\end{align*}
+if $Y_{ikc} = 1$; otherwise
+\begin{align*}
+r = &
+\frac{\pi(\theta_{kc}^{* })}{\pi(\theta_{kc}^{t})}
+# \frac{J(\theta_{kc}^{t} -> \theta_{kc}^{* })}{J(\theta_{kc}^{* } -> \theta_{kc}^{t})}
+(\exp(\theta_{kc}^{* }) - \exp(\theta_{kc}^{t}))
+\exp[-\sum_{i=1}^{I} \Lambda_{ic}(t) \exp(\beta_{ic} - \gamma_{c}||z_{kc} - w_{i}||)]
+\end{align*}
+
+** Update \beta
+1. initialize $\beta_{ic}$: I x 2
+2. for each i,c
+3. Draw $\beta_{ic}^{* } \sim N(\\beta_{ic}^{(t)}, jump_{\beta_{ic}})$
+4. accept if $\log r < \log U(0,1)$
+\begin{align*}
+r &= \prod_{k=1}^{N} \frac{
+   \exp(\beta_{ic}^{* } + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)
+   \exp[-\exp(\beta_{ic}^{* } + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)\Lambda_{ic}(t)]
+}{
+   \exp(\beta_{ic}^{t} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)
+   \exp[-\exp(\beta_{ic}^{t} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)\Lambda_{ic}(t) ]
+}
+\frac{\pi(\beta_{ic}^{* })}{\pi(\beta_{ic}^{t})}
+   \frac{J(\beta_{kc}^{t} -> \beta_{kc}^{* })}{J(\beta_{kc}^{* } -> \beta_{kc}^{t})} \\
+&=
+\frac{\exp(\beta_{kc}^{* })}{\exp(\beta_{kc}^{t})}
+\frac{\pi(\beta_{kc}^{* })}{\pi(\beta_{kc}^{t})}
+\frac{J(\beta_{kc}^{t} -> \beta_{kc}^{* })}{J(\beta_{kc}^{* } -> \beta_{kc}^{t})}
+\exp[-\sum_{k=1}^{N} \Lambda_{ic}(t) \exp(\beta_{ic} - \gamma_{c}||z_{kc} - w_{i}||)(\exp(\beta_{kc}^{* }) - \exp(\beta_{kc}^{t}))]
+\end{align*}
+if $Y_{ikc} = 1$; otherwise
+\begin{align*}
+r =&
+\frac{\pi(\beta_{kc}^{* })}{\pi(\beta_{kc}^{t})}
+\frac{J(\beta_{kc}^{t} -> \beta_{kc}^{* })}{J(\beta_{kc}^{* } -> \beta_{kc}^{t})}
+\exp[-\sum_{k=1}^{N} \Lambda_{ic}(t) \exp(\beta_{ic} - \gamma_{c}||z_{kc} - w_{i}||)(\exp(\beta_{kc}^{* }) - \exp(\beta_{kc}^{t}))]
+\end{align*}
+** Update z
+1. initialize $z_{kc}$: N x 2
+2. for each k,c
+3. Draw $z_{ic}^{* } \sim N(\z_{kc}^{(t)}, jump_{z_{kc}})$
+4. accept if $\log r < \log U(0,1)$
+\begin{align*}
+r =& \prod_{i=1}^{I} \frac{
+   \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc}^{* } - w_{i}||)
+   \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc}^{* } - w_{i}||)\Lambda_{ic}(t)]
+}{
+   \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc}^{t} - w_{i}||)
+   \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc}^{t} - w_{i}||)\Lambda_{ic}(t) ]
+}
+\frac{\pi(z_{kc}^{* })}{\pi(z_{kc}^{t})}
+   \frac{J(z_{kc}^{t} -> z_{kc}^{* })}{J(z_{kc}^{* } -> z_{kc}^{t})} \\
+=&
+\frac{\pi(z_{kc}^{* })}{\pi(z_{kc}^{t})}
+# \frac{J(z_{kc}^{t} -> z_{kc}^{* })}{J(z_{kc}^{* } -> z_{kc}^{t})}
+\exp[\gamma_{c}\sum_{i=1}^{I}
+(||z_{kc}^{* } - w_{i}||-||z_{kc}^{t} - w_{i}||)]\\
+&\times
+   \exp[-\exp(\theta_{kc}) \sum_{i=1}^{I}\Lambda_{ic}(t)\exp(\beta_{ic}) \{\exp( - \gamma_{c}||z_{kc}^{* } - w_{i}||) - \exp(-\gamma_c||z_{kc}^{t} - w_{i}||)\}]
+\end{align*}
+if $Y_{ikc} = 1$; otherwise
+
+\begin{align*}
+r =&
+\frac{\pi(z_{kc}^{* })}{\pi(z_{kc}^{t})}
+\frac{J(z_{kc}^{t} -> z_{kc}^{* })}{J(z_{kc}^{* } -> z_{kc}^{t})}\\
+& \times
+   \exp[-\exp(\theta_{kc}) \sum_{i=1}^{I}\Lambda_{ic}(t)\exp(\beta_{ic}) \{\exp( - \gamma_{c}||z_{kc}^{* } - w_{i}||) - \exp(-\gamma_c||z_{kc}^{t} - w_{i}||)\}]
+\end{align*}
+** Update w
+1. initialize $w_{i}$: I
+2. for each I
+3. Draw $w_{i}^{* } \sim N(\w_i^{(t)}, jump_{w_i)
+4. accept if $\log r < \log U(0,1)$
+\begin{align*}
+r = &\prod_{c=1}^{2} \prod_{i=1}^{I} \frac{
+   \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}^{* }||)
+   \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}^{* }||)\Lambda_{ic}(t)]
+}{
+   \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}^{t}||)
+   \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}^{t}||)\Lambda_{ic}(t) ]
+}
+\frac{\pi(w_i^{* })}{\pi(w_i^{t})}
+   \frac{J(w_i^{t} -> w_i^{* })}{J(w_i^{* } -> w_i^{t})} \\
+=&
+\frac{\pi(w_i^{* })}{\pi(w_i^{t})}
+# \frac{J(w_i^{t} -> w_i^{* })}{J(w_i^{* } -> w_i^{t})}
+\exp[\sum_{c=1}^{2}\sum_{k=1}^{N} \gamma_{c}
+(||z_{kc} - w_{i}^{* }||-||z_{kc} - w_{i}^{t}||)] \\
+& \times \exp[-\sum_{c=1}^{2}\Lambda_{ic}(t)\exp(\beta_{ic}) \sum_{k=1}^{N}\exp(\theta_{kc})\{ \exp(- \gamma_{c}||z_{kc} - w_{i}^{* }||) - \exp(-\gamma_c ||z_{kc} - w_{i}^{t}||)\}]
+\end{align*}
+if $Y_{ikc} = 1$; otherwise
+
+\begin{align*}
+r & =
+\frac{\pi(w_i^{* })}{\pi(w_i^{t})}
+\frac{J(w_i^{t} -> w_i^{* })}{J(w_i^{* } -> w_i^{t})}\\
+& \times \exp[-\sum_{c=1}^{2}\Lambda_{ic}(t)\exp(\beta_{ic}) \sum_{k=1}^{N}\exp(\theta_{kc})\{ \exp(- \gamma_{c}||z_{kc} - w_{i}^{* }||) - \exp(-\gamma_c ||z_{kc} - w_{i}^{t}||)\}]
+\end{align*}
+
+** Update gamma
+1. initialize $\gamma_{c}$: 2
+2. for each c
+3. Draw $\gamma_{c}^{* } \sim \log N(\log \gamma_{c}^{(t)}, jump_{\gamma_{c}})$
+4. accept if $\log r < \log U(0,1)$
+\begin{align*}
+r = & \prod_{i=1}^{I}\prod_{k=1}^{N} \frac{
+   \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}^{* }||z_{kc} - w_{i}||)
+   \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}^{* }||z_{kc} - w_{i}||)\Lambda_{ic}(t)]
+}{
+   \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}^{t}||z_{kc} - w_{i}||)
+   \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}^{t}||z_{kc} - w_{i}||)\Lambda_{ic}(t) ]
+}
+\frac{\pi(\gamma_{c}^{* })}{\pi(\gamma_c^{t})}
+   \frac{J(\gamma_{c}^{t} -> \gamma_{c}^{* })}{J(\gamma_{c}^{* } -> \gamma_{c}^{t})} \\
+=&
+\frac{\pi(w_i^{* })}{\pi(w_i^{t})}
+\frac{J(w_i^{t} -> w_i^{* })}{J(w_i^{* } -> w_i^{t})}
+\exp[\sum_{i=1}^{I}\sum_{k=1}^{N} ||z_{kc} - w_{i}||(\gamma_{c}^{t}-\gamma_{c}^{* })]\\
+& \times \exp[-\sum_{i=1}^{I}\sum_{k=1}^{N}\Lambda_{ic}(t)\exp(\beta_{ic} + \theta_{kc}) \{\exp( - \gamma_{c}^{* } ||z_{kc} - w_{i}||) -
+ \exp( -\gamma_{c}^{t} ||z_{kc} - w_{i}||)\}]
+\end{align*}
+
+if $Y_{ikc} = 1$; otherwise
+\begin{align*}
+r = &
+\frac{\pi(w_i^{* })}{\pi(w_i^{t})}
+\frac{J(w_i^{t} -> w_i^{* })}{J(w_i^{* } -> w_i^{t})}\\
+& \times \exp[-\sum_{i=1}^{I}\sum_{k=1}^{N}\Lambda_{ic}(t)\exp(\beta_{ic} + \theta_{kc}) \{\exp( - \gamma_{c}^{* } ||z_{kc} - w_{i}||) -
+ \exp( -\gamma_{c}^{t} ||z_{kc} - w_{i}||)\}]
+\end{align*}
+
+** update \sigma^2
+prior: $\sigma^{2} \sim inv-gamma(a,b)$
+target: $\prod_{k,c} N(\theta_{kc}|0,\sigma^{2}) inv-gamma(\sigma^{2}|a,b)$ -> normal-(inv-gamma) model
+
+1. initialize $\sigma^{2}$
+2. Draw $\sigma^{2} \sim inv-Gamma(a + N, b + \sum_{k,c} \theta_{kc} / 2)$
 * PISA2015 data
 ** pisa2015/README.txt
 #+BEGIN_SRC sh :results output
@@ -311,7 +495,6 @@ dt01$stuid = to_numID(dt01$CNTSTUID, tab_stuid)
 #+END_SRC
 
 #+RESULTS:
-:
 
 #+BEGIN_SRC R
 library(reshape2)
@@ -319,11 +502,11 @@ library(reshape2)
 ##di01_long <- melt(di01, id.vars=c("CNTSCHID","CNTSTUID","ST004D01T"))
 ##dt01_long <- melt(dt01, id.vars=c("CNTSCHID","CNTSTUID","ST004D01T"))
 
-di01 = di01 %>% select(- CNTSCHID, - CNTSTUID)
-dt01 = dt01 %>% select(- CNTSCHID, - CNTSTUID)
+di01_long = di01 %>% select(- CNTSCHID, - CNTSTUID)
+dt01_long = dt01 %>% select(- CNTSCHID, - CNTSTUID)
 
-di01_long <- melt(di01, id.vars=c("schid","stuid","ST004D01T"))
-dt01_long <- melt(dt01, id.vars=c("schid","stuid","ST004D01T"))
+di01_long <- melt(di01_long, id.vars=c("schid","stuid","ST004D01T"))
+dt01_long <- melt(dt01_long, id.vars=c("schid","stuid","ST004D01T"))
 
 identical(di01_long[,1],dt01_long[,1])
 identical(di01_long[,2],dt01_long[,2])
@@ -343,12 +526,22 @@ dit01$item = to_numID(dit01$item, tab_item)
 
 ** knot selection
 #+begin_src R
+sdi01 = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix()
+sdt01 = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix()
+
 time = pull(dit01,time)
 ncut = 4
 ## interval <- seq(from=0, to = max(time)+1,length.out = 8)
 pseq =  seq(from=0, to = 1, length.out = ncut + 1)
 sj = quantile(time, probs = pseq) %>% round()
 sj[1] = 0; sj[length(sj)] = sj[length(sj)] + 1
+N = ncol(sdi01)
+msj = array(0,dim=c(N,ncut+1,2))
+for (i in 1:N) {
+  msj[i,1,1]  = msj[i,1,1] = 0
+  msj[i,2:(ncut+1),2] = quantile(sdt01[sdi01[,i]==1,i], probs = pseq[-1]) %>% round()
+  msj[i,2:(ncut+1),1] = quantile(sdt01[sdi01[,i]==0,i], probs = pseq[-1]) %>% round()
+}
 #+end_src
 
 #+RESULTS:
@@ -371,7 +564,7 @@ to_stan = tmp %>% mutate(seg_g = seg_g - 1) %>% select(stuid, item, time, seg_g,
 #+RESULTS:
 
 #+BEGIN_SRC R
-tt01 = dt01 %>% select(-ST004D01T,-schid,-stuid)
+tt01 = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID)
 nitem = ncol(tt01)
 tt01 = data.frame(time = c(as.matrix(tt01)), status = 1)
 
@@ -384,8 +577,8 @@ tmp <- survival::survSplit(formula = Surv(time, status) ~ ., data = tt01, cut = 
 mseg = matrix(pull(tmp,seg_g),ncol=nitem) %>% t()
 mh = matrix(pull(tmp,len),ncol=nitem) %>% t()
 mlen = sj[2:(ncut+1)] - sj[1:(ncut)]
-mt = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% as.matrix %>% t()
-mi = di01 %>% select(-ST004D01T,-schid,-stuid) %>% as.matrix %>% t()
+mt = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
+mi = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
 mi[mi==99] = 2
 #+END_SRC
 
@@ -402,6 +595,45 @@ G = ncut + 1
 rstan::stan_rdump(c('I','N','C','G', 'mseg','mlen', 'mh', 'mt','mi'),"pisa_short.R")
 
 #+end_src
+
+#+BEGIN_SRC R
+tt01 = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID)
+ti01 = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID)
+nitem = ncol(tt01)
+
+tf01 = data.frame(time = c(as.matrix(tt01)), status = 1)
+tmp <- survival::survSplit(formula = Surv(time, status) ~ ., data = tf01, cut = sj, episode ="seg_g") %>%
+    mutate(seg = factor(tstart),
+           seg_g = seg_g - 1,
+           len = time - tstart
+           ) %>% filter(status == 1) %>%
+    as_tibble
+
+mseg = matrix(pull(tmp,seg_g),ncol=nitem) %>% t()
+mh = matrix(pull(tmp,len),ncol=nitem) %>% t()
+mlen = sj[2:(ncut+1)] - msj[1:(ncut)]
+mt = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
+mi = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
+mi[mi==99] = 2
+#+END_SRC
+
+#+RESULTS:
+
+#+begin_src R
+## data and fixed parameters
+I = nrow(mt)
+N = ncol(mt)
+C = 2
+G = ncut + 1
+write_csv(data.frame(I=I, N=N, C=C, G=G), "mvar.csv", col_names = FALSE)
+write_csv(as.data.frame(mlen),"mlen.csv", col_names = FALSE)
+write_csv(as.data.frame(mseg),"mseg.csv", col_names = FALSE)
+write_csv(as.data.frame(mh),"mh.csv", col_names = FALSE)
+write_csv(as.data.frame(mt),"mt.csv", col_names = FALSE)
+write_csv(as.data.frame(mi),"mi.csv", col_names = FALSE)
+#+end_src
+
+#+RESULTS:
 
 ** not used
 #+BEGIN_SRC R
@@ -1231,148 +1463,3 @@ mdsplot(data.frame(x,y), cname)
 : See spec(...) for full column specifications.
 : #   -00:12/03:11#   -00:11/03:11#   -00:10/03:11#   -00:09/03:11
 
-* pseudo code
-** Initialize
-1. initialize $\lambda_{ic,j}$: I x N x 2
-** Update \lambda
-1. initialize $\log \lambda_{ic,j}$: I x N x 2
-2. for each i,k,c
-3. for each j
-4. Draw $\lambda_{ic,j}^{*} \log \sim N(\log \lambda_{ic,j}^{(t)}, jump_{\lambda_{ic,j}})$
-5. accept if $r < \log U(0,1)$
-\begin{align*}
-r &= \frac{
-   \lambda_{ic,j}^{*} \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)\Lambda_{ic}(t)^{*}]}
-   {\lambda_{ic,j}^{t} \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{1}||z_{kc} - w_{i}||)\Lambda_{ic}(t)^{t}]}
-  \frac{J(\lambda_{ic,j}^{(t)} -> \lambda_{ic,j}^{*})}{J(\lambda_{ic,j}^{(*)} -> \lambda_{ic,j}^{t})}\\
-& =
-  \frac{\lambda_{ic,j}^{*}}{\lambda_{ic,j}^{t}} \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)(\Lambda_{ic}(t)^{*} - \Lambda_{ic}(t)^{t})]   \frac{J(\lambda_{ic,j}^{(t)} -> \lambda_{ic,j}^{*})}{J(\lambda_{ic,j}^{(*)} -> \lambda_{ic,j}^{t})};
-\end{align*}
-if $Y_{ikc,j} = 1$; otherwise
-\begin{align*}
-r &=
-  \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)(\Lambda_{ic}(t)^{*} - \Lambda_{ic}(t)^{t})]   \frac{J(\lambda_{ic,j}^{(t)} -> \lambda_{ic,j}^{*})}{J(\lambda_{ic,j}^{(*)} -> \lambda_{ic,j}^{t})};
-\end{align*}
-
-** Update \theta
-prior: $\theta_{kc} | \sigma^{2} ~ N(0,\sigma^2)$
-1. initialize $\theta_{kc}$: N x 2
-2. for each k,c
-3. Draw $\theta_{kc}^{*} \sim N(\theta_{kc}^{(t)}, jump_{\theta_{kc}})$
-4. accept if $\log r < \log U(0,1)$
-\begin{align*}
-r &= \prod_{i=1}^{I} \frac{
-   \exp(\beta_{ic} + \theta_{kc}^{*} - \gamma_{c}||z_{kc} - w_{i}||)
-   \exp[-\exp(\beta_{ic} + \theta_{kc}^{*} - \gamma_{c}||z_{kc} - w_{i}||)\Lambda_{ic}(t)]
-}{
-   \exp(\beta_{ic} + \theta_{kc}^{t} - \gamma_{c}||z_{kc} - w_{i}||)
-   \exp[-\exp(\beta_{ic} + \theta_{kc}^{t} - \gamma_{c}||z_{kc} - w_{i}||)\Lambda_{ic}(t) ]
-}
-\frac{\pi(\theta_{kc}^{*})}{\pi(\theta_{kc}^{*})}
-   \frac{J(\theta_{kc}^{t} -> \theta_{kc}^{*})}{J(\theta_{kc}^{*} -> \theta_{kc}^{t})} \\
-&=
-\frac{\exp(\theta_{kc}^{*})}{\exp(\theta_{kc}^{t})}
-\frac{\pi(\theta_{kc}^{*})}{\pi(\theta_{kc}^{t})}
-# \frac{J(\theta_{kc}^{t} -> \theta_{kc}^{*})}{J(\theta_{kc}^{*} -> \theta_{kc}^{t})}
-(\exp(\theta_{kc}^{*}) - \exp(\theta_{kc}^{t}))
-\exp[-\sum_{i=1}^{I} \Lambda_{ic}(t) \exp(\beta_{ic} - \gamma_{c}||z_{kc} - w_{i}||)]
-\end{align*}
-
-** Update \beta
-1. initialize $\beta_{ic}$: I x 2
-2. for each i,c
-3. Draw $\beta_{ic}^{*} \sim N(\\beta_{ic}^{(t)}, jump_{\beta_{ic}})$
-4. accept if $\log r < \log U(0,1)$
-\begin{align*}
-r &= \prod_{k=1}^{N} \frac{
-   \exp(\beta_{ic}^{*} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)
-   \exp[-\exp(\beta_{ic}^{*} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)\Lambda_{ic}(t)]
-}{
-   \exp(\beta_{ic}^{t} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)
-   \exp[-\exp(\beta_{ic}^{t} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)\Lambda_{ic}(t) ]
-}
-\frac{\pi(\beta_{ic}^{*})}{\pi(\beta_{ic}^{t})}
-   \frac{J(\beta_{kc}^{t} -> \beta_{kc}^{*})}{J(\beta_{kc}^{*} -> \beta_{kc}^{t})} \\
-&=
-\frac{\exp(\beta_{kc}^{*})}{\exp(\beta_{kc}^{t})}
-\frac{\pi(\beta_{kc}^{*})}{\pi(\beta_{kc}^{t})}
-\frac{J(\beta_{kc}^{t} -> \beta_{kc}^{*})}{J(\beta_{kc}^{*} -> \beta_{kc}^{t})}
-\exp[-\sum_{k=1}^{N} \Lambda_{ic}(t) \exp(\beta_{ic} - \gamma_{c}||z_{kc} - w_{i}||)(\exp(\beta_{kc}^{*}) - \exp(\beta_{kc}^{t}))]
-\end{align*}
-
-** Update z
-1. initialize $z_{kc}$: N x 2
-2. for each k,c
-3. Draw $z_{ic}^{*} \sim N(\z_{kc}^{(t)}, jump_{z_{kc}})$
-4. accept if $\log r < \log U(0,1)$
-\begin{align*}
-r =& \prod_{i=1}^{I} \frac{
-   \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc}^{*} - w_{i}||)
-   \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc}^{*} - w_{i}||)\Lambda_{ic}(t)]
-}{
-   \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc}^{t} - w_{i}||)
-   \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc}^{t} - w_{i}||)\Lambda_{ic}(t) ]
-}
-\frac{\pi(z_{kc}^{*})}{\pi(z_{kc}^{t})}
-   \frac{J(z_{kc}^{t} -> z_{kc}^{*})}{J(z_{kc}^{*} -> z_{kc}^{t})} \\
-=&
-\frac{\pi(z_{kc}^{*})}{\pi(z_{kc}^{t})}
-# \frac{J(z_{kc}^{t} -> z_{kc}^{*})}{J(z_{kc}^{*} -> z_{kc}^{t})}
-\exp[\gamma_{c}\sum_{i=1}^{I}
-(||z_{kc}^{*} - w_{i}||-||z_{kc}^{t} - w_{i}||)]\\
-&\times
-   \exp[-\exp(\theta_{kc}) \sum_{i=1}^{I}\Lambda_{ic}(t)\exp(\beta_{ic}) \{\exp( - \gamma_{c}||z_{kc}^{*} - w_{i}||) - \exp(-\gamma_c||z_{kc}^{t} - w_{i}||)\}]
-\end{align*}
-
-** Update w
-1. initialize $w_{i}$: I
-2. for each I
-3. Draw $w_{i}^{*} \sim N(\w_i^{(t)}, jump_{w_i)
-4. accept if $\log r < \log U(0,1)$
-\begin{align*}
-r = &\prod_{c=1}^{2} \prod_{i=1}^{I} \frac{
-   \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}^{*}||)
-   \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}^{*}||)\Lambda_{ic}(t)]
-}{
-   \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}^{t}||)
-   \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}^{t}||)\Lambda_{ic}(t) ]
-}
-\frac{\pi(w_i^{*})}{\pi(w_i^{t})}
-   \frac{J(w_i^{t} -> w_i^{*})}{J(w_i^{*} -> w_i^{t})} \\
-=&
-\frac{\pi(w_i^{*})}{\pi(w_i^{t})}
-# \frac{J(w_i^{t} -> w_i^{*})}{J(w_i^{*} -> w_i^{t})}
-\exp[\sum_{c=1}^{2}\sum_{k=1}^{N} \gamma_{c}
-(||z_{kc} - w_{i}^{*}||-||z_{kc} - w_{i}^{t}||)] \\
-& \times \exp[-\sum_{c=1}^{2}\Lambda_{ic}(t)\exp(\beta_{ic}) \sum_{k=1}^{N}\exp(\theta_{kc})\{ \exp(- \gamma_{c}||z_{kc} - w_{i}^{*}||) - \exp(-\gamma_c ||z_{kc} - w_{i}^{t}||)\}]
-\end{align*}
-
-** Update gamma
-1. initialize $\gamma_{c}$: 2
-2. for each c
-3. Draw $\gamma_{c}^{*} \sim \log N(\log \gamma_{c}^{(t)}, jump_{\gamma_{c}})$
-4. accept if $\log r < \log U(0,1)$
-\begin{align*}
-r = & \prod_{i=1}^{I}\prod_{k=1}^{N} \frac{
-   \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}^{*}||z_{kc} - w_{i}||)
-   \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}^{*}||z_{kc} - w_{i}||)\Lambda_{ic}(t)]
-}{
-   \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}^{t}||z_{kc} - w_{i}||)
-   \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}^{t}||z_{kc} - w_{i}||)\Lambda_{ic}(t) ]
-}
-\frac{\pi(\gamma_{c}^{*})}{\pi(\gamma_c^{t})}
-   \frac{J(\gamma_{c}^{t} -> \gamma_{c}^{*})}{J(\gamma_{c}^{*} -> \gamma_{c}^{t})} \\
-=&
-\frac{\pi(w_i^{*})}{\pi(w_i^{t})}
-\frac{J(w_i^{t} -> w_i^{*})}{J(w_i^{*} -> w_i^{t})}
-\exp[\sum_{i=1}^{I}\sum_{k=1}^{N} ||z_{kc} - w_{i}||(\gamma_{c}^{t}-\gamma_{c}^{*})]\\
-& \times \exp[-\sum_{i=1}^{I}\sum_{k=1}^{N}\Lambda_{ic}(t)\exp(\beta_{ic} + \theta_{kc}) \{\exp( - \gamma_{c}^{*} ||z_{kc} - w_{i}||) -
- \exp( -\gamma_{c}^{t} ||z_{kc} - w_{i}||)\}]
-\end{align*}
-
-** update \sigma^2
-prior: $\sigma^{2} \sim inv-gamma(a,b)$
-target: $\prod_{k,c} N(\theta_{kc}|0,\sigma^{2}) inv-gamma(\sigma^{2}|a,b)$ -> normal-(inv-gamma) model
-
-1. initialize $\sigma^{2}$
-2. Draw $\sigma^{2} \sim inv-Gamma(a + N, b + \sum_{k,c} \theta_{kc} / 2)$
