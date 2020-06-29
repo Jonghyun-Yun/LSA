@@ -4,7 +4,7 @@
 #include <Eigen/Dense>
 #include "readCSV.h"
 
-auto readCSV(std::string file, typename T, std::string type, int rows, int cols) {
+Eigen::MatrixXd readCSV(std::string file, int rows, int cols) {
 
   std::ifstream in(file);
   
@@ -13,7 +13,7 @@ auto readCSV(std::string file, typename T, std::string type, int rows, int cols)
   int row = 0;
   int col = 0;
 
-  Eigen::Matrix<T, rows, cols> res;
+  Eigen::MatrixXd res = Eigen::MatrixXd(rows, cols);
 
   if (in.is_open()) {
 

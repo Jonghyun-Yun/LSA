@@ -142,26 +142,29 @@
 #+latex: \endgroup
 * pseudo code
 ** Initialize
-1. initialize $\lambda_{ic,j}$: I x N x 2
+1. initialize $\lambda_{ic,g}$: I x N x 2
 ** Update \lambda
-1. initialize $\log \lambda_{ic,j}$: I x N x 2
+1. initialize $\log \lambda_{ic,g}$: I x N x 2
 2. for each i,k,c
 3. for each j
-4. Draw $\lambda_{ic,j}^{* } \sim N(\log \lambda_{ic,j}^{(t)}, jump_{\lambda_{ic,j}})$
+4. Draw $\lambda_{ic,g}^{* } \sim N(\log \lambda_{ic,j}^{(t)}, jump_{\lambda_{ic,j}})$
 5. accept if $r < \log U(0,1)$
 \begin{align*}
-r &= \frac{
-   \lambda_{ic,j}^{* } \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)\Lambda_{ic}(t)^{* }]}
-   {\lambda_{ic,j}^{t} \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{1}||z_{kc} - w_{i}||)\Lambda_{ic}(t)^{t}]}
-  \frac{J(\lambda_{ic,j}^{(t)} -> \lambda_{ic,j}^{* })}{J(\lambda_{ic,j}^{(*)} -> \lambda_{ic,j}^{t})}\\
-& =
-  \frac{\lambda_{ic,j}^{* }}{\lambda_{ic,j}^{t}} \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)(\Lambda_{ic}(t)^{* } - \Lambda_{ic}(t)^{t})]   \frac{J(\lambda_{ic,j}^{(t)} -> \lambda_{ic,j}^{* })}{J(\lambda_{ic,j}^{(*)} -> \lambda_{ic,j}^{t})};
+r = & \prod_{k=1}^{N}
+\frac{
+   (\lambda_{ic,g}^{* })^{I(Y_{ikc,g} = 1)} \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)\Lambda_{ic}(t)^{* }]}
+   {(\lambda_{ic,g}^{t})^{I(Y_{ikc,g} = 1)} \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{1}||z_{kc} - w_{i}||)\Lambda_{ic}(t)^{t}]} \\
+& \times
+  \frac{J(\lambda_{ic,g}^{(t)} -> \lambda_{ic,g}^{* })}{J(\lambda_{ic,g}^{* } -> \lambda_{ic,g}^{t})}
+\frac{\pi(\lambda_{ic,g}^{* })}{\pi(\lambda_{ic,g}^{(t)})} \\
+= & \prod_{k=1}^{N}
+  \frac{(\lambda_{ic,g}^{* })^{I(Y_{ikc,j} = 1)}}{(\lambda_{ic,j}^{t})^{I(Y_{ikc,j} = 1)}} \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)(\sum_{m=1}^{j} H_{ic,m}(\lambda_{ic,m}^{* } - \lambda_{ic,m}^{t}))] \\
+& \times
+\frac{\pi(\lambda_{ic,g}^{* })}{\pi(\lambda_{ic,g}^{(t)})}
+ \frac{J(\lambda_{ic,g}^{(t)} -> \lambda_{ic,g}^{* })}{J(\lambda_{ic,g}^{* } -> \lambda_{ic,g}^{t})};
 \end{align*}
-if $Y_{ikc,j} = 1$; otherwise
-\begin{align*}
-r &=
-  \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)(\Lambda_{ic}(t)^{* } - \Lambda_{ic}(t)^{t})]   \frac{J(\lambda_{ic,j}^{(t)} -> \lambda_{ic,j}^{* })}{J(\lambda_{ic,j}^{(*)} -> \lambda_{ic,j}^{t})};
-\end{align*}
+
+if the event occurs before the $j$-th segment (g > j), then $\lambda_{ic,m}^{* } - \lambda_{ic,m}^{t} = 0$ for all $m=1,..,j$, so no contribution in the likelihood part.
 
 ** Update \theta
 prior: $\theta_{kc} | \sigma^{2} ~ N(0,\sigma^2)$
@@ -495,18 +498,17 @@ dt01$stuid = to_numID(dt01$CNTSTUID, tab_stuid)
 #+END_SRC
 
 #+RESULTS:
+:
 
 #+BEGIN_SRC R
-library(reshape2)
-
 ##di01_long <- melt(di01, id.vars=c("CNTSCHID","CNTSTUID","ST004D01T"))
 ##dt01_long <- melt(dt01, id.vars=c("CNTSCHID","CNTSTUID","ST004D01T"))
 
 di01_long = di01 %>% select(- CNTSCHID, - CNTSTUID)
 dt01_long = dt01 %>% select(- CNTSCHID, - CNTSTUID)
 
-di01_long <- melt(di01_long, id.vars=c("schid","stuid","ST004D01T"))
-dt01_long <- melt(dt01_long, id.vars=c("schid","stuid","ST004D01T"))
+di01_long <- reshape2::melt(di01_long, id.vars=c("schid","stuid","ST004D01T"))
+dt01_long <- reshape2::melt(dt01_long, id.vars=c("schid","stuid","ST004D01T"))
 
 identical(di01_long[,1],dt01_long[,1])
 identical(di01_long[,2],dt01_long[,2])
@@ -520,6 +522,12 @@ dit01$item = to_numID(dit01$item, tab_item)
 
 
 #+RESULTS:
+:
+: Attaching package: 'reshape2'
+:
+: The following object is masked from 'package:tidyr':
+:
+:     smiths
 : [1] TRUE
 : [1] TRUE
 : [1] TRUE
@@ -546,94 +554,115 @@ for (i in 1:N) {
 
 #+RESULTS:
 ** survSplit
-#+begin_src R
-library(survival)
-status = !(dit01$res == 99)
+*** To export long format data for STAN
+ #+begin_src R
+ library(survival)
+ status = !(dit01$res == 99)
 
-tmp <- survival::survSplit(formula = Surv(time, status) ~ ., data = dit01, cut = sj, episode ="seg_g") %>%
-    mutate(seg = factor(tstart),
-           len = time - tstart,
-           status_T = 1 * (status == 1 & res == 1),
-           status_F = 1 * (status == 1 & res == 0)
-           ) %>%
-    as_tibble
-to_stan = tmp %>% mutate(seg_g = seg_g - 1) %>% select(stuid, item, time, seg_g, len, status_F, status_T)
-## tmp %>% select(res,status,status_T,status_F)
-#+end_src
+ tmp <- survival::survSplit(formula = Surv(time, status) ~ ., data = dit01, cut = sj, episode ="seg_g") %>%
+     mutate(seg = factor(tstart),
+            len = time - tstart,
+            status_T = 1 * (status == 1 & res == 1),
+            status_F = 1 * (status == 1 & res == 0)
+            ) %>%
+     as_tibble
+ to_stan = tmp %>% mutate(seg_g = seg_g - 1) %>% select(stuid, item, time, seg_g, len, status_F, status_T)
+ ## tmp %>% select(res,status,status_T,status_F)
+ #+end_src
 
-#+RESULTS:
+ #+begin_src R
+ ## data and fixed parameters
+ I = nrow(tab_item)
+ N = nrow(tab_stuid)
+ C = 2
 
-#+BEGIN_SRC R
-tt01 = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID)
-nitem = ncol(tt01)
-tt01 = data.frame(time = c(as.matrix(tt01)), status = 1)
+ L = nrow(to_stan)
+ G = ncut
 
-tmp <- survival::survSplit(formula = Surv(time, status) ~ ., data = tt01, cut = sj, episode ="seg_g") %>%
-    mutate(seg = factor(tstart),
-           seg_g = seg_g - 1,
-           len = time - tstart
-           ) %>% filter(status == 1) %>%
-    as_tibble
-mseg = matrix(pull(tmp,seg_g),ncol=nitem) %>% t()
-mh = matrix(pull(tmp,len),ncol=nitem) %>% t()
-mlen = sj[2:(ncut+1)] - sj[1:(ncut)]
-mt = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
-mi = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
-mi[mi==99] = 2
-#+END_SRC
+ with(to_stan,
+ rstan::stan_rdump(c('I','N','C','L','G','stuid','item', 'G', 'seg_g','len','status_F','status_T'),"pisa_data.R"))
 
-#+RESULTS:
+ #+end_src
 
-#+begin_src R
-## data and fixed parameters
-I = nrow(mt)
-N = ncol(mt)
-C = 2
+ #+RESULTS:
 
-G = ncut + 1
+*** To export short format data for STAN
 
-rstan::stan_rdump(c('I','N','C','G', 'mseg','mlen', 'mh', 'mt','mi'),"pisa_short.R")
+   #+BEGIN_SRC R
+   tt01 = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID)
+   nitem = ncol(tt01)
+   tt01 = data.frame(time = c(as.matrix(tt01)), status = 1)
 
-#+end_src
+   tmp <- survival::survSplit(formula = Surv(time, status) ~ ., data = tt01, cut = sj, episode ="seg_g") %>%
+       mutate(seg = factor(tstart),
+              seg_g = seg_g - 1,
+              len = time - tstart
+              ) %>% filter(status == 1) %>%
+       as_tibble
+   mseg = matrix(pull(tmp,seg_g),ncol=nitem) %>% t()
+   mh = matrix(pull(tmp,len),ncol=nitem) %>% t()
+   mlen = sj[2:(ncut+1)] - sj[1:(ncut)]
+   mt = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
+   mi = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
+   mi[mi==99] = 2
+   #+END_SRC
 
-#+BEGIN_SRC R
-tt01 = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID)
-ti01 = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID)
-nitem = ncol(tt01)
+   #+RESULTS:
+   : Error in Surv(time, status) : could not find function "Surv"
+   : Error in pull(tmp, seg_g) : object 'tmp' not found
+   : Error in pull(tmp, len) : object 'tmp' not found
 
-tf01 = data.frame(time = c(as.matrix(tt01)), status = 1)
-tmp <- survival::survSplit(formula = Surv(time, status) ~ ., data = tf01, cut = sj, episode ="seg_g") %>%
-    mutate(seg = factor(tstart),
-           seg_g = seg_g - 1,
-           len = time - tstart
-           ) %>% filter(status == 1) %>%
-    as_tibble
+   #+begin_src R
+   ## data and fixed parameters
+   I = nrow(mt)
+   N = ncol(mt)
+   C = 2
 
-mseg = matrix(pull(tmp,seg_g),ncol=nitem) %>% t()
-mh = matrix(pull(tmp,len),ncol=nitem) %>% t()
-mlen = sj[2:(ncut+1)] - msj[1:(ncut)]
-mt = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
-mi = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
-mi[mi==99] = 2
-#+END_SRC
+   G = ncut + 1
 
-#+RESULTS:
+   rstan::stan_rdump(c('I','N','C','G', 'mseg','mlen', 'mh', 'mt','mi'),"pisa_short.R")
 
-#+begin_src R
-## data and fixed parameters
-I = nrow(mt)
-N = ncol(mt)
-C = 2
-G = ncut + 1
-write_csv(data.frame(I=I, N=N, C=C, G=G), "mvar.csv", col_names = FALSE)
-write_csv(as.data.frame(mlen),"mlen.csv", col_names = FALSE)
-write_csv(as.data.frame(mseg),"mseg.csv", col_names = FALSE)
-write_csv(as.data.frame(mh),"mh.csv", col_names = FALSE)
-write_csv(as.data.frame(mt),"mt.csv", col_names = FALSE)
-write_csv(as.data.frame(mi),"mi.csv", col_names = FALSE)
-#+end_src
+   #+end_src
 
-#+RESULTS:
+*** to export short format data for C++
+   #+BEGIN_SRC R
+   tt01 = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID)
+   ti01 = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID)
+   nitem = ncol(tt01)
+
+   tf01 = data.frame(time = c(as.matrix(tt01)), status = 1)
+   tmp <- survival::survSplit(formula = Surv(time, status) ~ ., data = tf01, cut = sj, episode ="seg_g") %>%
+       mutate(seg = factor(tstart),
+              seg_g = seg_g - 2,
+              len = time - tstart
+              ) %>% filter(status == 1) %>%
+       as_tibble
+
+   mseg = matrix(pull(tmp,seg_g),ncol=nitem) %>% t()
+   mh = matrix(pull(tmp,len),ncol=nitem) %>% t()
+   mlen = sj[2:(ncut+1)] - msj[1:(ncut)]
+   mt = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
+   mi = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
+   mi[mi==99] = 2
+   #+END_SRC
+
+   #+RESULTS:
+
+   #+begin_src R
+   ## data and fixed parameters
+   I = nrow(mt)
+   N = ncol(mt)
+   C = 2
+   G = ncut # 
+   write_csv(data.frame(I=I, N=N, C=C, G=G), "mvar.csv", col_names = FALSE)
+   write_csv(as.data.frame(mlen),"mlen.csv", col_names = FALSE)
+   write_csv(as.data.frame(mseg),"mseg.csv", col_names = FALSE)
+   write_csv(as.data.frame(mh),"mh.csv", col_names = FALSE)
+   write_csv(as.data.frame(mt),"mt.csv", col_names = FALSE)
+   write_csv(as.data.frame(mi),"mi.csv", col_names = FALSE)
+   #+end_src
+
+   #+RESULTS:
 
 ** not used
 #+BEGIN_SRC R
@@ -675,7 +704,6 @@ boxplot(yt)
 - Try to fix two points, and see if multiple results are similar
 - Variational Bayes + any optimization may get trapped in local modes.
 
-
 ** LSJM prior
 \begin{aligned} \pi\left(\beta_{i}\right) & \sim \mathrm{N}\left(0, \tau_{\beta}^{2}\right) \\ \pi\left(\theta_{j} | \sigma^{2}\right) & \sim \mathrm{N}\left(0, \sigma^{2}\right) \\ \pi\left(\sigma^{2}\right) & \sim \operatorname{lnv}-\operatorname{Gamma}\left(a_{\sigma}, b_{\sigma}\right) \\ \pi\left(\mathbf{z}_{j}\right) & \sim \mathrm{MVN}_{d}\left(0, I_{d}\right) \\ \pi\left(\mathbf{w}_{i}\right) & \sim \mathrm{MVN}_{d}\left(0, I_{d}\right) \\ \log \pi(\gamma) & \sim \mathrm{N}\left(\mu_{\gamma}, \tau_{\gamma}^{2}\right) \end{aligned}
 
@@ -683,20 +711,6 @@ boxplot(yt)
 ** stan code
 
 - stan_code: [[./stan/art.stan]]
-
-#+begin_src R
-## data and fixed parameters
-I = nrow(tab_item)
-N = nrow(tab_stuid)
-C = 2
-
-L = nrow(to_stan)
-G = ncut
-
-with(to_stan,
-rstan::stan_rdump(c('I','N','C','L','G','stuid','item', 'G', 'seg_g','len','status_F','status_T'),"pisa_data.R"))
-
-#+end_src
 
 #+RESULTS:
 
@@ -820,8 +834,6 @@ adapt delta=0.8 algorithm=hmc engine=nuts \
 metric=diag_e output file=single_mcmc.csv \
 data file=../pisa_short.R
 #+end_src
-
-#+RESULTS:
 
 #+begin_src sh :async
 ~/stan-dev/cmdstan/bin/stansummary stan/single_mcmc.csv --sig_figs=3 > single_summary.csv

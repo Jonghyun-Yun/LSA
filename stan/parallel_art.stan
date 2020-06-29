@@ -130,6 +130,7 @@ model {
   to_vector(z1) ~ std_normal(); // normal(mu, sigma)
   to_vector(z2) ~ std_normal(); // normal(mu, sigma)
   to_vector(theta) ~ normal(0,sigma);
+  to_vector(beta) ~ normal(0,1);
   to_vector(lambda1) ~ gamma(la,lb);
   to_vector(lambda2) ~ gamma(la,lb);
   to_vector(w) ~ normal(0,1);
