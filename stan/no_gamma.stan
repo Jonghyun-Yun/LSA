@@ -1,27 +1,26 @@
 functions {
-  // real lambda_g(int g, int y, row_vector lambda1, row_vector lambda2) {
-  //   real out;
-  //   if (y == 1) out = lambda1[g];
-  //   else if (y == 0) out = lambda2[g];
-  //   else out = 1;
-  //   return log(out);
-  // }
-  // real vcum_hazard(row_vector lambda, row_vector len, int[] g, row_vector H) {
-  //   int N = size(g);
-  //   real out = 0;
-  //   for (n in 1:N){
-  //     if (g[n] > 1) out += sum(lambda[1:(g[n]-1)] .* len[1:(g[n]-1)]) + lambda[g[n]] * H[n];
-  //     else out += lambda[g[n]] * H[n];
-  //   }
-  //   return out;
-  // }
-  // real log_hazard(int y, row_vector beta, row_vector theta, vector gamma, row_vector z1, row_vector z2, row_vector w) {
-  //   real out;
-  //   if (y == 1) out = beta[1] + theta[1] - gamma[1] * distance(z1, w);
-  //   else if (y == 0) out = beta[2] + theta[2] - gamma[2] * distance(z2, w);
-  //   else out = 0;
-  //   return out;
-  // }
+  real cum_hazard(row_vector lambda, row_vector len, int g, real H) {
+    real out;
+    if (g > 1) out = sum(lambda[1:(g-1)] .* len[1:(g-1)]) + lambda[g] * H;
+    else out = lambda[g] * H;
+    return out;
+  }
+  real vcum_hazard(row_vector lambda, row_vector len, int[] g, row_vector H) {
+    int N = size(g);
+    real out = 0;
+    for (n in 1:N){
+      if (g[n] > 1) out += sum(lambda[1:(g[n]-1)] .* len[1:(g[n]-1)]) + lambda[g[n]] * H[n];
+      else out += lambda[g[n]] * H[n];
+    }
+    return out;
+  }
+  real log_hazard(int y, row_vector beta, row_vector theta, vector gamma, row_vector z1, row_vector z2, row_vector w) {
+    real out;
+    if (y == 1) out = beta[1] + theta[1] - gamma[1] * distance(z1, w);
+    else if (y == 0) out = beta[2] + theta[2] - gamma[2] * distance(z2, w);
+    else out = 0;
+    return out;
+  }
   real vlog_hazard(int[] y, row_vector beta, matrix theta,
                    vector gamma, matrix z1, matrix z2, row_vector w) {
     int N = size(y);
@@ -30,12 +29,6 @@ functions {
       if (y[n] == 1) out += beta[1] + theta[n,1] - gamma[1] * distance(z1[n], w);
       else if (y[n] == 0) out += beta[2] + theta[n,2] - gamma[2] * distance(z2[n], w);
     }
-    return out;
-  }
-  real cum_hazard(row_vector lambda, row_vector len, int g, real H) {
-    real out;
-    if (g > 1) out = sum(lambda[1:(g-1)] .* len[1:(g-1)]) + lambda[g] * H;
-    else out = lambda[g] * H;
     return out;
   }
   real cum_vhazard(row_vector beta, matrix theta,
@@ -49,6 +42,24 @@ functions {
       out += cum_hazard(lambda2, len, g[n], H[n]) * exp(beta[2] + theta[n,2] - gamma[2] * distance(z2[n], w));
     }
     return out;
+  }
+  //  vector vlog_hazard_f(int y, row_vector beta, matrix theta,
+  //                    vector gamma, matrix z1, matrix z2, row_vector w) {
+  //   int N = size(theta);
+  //   vector[N] out;
+  //   for (n in 1:N){
+  //     if (y == 1) out[n] = beta[1] + theta[n,1] - gamma[1] * distance(z1[n], w);
+  //     else if (y == 0) out[n] = beta[2] + theta[n,2] - gamma[2] * distance(z2[n], w);
+  //     else out[n] = 0;
+  //   }
+  //   return out;
+  // }
+  real lambda_g(int g, int y, row_vector lambda1, row_vector lambda2) {
+    real out;
+    if (y == 1) out = lambda1[g];
+    else if (y == 0) out = lambda2[g];
+    else out = 1;
+    return log(out);
   }
   real vlambda_g(int[] g, int[] y, row_vector lambda1, row_vector lambda2) {
     int N = size(y);
@@ -69,8 +80,7 @@ functions {
                 ) {
     return vlambda_g(mseg[start:end], mi, lambda1, lambda2) +
       vlog_hazard(mi, beta, theta[start:end], gamma, z1[start:end], z2[start:end], w) +
-      cum_vhazard(beta, theta[start:end], gamma, z1[start:end], z2[start:end],
-      w, lambda1, lambda2, mlen, mseg[start:end], mh[start:end]);
+      cum_vhazard(beta, theta[start:end], gamma, z1[start:end], z2[start:end], w, lambda1, lambda2, mlen, mseg[start:end], mh[start:end]);
   }
 }
 data {
@@ -98,7 +108,6 @@ parameters {
   matrix[N,2] z1;
   matrix[N,2] z2;
   matrix[I,2] w;
-  vector<lower=machine_precision()>[2] gamma;
   matrix<lower=machine_precision()>[I,G] lambda1;
   matrix<lower=machine_precision()>[I,G] lambda2;
 }
@@ -112,27 +121,19 @@ model {
     //     cum_hazard(lambda2[i], mlen, mseg[i,k], mh[i,k]) *
     //     exp(log_hazard(2, beta[i], theta[k], gamma, z1[k], z2[k], w[i]));
     // }
-
     int grainsize = 1;
     target += reduce_sum(part_sum, mi[i], grainsize,
                          mseg[i],
                          lambda1[i], lambda2[i],
                          beta[i], theta, gamma,
                          z1, z2, w[i], mlen, mh[i]);
-
-    // target += vlambda_g(mseg[i], mi[i], lambda1[i], lambda2[i]) +
-    //   vlog_hazard(mi[i], beta[i], theta, gamma, z1, z2, w[i]) +
-    //   cum_vhazard(beta[i], theta, gamma, z1, z2,
-    //   w[i], lambda1[i], lambda2[i], mlen, mseg[i], mh[i]);
-
   }
-  to_vector(lambda1) ~ gamma(la,lb);
-  to_vector(lambda2) ~ gamma(la,lb);
-  to_vector(beta) ~ normal(0,1);
-  to_vector(theta) ~ normal(0,sigma);
-  target += inv_gamma_lpdf(sigma^2 | sa,sb);
   gamma ~ lognormal(0, 1);
   to_vector(z1) ~ std_normal(); // normal(mu, sigma)
   to_vector(z2) ~ std_normal(); // normal(mu, sigma)
+  to_vector(theta) ~ normal(0,sigma);
+  to_vector(lambda1) ~ gamma(la,lb);
+  to_vector(lambda2) ~ gamma(la,lb);
   to_vector(w) ~ normal(0,1);
+  target += inv_gamma_lpdf(sigma^2 | sa,sb);
 }

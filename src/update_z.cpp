@@ -10,7 +10,7 @@ Eigen::VectorXd update_z(const Eigen::MatrixXd::RowXpr &z, double &acc_z,
                          const Eigen::VectorXd &len, const Eigen::MatrixXi::ColXpr &seg,
                          const Eigen::MatrixXd::ColXpr &H,
                          const Eigen::MatrixXi::ColXpr &Y_k, const int cause,
-                         boost::ecuyer1988 &rng);
+                         boost::ecuyer1988 &rng) {
 
   // log-acceptance ratio
   double logr_z = 0.0;
@@ -45,10 +45,9 @@ Eigen::VectorXd update_z(const Eigen::MatrixXd::RowXpr &z, double &acc_z,
   if ((logr_z) > 0.0 || (logr_z >
                               stan::math::log(stan::math::uniform_rng(0.0, 1.0, rng)))) {
       acc_z += 1.0;
-      return z_s;
   }
   else {
       z_s = z;
-      return z_s;
   }
+  return z_s;
 }

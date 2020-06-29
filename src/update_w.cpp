@@ -2,53 +2,62 @@
 #include "update_w.h"
 
 Eigen::VectorXd update_w(const Eigen::MatrixXd::RowXpr &w, double &acc_w,
-                         const Eigen::MatrixXd::RowXpr &lambda,
-                         const Eigen::MatrixXd::ColXpr &theta,
-                         const double &gamma,
-                         const Eigen::MatrixXd &z,
-                         const int &N,
-                         const Eigen::VectorXd &len, const Eigen::MatrixXi::RowXpr &seg,
-                         const Eigen::MatrixXd::RowXpr &H,
-                         const Eigen::MatrixXi::RowXpr &Y_i, const int cause,
+                         const Eigen::MatrixXd::RowXpr &lambda0,
+                         const Eigen::MatrixXd::RowXpr &lambda1,
+                         const Eigen::MatrixXd::RowXpr &beta,
+                         const Eigen::MatrixXd &theta,
+                         const Eigen::VectorXd &gamma,
+                         const Eigen::MatrixXd &z0, const Eigen::MatrixXd &z1,
+                         const int &N, const int &G, const Eigen::VectorXd &len, const Eigen::MatrixXi::RowXpr &seg,
+                         const Eigen::MatrixXd::RowXpr &H, const Eigen::MatrixXi::RowXpr &Y_i,
                          boost::ecuyer1988 &rng) {
 
   // log-acceptance ratio
   double logr_w = 0.0;
   Eigen::VectorXd w_s(2);
-  double cum_lambda;
+  Eigen::MatrixXd mlambda(2,G); // lambda for each cause
+  Eigen::VectorXd cum_lambda(2); // cumulative lambda for each cause
+  Eigen::MatrixXd tz(2,2); // row of z for each cause
+
+  mlambda.row(0) = lambda0;
+  mlambda.row(1) = lambda1;
 
   // std::cout << "Drawing...\n";
   for (int d = 0; d < 2; d++) {
-      z_s(d) = stan::math::normal_rng(z(d), 1.0, rng);
-  logr_z +=
-      stan::math::normal_lpdf(z_s(d), 0.0, 1.0) -
-      stan::math::normal_lpdf(z(d), 0.0, 1.0);
+      w_s(d) = stan::math::normal_rng(w(d), 1.0, rng);
+  logr_w +=
+      stan::math::normal_lpdf(w_s(d), 0.0, 1.0) -
+      stan::math::normal_lpdf(w(d), 0.0, 1.0);
   }
 
   // std::cout << "Calculating the log-acceptance ratio of lambda...\n";
-  for (int i = 0; i < I; i++) {
-  cum_lambda = 0.0;
-    for (int g = 0; g < seg(i); g++) {
-      cum_lambda += len(g) * lambda(i,g);
-    }
-    cum_lambda += H(i) * lambda(i,seg(i));
+  for (int k = 0; k < N; k++) {
+    cum_lambda.setZero();
+    tz.row(0) = z0.row(k);
+    tz.row(1) = z1.row(k);
 
-    logr_z -= cum_lambda * ( stan::math::exp( beta(i) + theta - gamma * stan::math::distance(z, w.row(i))) -
-                             stan::math::exp( beta(i) + theta - gamma * stan::math::distance(z_s, w.row(i))));
+    for (int c = 0; c < 2; c++) {
+      for (int g = 0; g < seg(k); g++) {
+        cum_lambda(c) += len(g) * mlambda(c,g);
+      }
+      cum_lambda(c) += H(k) * mlambda(c,seg(k));
 
-      if (Y_k(i) == cause) {
-          logr_z -= gamma * ( stan::math::distance(z, w.row(i)) - stan::math::distance(z_s, w.row(i)));
+      logr_w -= cum_lambda(c) * ( stan::math::exp( beta(c) + theta(k,c) - gamma(c) * stan::math::distance(tz.row(c), w_s)) -
+                                  stan::math::exp( beta(c) + theta(k,c) - gamma(c) * stan::math::distance(tz.row(c), w)));
+
+      if (Y_i(k) == c) {
+        logr_w -= gamma(c) * ( stan::math::distance(tz.row(c), w_s) - stan::math::distance(tz.row(c), w));
       }
     }
+  }
 
   // accept or reject?
-  if ((logr_z) > 0.0 || (logr_z >
-                              stan::math::log(stan::math::uniform_rng(0.0, 1.0, rng)))) {
-      acc_z += 1.0;
-      return z_s;
+  if ((logr_w) > 0.0 || (logr_w >
+                         stan::math::log(stan::math::uniform_rng(0.0, 1.0, rng)))) {
+      acc_w += 1.0;
   }
   else {
-      z_s = z;
-      return z_s;
+      w_s = w;
   }
+  return w_s;
 }
