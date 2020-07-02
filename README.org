@@ -1,6 +1,11 @@
+#+STARTUP: overview inlineimages logdone noindent
 
 #+include: ~/org/OSX.org::CMakeLists
 #+include: ~/org/OSX.org::compile_commands
+
+* STAN MATH LIBRARY VERSION
+develop origin/develop fd1d8917ee5754810cfab4f7871760315e075135
+
 * CCLS issue
 ** https://github.com/MaskRay/ccls/issues/622#issuecomment-623115650
 
@@ -8,16 +13,18 @@
 cmake -H. -BRelease -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/Users/yunj/local/clang+llvm-10.0.0-x86_64-apple-darwin/ -DCMAKE_INSTALL_PREFIX=/usr/local/Cellar/ccls/HEAD-c5acf62 -DUSE_SYSTEM_RAPIDJSON=OFF -DCMAKE_CXX_COMPILER=/Users/yunj/local/clang+llvm-10.0.0-x86_64-apple-darwin/bin/clang++
 #+END_SRC
 * compiledb-generator
+  Remove ~STAN_THREADS=TRUE~ for serial computing
 #+BEGIN_SRC sh
 conda activate compiledb
 
-compiledb -n make -f /Users/yunj/stan-dev/math/make/standalone main # extract compile commands without executing the actual build
+compiledb -n make STAN_THREADS=TRUE -f /Users/yunj/stan-dev/math/make/standalone main # extract compile commands without executing the actual build
 
-make -w -f /Users/yunj/stan-dev/math/make/standalone main | tee build_log.txt
+make -w STAN_THREADS=TRUE -f /Users/yunj/stan-dev/math/make/standalone main | tee build_log.txt
 compiledb < build_log.txt # extract compile commands from the build log previously generated
 #+END_SRC
 
 #+RESULTS:
+
 ** compilation database
 #+BEGIN_SRC json
 [
@@ -59,7 +66,6 @@ compiledb < build_log.txt # extract compile commands from the build log previous
  }
 ]
 #+END_SRC
-
 
 add directories from =clang -fsyntax-only -v -xc++ /dev/null= (not /usr/include).
 remove boost directory.
@@ -112,6 +118,7 @@ edited a few lines from compiledb-generator and [[file:compile_commands.json][SA
 #+END_SRC
 
 * MakeFile
+  =compiledb-generator= can be used to generate the compilation database, but it doesn't generate a build system. So I may want to generate a Makefile to build sources. If I use CMAKE, which generate compilation database and build system, this step is not necessary.
 #+BEGIN_SRC sh :tangle Makefile
 MATH=/Users/yunj/stan-dev/math/
 
@@ -157,6 +164,7 @@ clean:
   # c++ linker
   # SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -isystem/Library/Developer/CommandLineTools/usr/include/c++/v1")
   SET(CMAKE_CXX_FLAGS  "-std=c++1y -Wno-unknown-warning-option -Wno-tautological-compare -Wno-sign-compare -D_REENTRANT ${CMAKE_CXX_FLAGS}")
+  SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -DSTAN_THREADS")
   SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -DBOOST_DISABLE_ASSERTS")
   SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wl,-L,${MATH}/lib/tbb -Wl,-rpath,${MATH}/lib/tbb")
   SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -isysroot ${Xcode_CLT}/SDKs/MacOSX.sdk/usr/include")

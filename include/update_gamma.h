@@ -2,6 +2,7 @@
 #define __UPDATE_GAMMA_H_
 
 void update_gamma(Eigen::VectorXd &gamma, Eigen::VectorXd &acc_gamma,
+                  const Eigen::VectorXd &mu_gamma, const Eigen::VectorXd &sigma_gamma, const Eigen::VectorXd &jump_gamma,
                   const Eigen::MatrixXd &lambda0, const Eigen::MatrixXd &lambda1,
                   const Eigen::MatrixXd &beta, const Eigen::MatrixXd &theta,
                   const Eigen::MatrixXd &z0, const Eigen::MatrixXd &z1, const Eigen::MatrixXd &w,

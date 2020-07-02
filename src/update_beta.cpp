@@ -2,15 +2,16 @@
 #include "update_beta.h"
 
 void update_beta(double &beta, double &acc_beta,
-                  const Eigen::MatrixXd::RowXpr &lambda,
-                  const Eigen::MatrixXd::ColXpr &theta,
-                  const double &gamma,
-                  const Eigen::MatrixXd &z, const Eigen::MatrixXd::RowXpr &w,
-                  const int &N,
-                  const Eigen::VectorXd &len, const Eigen::MatrixXi::RowXpr &seg,
-                  const Eigen::MatrixXd::RowXpr &H,
-                  const Eigen::MatrixXi::RowXpr &Y_i, const int cause,
-                  boost::ecuyer1988 &rng) {
+                 const double &mu_beta, const double &sigma_beta, const double &jump_beta,
+                 const Eigen::MatrixXd::RowXpr &lambda,
+                 const Eigen::MatrixXd::ColXpr &theta,
+                 const double &gamma,
+                 const Eigen::MatrixXd &z, const Eigen::MatrixXd::RowXpr &w,
+                 const int &N,
+                 const Eigen::VectorXd &len, const Eigen::MatrixXi::RowXpr &seg,
+                 const Eigen::MatrixXd::RowXpr &H,
+                 const Eigen::MatrixXi::RowXpr &Y_i, const int cause,
+                 boost::ecuyer1988 &rng) {
 
   // log-acceptance ratio
   double logr_beta = 0.0;
@@ -18,12 +19,12 @@ void update_beta(double &beta, double &acc_beta,
   double cum_lambda;
 
   // std::cout << "Drawing...\n";
-  beta_s = stan::math::normal_rng(beta, 1.0, rng);
+  beta_s = stan::math::normal_rng(beta, jump_beta, rng);
 
   // prior and jump rule
   logr_beta +=
-      stan::math::normal_lpdf(beta_s, 0.0, 1.0) -
-      stan::math::normal_lpdf(beta, 0.0, 1.0);
+      stan::math::normal_lpdf(beta_s, mu_beta, sigma_beta) -
+      stan::math::normal_lpdf(beta, mu_beta, sigma_beta);
 
   // std::cout << "Calculating the log-acceptance ratio of lambda...\n";
   for (int k = 0; k < N; k++) {
@@ -42,7 +43,7 @@ void update_beta(double &beta, double &acc_beta,
     }
 
   // accept or reject?
-  if ((logr_beta) > 0.0 || (logr_beta >
+  if ((logr_beta > 0.0) || (logr_beta >
                               stan::math::log(stan::math::uniform_rng(0.0, 1.0, rng)))) {
     beta = beta_s;
     acc_beta += 1.0;

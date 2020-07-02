@@ -2,6 +2,7 @@
 #include "update_gamma.h"
 
 void update_gamma(Eigen::VectorXd &gamma, Eigen::VectorXd &acc_gamma,
+                  const Eigen::VectorXd &mu_gamma, const Eigen::VectorXd &sigma_gamma, const Eigen::VectorXd &jump_gamma,
                   const Eigen::MatrixXd &lambda0, const Eigen::MatrixXd &lambda1,
                   const Eigen::MatrixXd &beta, const Eigen::MatrixXd &theta,
                   const Eigen::MatrixXd &z0, const Eigen::MatrixXd &z1,
@@ -28,14 +29,14 @@ void update_gamma(Eigen::VectorXd &gamma, Eigen::VectorXd &acc_gamma,
       z = z1;
     } 
     // std::cout << "Drawing...\n";
-    gamma_s(c) = stan::math::lognormal_rng(stan::math::log(gamma(c)), 1.0, rng);
+    gamma_s(c) = stan::math::lognormal_rng(stan::math::log(gamma(c)), jump_gamma(c), rng);
 
     // prior and jumping rule
     logr_gamma(c) +=
-      stan::math::lognormal_lpdf(gamma_s(c), 0.0, 1.0) -
-      stan::math::lognormal_lpdf(gamma(c), 0.0, 1.0) +
-      stan::math::lognormal_lpdf(gamma_s(c), stan::math::log(gamma(c)), 1.0) -
-      stan::math::lognormal_lpdf(gamma(c), stan::math::log(gamma_s(c)), 1.0);
+      stan::math::lognormal_lpdf(gamma_s(c), mu_gamma(c), sigma_gamma(c)) -
+      stan::math::lognormal_lpdf(gamma(c), mu_gamma(c), sigma_gamma(c)) +
+      stan::math::lognormal_lpdf(gamma(c), stan::math::log(gamma_s(c)), jump_gamma(c)) -
+      stan::math::lognormal_lpdf(gamma_s(c), stan::math::log(gamma(c)), jump_gamma(c));
 
     // std::cout << "Calculating the log-acceptance ratio...\n";
     for (int i = 0; i < I; i++) {
@@ -57,7 +58,7 @@ void update_gamma(Eigen::VectorXd &gamma, Eigen::VectorXd &acc_gamma,
     }
 
     // accept or reject?
-    if ((logr_gamma(c)) > 0.0 || (logr_gamma(c) >
+    if ((logr_gamma(c) > 0.0) || (logr_gamma(c) >
                                   stan::math::log(stan::math::uniform_rng(0.0, 1.0, rng)))) {
       acc_gamma(c) += 1.0;
       gamma(c) = gamma_s(c);

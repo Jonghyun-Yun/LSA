@@ -2,6 +2,7 @@
 #include "update_w.h"
 
 Eigen::VectorXd update_w(const Eigen::MatrixXd::RowXpr &w, double &acc_w,
+                         const double &mu_w, const double &sigma_w, const double &jump_w,
                          const Eigen::MatrixXd::RowXpr &lambda0,
                          const Eigen::MatrixXd::RowXpr &lambda1,
                          const Eigen::MatrixXd::RowXpr &beta,
@@ -15,19 +16,19 @@ Eigen::VectorXd update_w(const Eigen::MatrixXd::RowXpr &w, double &acc_w,
   // log-acceptance ratio
   double logr_w = 0.0;
   Eigen::VectorXd w_s(2);
-  Eigen::MatrixXd mlambda(2,G); // lambda for each cause
+  Eigen::MatrixXd lambda(2,G); // lambda for each cause
   Eigen::VectorXd cum_lambda(2); // cumulative lambda for each cause
   Eigen::MatrixXd tz(2,2); // row of z for each cause
 
-  mlambda.row(0) = lambda0;
-  mlambda.row(1) = lambda1;
+  lambda.row(0) = lambda0;
+  lambda.row(1) = lambda1;
 
   // std::cout << "Drawing...\n";
   for (int d = 0; d < 2; d++) {
-      w_s(d) = stan::math::normal_rng(w(d), 1.0, rng);
+      w_s(d) = stan::math::normal_rng(w(d), jump_w, rng);
   logr_w +=
-      stan::math::normal_lpdf(w_s(d), 0.0, 1.0) -
-      stan::math::normal_lpdf(w(d), 0.0, 1.0);
+      stan::math::normal_lpdf(w_s(d), mu_w, sigma_w) -
+      stan::math::normal_lpdf(w(d), mu_w, sigma_w);
   }
 
   // std::cout << "Calculating the log-acceptance ratio of lambda...\n";
@@ -38,9 +39,9 @@ Eigen::VectorXd update_w(const Eigen::MatrixXd::RowXpr &w, double &acc_w,
 
     for (int c = 0; c < 2; c++) {
       for (int g = 0; g < seg(k); g++) {
-        cum_lambda(c) += len(g) * mlambda(c,g);
+        cum_lambda(c) += len(g) * lambda(c,g);
       }
-      cum_lambda(c) += H(k) * mlambda(c,seg(k));
+      cum_lambda(c) += H(k) * lambda(c,seg(k));
 
       logr_w -= cum_lambda(c) * ( stan::math::exp( beta(c) + theta(k,c) - gamma(c) * stan::math::distance(tz.row(c), w_s)) -
                                   stan::math::exp( beta(c) + theta(k,c) - gamma(c) * stan::math::distance(tz.row(c), w)));
@@ -52,7 +53,7 @@ Eigen::VectorXd update_w(const Eigen::MatrixXd::RowXpr &w, double &acc_w,
   }
 
   // accept or reject?
-  if ((logr_w) > 0.0 || (logr_w >
+  if ((logr_w > 0.0) || (logr_w >
                          stan::math::log(stan::math::uniform_rng(0.0, 1.0, rng)))) {
       acc_w += 1.0;
   }

@@ -2,6 +2,7 @@
 #define __UPDATE_Z_H_
 
 Eigen::VectorXd update_z(const Eigen::MatrixXd::RowXpr &z, double &acc_z,
+                         const double &mu_z, const double &sigma_z, const double &jump_z,
                          const Eigen::MatrixXd &lambda,
                          const Eigen::MatrixXd::ColXpr &beta,
                          const double &theta, const double &gamma,

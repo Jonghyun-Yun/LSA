@@ -1,7 +1,9 @@
 #include <stan/math.hpp>
 #include "update_theta.h"
 
-void update_theta(double &theta, double &acc_theta, const double &sigma,
+void update_theta(double &theta, double &acc_theta,
+                  const double &mu_theta, const double &jump_theta,
+                  const double &sigma,
                   const Eigen::MatrixXd &lambda,
                   const Eigen::MatrixXd::ColXpr &beta,
                   const double &gamma,
@@ -18,12 +20,12 @@ void update_theta(double &theta, double &acc_theta, const double &sigma,
   double cum_lambda;
 
   // std::cout << "Drawing...\n";
-  theta_s = stan::math::normal_rng(theta, 1.0, rng);
+  theta_s = stan::math::normal_rng(theta, jump_theta, rng);
 
   // prior and jump rule
   logr_theta +=
-      stan::math::normal_lpdf(theta_s, 0.0, sigma) -
-      stan::math::normal_lpdf(theta, 0.0, sigma);
+      stan::math::normal_lpdf(theta_s, mu_theta, sigma) -
+      stan::math::normal_lpdf(theta, mu_theta, sigma);
 
   // std::cout << "Calculating the log-acceptance ratio of lambda...\n";
   for (int i = 0; i < I; i++) {
@@ -42,7 +44,7 @@ void update_theta(double &theta, double &acc_theta, const double &sigma,
     }
 
   // accept or reject?
-  if ((logr_theta) > 0.0 || (logr_theta >
+  if ((logr_theta > 0.0) || (logr_theta >
                               stan::math::log(stan::math::uniform_rng(0.0, 1.0, rng)))) {
     theta = theta_s;
     acc_theta += 1.0;

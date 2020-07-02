@@ -1,5 +1,5 @@
 #include <stan/math.hpp>
-#include "fun_lp.h"
+#include "par_fun_lp.h"
 
 double fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lambda,
               const Eigen::MatrixXd &mu_beta, const Eigen::MatrixXd &sigma_beta,
