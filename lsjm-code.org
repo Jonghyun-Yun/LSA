@@ -470,10 +470,10 @@ logrt_boxp <- ggplot(dit01, aes(x=factor(res),y=log(time),fill=factor(res)))+
 
 #+RESULTS:
 
-[[file:RTs_S01.pdf]]
+[[file:figure/RTs_S01.pdf]]
 
 #+BEGIN_SRC R
-pdf("RTs_S01.pdf")
+pdf("figure/RTs_S01.pdf")
 rt_boxp
 logrt_boxp
 dev.off()
@@ -490,11 +490,6 @@ tabulate_id = function(chrid) {
   out = data.frame(chr = chr, num = 1:length(chr))
   return(out)
 }
-
-tab_schid = tabulate_id(di01$CNTSCHID)
-tab_stuid = tabulate_id(di01$CNTSTUID)
-tab_item = tabulate_id(colnames(di01)[-(1:3)])
-
 to_numID = function(x, tab) {
     sapply(x, function(x) tab$num[which(tab$chr == x)])
 }
@@ -502,12 +497,17 @@ to_numID = function(x, tab) {
 to_chrID = function(x, tab) {
     sapply(x, function(x) tab$chr[which(tab$num == x)])
 }
+#+END_SRC
+
+#+BEGIN_SRC R
+tab_schid = tabulate_id(di01$CNTSCHID)
+tab_stuid = tabulate_id(di01$CNTSTUID)
+tab_item = tabulate_id(colnames(di01)[-(1:3)])
 
 di01$schid = to_numID(dt01$CNTSCHID, tab_schid)
 di01$stuid = to_numID(dt01$CNTSTUID, tab_stuid)
 dt01$schid = to_numID(dt01$CNTSCHID, tab_schid)
 dt01$stuid = to_numID(dt01$CNTSTUID, tab_stuid)
-
 #+END_SRC
 
 #+RESULTS:
@@ -943,10 +943,10 @@ sf[k,adx] = c(t(mm[[k]]))
 #+end_src
 
 
-[[file:latent_plot.pdf]]
+[[file:figure/latent_plot.pdf]]
 #+begin_src R
 posm = Reduce("+",mm) / nrow(ss)
-pdf("latent_plot.pdf")
+pdf("figure/latent_plot.pdf")
 myname = c(1:nper,paste0("I.",1:nitem))
 z1= posm[1:nper,]
 w = posm[-(1:(2*nper)),]
@@ -1110,7 +1110,7 @@ sj = c(0, cumsum(mlen))
 
 #+RESULTS:
 
-[[file:tradeoff.pdf]]
+[[file:figure/tradeoff.pdf]]
 #+BEGIN_SRC R
 accuracy = c(rep(mat[1,1],mlen[1]),rep(mat[1,2],mlen[2]),rep(mat[1,3],mlen[3]),rep(mat[1,4],mlen[4]),rep(mat[1,5],100))
 time = 0:(length(accuracy)-1)
@@ -1122,7 +1122,7 @@ for (k in 2:nper) {
   plotdf = rbind(plotdf, cbind(accuracy,time,person))
 }
 
-pdf("tradeoff.pdf")
+pdf("figure/tradeoff.pdf")
 plotdf = as.data.frame(plotdf)
 ggplot(data=plotdf, aes(x=time, y=accuracy, group=person)) +
   geom_line(aes(color=factor(person)), show.legend=FALSE) +
@@ -1232,7 +1232,7 @@ x = out[(1+n)+2:(2+p-1)]
 y = out[(1+n)+(2+p):(2+2*p-1)]
 cname = colnames(mm[[i]])
 
-pdf("stan_optimization.pdf")
+pdf("figure/stan_optimization.pdf")
 mdsplot(data.frame(x,y), cname)
 dev.off()
 #+end_src
@@ -1284,7 +1284,7 @@ mm[[k]] = procrustes(X, Xstar, translation = FALSE, dilation = FALSE)$X.new
 
 #+begin_src R
 w = Reduce("+",mm)
-pdf("plot4.pdf")
+pdf("figure/plot4.pdf")
 mdsplot(data.frame(w), cname)
 dev.off(0)
 #+end_src
@@ -1712,7 +1712,7 @@ colnames(mydf[[cid]]) = cnames
 
  #+RESULTS:
 
- [[file:temp_latent.pdf]]
+ [[file:figure/temp_latent.pdf]]
  #+BEGIN_SRC R
  z0 = Xstar[1:N,]
  z1 = Xstar[(N+1):(2*N),]
@@ -1722,7 +1722,7 @@ colnames(mydf[[cid]]) = cnames
  xmax = max(z0[,1],z1[,1],w[,1])
  ymax = max(z0[,2],z1[,2],w[,2])
 
-pdf("temp_latent.pdf")
+pdf("figure/temp_latent.pdf")
  lsjmplot(z0,w,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname)
  lsjmplot(z1,w,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname)
 dev.off()
@@ -1736,15 +1736,15 @@ dev.off()
  : null device
  :           1
 
- [[file:latent_position_plot_1.pdf]]
- [[file:latent_position_plot_2.pdf]]
- [[file:latent_position_plot_3.pdf]]
- [[file:latent_position_plot_4.pdf]]
- [[file:latent_position_plot_5.pdf]]
- [[file:latent_position_plot.pdf]]
- [[file:latent_position_plot_0.pdf]]
+ [[file:figure/latent_position_plot_1.pdf]]
+ [[file:figure/latent_position_plot_2.pdf]]
+ [[file:figure/latent_position_plot_3.pdf]]
+ [[file:figure/latent_position_plot_4.pdf]]
+ [[file:figure/latent_position_plot_5.pdf]]
+ [[file:figure/latent_position_plot.pdf]]
+ [[file:figure/latent_position_plot_0.pdf]]
  #+begin_src R :tangle art-analysis.R
- pdf("latent_position_plot_0.pdf")
+ pdf("figure/latent_position_plot_0.pdf")
  myname = c(1:N,paste0("I.",1:I))
  lsjmplot(z0,w,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname)
  lsjmplot(z1,w,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname)
@@ -1759,9 +1759,9 @@ dev.off()
  : null device
  :           1
 
- [[file:lambda_mcmc_interval_plot.pdf]]
+ [[file:figure/lambda_mcmc_interval_plot.pdf]]
  #+BEGIN_SRC R
- pdf("lambda_mcmc_interval_plot.pdf")
+ pdf("figure/lambda_mcmc_interval_plot.pdf")
  lambda0.sam = df[,grepl("^lambda.0", colnames(df))]
  mcmc_intervals(lambda0.sam)
  ##mcmc_areas(
@@ -1780,12 +1780,12 @@ dev.off()
  : null device
  :           1
 
-[[file:z_mcmc_trace_plot.pdf]]
-[[file:z_mcmc_trace_plot_1.pdf]]
-[[file:z_mcmc_trace_plot_2.pdf]]
+[[file:figure/z_mcmc_trace_plot.pdf]]
+[[file:figure/z_mcmc_trace_plot_1.pdf]]
+[[file:figure/z_mcmc_trace_plot_2.pdf]]
  #+BEGIN_SRC R
  ## mcmc_intervals(mylist, pars=c("lambda.0.1.1")
- pdf("z_mcmc_trace_plot_2.pdf")
+ pdf("figure/z_mcmc_trace_plot_2.pdf")
  p <- mcmc_trace(mylist,
                  ##pars = c("lambda.0.1.1",  "lambda.0.1.2",  "lambda.0.1.3", "lambda.0.1.4"),
                  regex_pars = "^z.[0-1]\\.[1-2]\\.",
@@ -1799,11 +1799,11 @@ dev.off()
  : null device
  :           1
 
-[[file:w_mcmc_trace_plot.pdf]]
-[[file:w_mcmc_trace_plot_1.pdf]]
+[[file:figure/w_mcmc_trace_plot.pdf]]
+[[file:figure/w_mcmc_trace_plot_1.pdf]]
  #+BEGIN_SRC R
  ## mcmc_intervals(mylist, pars=c("lambda.0.1.1")
- pdf("w_mcmc_trace_plot_1.pdf")
+ pdf("figure/w_mcmc_trace_plot_1.pdf")
  p <- mcmc_trace(mylist,
                  ##pars = c("lambda.0.1.1",  "lambda.0.1.2",  "lambda.0.1.3", "lambda.0.1.4"),
                  regex_pars = "^w\\.[1-2]\\.",
@@ -1817,10 +1817,10 @@ dev.off()
  : quartz
  :      2
 
- [[file:lambda_mcmc_trace_plot.pdf]]
- [[file:lambda_mcmc_trace_plot_1.pdf]]
+ [[file:figure/lambda_mcmc_trace_plot.pdf]]
+ [[file:figure/lambda_mcmc_trace_plot_1.pdf]]
  #+BEGIN_SRC R
- pdf("lambda_mcmc_trace_plot_1.pdf")
+ pdf("figure/lambda_mcmc_trace_plot_1.pdf")
  color_scheme_set("mix-blue-pink")
  p <- mcmc_trace(mylist,
                  regex_pars = "^lambda\\.0\\.1\\.",
@@ -1839,9 +1839,9 @@ dev.off()
  : quartz
  :      2
 
- [[file:beta_mcmc_trace_plot.pdf]]
+ [[file:figure/beta_mcmc_trace_plot.pdf]]
  #+BEGIN_SRC R
- pdf("beta_mcmc_trace_plot.pdf")
+ pdf("figure/beta_mcmc_trace_plot.pdf")
  color_scheme_set("mix-blue-pink")
  p <- mcmc_trace(mylist,
                  regex_pars = "^beta\\.[1-2]",
@@ -1854,9 +1854,9 @@ dev.off()
  : null device
  :           1
 
- [[file:theta_mcmc_trace_plot.pdf]]
+ [[file:figure/theta_mcmc_trace_plot.pdf]]
  #+BEGIN_SRC R
- pdf("theta_mcmc_trace_plot.pdf")
+ pdf("figure/theta_mcmc_trace_plot.pdf")
  color_scheme_set("mix-blue-pink")
  p <- mcmc_trace(mylist,
                  regex_pars = "^theta\\.[1-2]\\.",
@@ -1869,10 +1869,10 @@ dev.off()
  : null device
  :           1
 
- [[file:lp_sigma_mcmc_trace_plot.pdf]]
- [[file:lp_sigma_mcmc_trace_plot_1.pdf]]
+ [[file:figure/lp_sigma_mcmc_trace_plot.pdf]]
+ [[file:figure/lp_sigma_mcmc_trace_plot_1.pdf]]
  #+BEGIN_SRC R
- pdf("lp_sigma_mcmc_trace_plot_1.pdf")
+ pdf("figure/lp_sigma_mcmc_trace_plot_1.pdf")
  color_scheme_set("mix-blue-pink")
  p <- mcmc_trace(mylist,
                  pars = c("sigma", "lp_"),
@@ -1946,12 +1946,12 @@ registerDoParallel(cores=4)
 t = 1:1000
 #+END_SRC
 
-[[file:tradeoff1_1.pdf]]
+[[file:figure/tradeoff1_1.pdf]]
 #+BEGIN_SRC R
 i = 1
 accuracy = foreach(k=1:N, .combine='rbind') %dopar% fun_accuracy_ick(t,i,k,posm,cname,sj)
 
-pdf("tradeoff1_1.pdf")
+pdf("figure/tradeoff1_1.pdf")
 
 plotdf <- reshape::melt(accuracy, id.vars=c("t"))
 colnames(plotdf) = c("person", "time", "accuracy")
@@ -1978,11 +1978,11 @@ null device
           1
 #+end_example
 
-[[file:tradeoff2.pdf]]
+[[file:figure/tradeoff2.pdf]]
 #+BEGIN_SRC R
 i = 2
 accuracy = foreach(k=1:N, .combine='rbind') %dopar% fun_accuracy_ick(t,i,k,posm,cname,sj)
-pdf("tradeoff2.pdf")
+pdf("figure/tradeoff2.pdf")
 
 plotdf <- reshape::melt(accuracy, id.vars=c("t"))
 colnames(plotdf) = c("person", "time", "accuracy")
@@ -1999,11 +1999,11 @@ dev.off()
 : pdf
 :   2
 
-[[file:tradeoff3.pdf]]
+[[file:figure/tradeoff3.pdf]]
 #+BEGIN_SRC R
 i = 3
 accuracy = foreach(k=1:N, .combine='rbind') %dopar% fun_accuracy_ick(t,i,k,posm,cname,sj)
-pdf("tradeoff3.pdf")
+pdf("figure/tradeoff3.pdf")
 
 plotdf <- reshape::melt(accuracy, id.vars=c("t"))
 colnames(plotdf) = c("person", "time", "accuracy")
@@ -2015,10 +2015,6 @@ ggplot(data=plotdf, aes(x=time, y=accuracy, group=person)) +
     ggtitle(paste0("Plot of speed-accuracy tradeoff for item ",i,"."))
 dev.off()
 #+END_SRC
-
-#+RESULTS:
-: pdf
-:   2
 
 #+BEGIN_SRC R
 fun_hazard_surv = function(t,i,k,posm,cname,sj) {
@@ -2136,18 +2132,350 @@ do_procrustes = function(Xstar, mydf, is_list = FALSE, translation = TRUE, dilat
 * opusIII-matrices-data.dat
 
 #+BEGIN_SRC R :results none
+num_person
+num_item
+
 setwd("~/Dropbox/research/lsjm-art/lsjm-code")
 
 source("fun_art_R.R")
 
 library(tidyverse)
 
-opusIII = read_delim("opusIII-matrices-data.dat"," ")
-df = as_tibble(opusIII)
-
-info = readr::read_csv("../pisa2015/ItemTimeInfo.csv")
-polytomous = c("DS519Q01C","DS498Q04C","DS465Q01C","CS635Q01S", "CS635Q04S","DS635Q05C","DS605Q04C","DS607Q03C","CS634Q02S", "CS645Q01S","DS657Q04C","DS629Q01C","CS637Q02S")
-pdx = which(colnames(df) %in% polytomous)
-pdx = c(pdx,pdx + 184)
-df[,-pdx]
+opusIII = read_delim("data/opusIII-matrices-data.dat"," ")
+df = as_tibble(opusIII[,-1])[,1:4] ## drop row names
 #+END_SRC
+
+#+BEGIN_SRC R
+
+di = df[,-4]
+dt = df[,-3]
+di = reshape2::dcast(di, item ~ person)
+dt = reshape2::dcast(dt, item ~ person)
+#+END_SRC
+
+#+RESULTS:
+: Using PbyI as value column: use value.var to override.
+: Using PbyI as value column: use value.var to override.
+
+** boxplot :ARCHIVE:
+#+BEGIN_SRC R
+library(reshape2)
+
+di01_long <- melt(di01, id.vars=c("CNTSCHID","CNTSTUID","ST004D01T"))
+dt01_long <- melt(dt01, id.vars=c("CNTSCHID","CNTSTUID","ST004D01T"))
+
+identical(di01_long[,1],di01_long[,1])
+identical(di01_long[,2],di01_long[,2])
+identical(di01_long[,3],di01_long[,3])
+
+dit01 = cbind(di01_long, dt01_long[,5])
+colnames(dit01)[4:6] = c("item","res","time")
+#+END_SRC
+
+#+RESULTS:
+:
+: Attaching package: 'reshape2'
+:
+: The following object is masked from 'package:tidyr':
+:
+:     smiths
+: [1] TRUE
+: [1] TRUE
+: [1] TRUE
+
+#+BEGIN_SRC R :results value
+dit01 %>% group_by(item) %>% summarise(F = sum(res == 0), T = sum(res == 1), mis = sum(res == 99))
+#+END_SRC
+
+#+RESULTS:
+| DS269Q01C | 353 | 218 | 21 |
+| DS269Q03C | 349 | 220 | 23 |
+| CS269Q04S | 421 | 167 |  4 |
+| CS408Q01S | 270 | 318 |  4 |
+| DS408Q03C | 350 | 228 | 14 |
+| CS408Q04S | 255 | 334 |  3 |
+| CS408Q05S | 429 | 158 |  5 |
+| CS466Q01S | 223 | 365 |  4 |
+| CS466Q05S | 318 | 265 |  9 |
+| CS466Q07S | 150 | 436 |  6 |
+| DS519Q01C | 297 | 275 | 20 |
+| CS519Q02S | 276 | 313 |  3 |
+| DS519Q03C | 461 | 112 | 19 |
+| CS521Q02S | 291 | 299 |  2 |
+| CS521Q06S |  77 | 511 |  4 |
+| CS527Q01S | 493 |  98 |  1 |
+| CS527Q03S | 219 | 370 |  3 |
+| CS527Q04S | 264 | 325 |  3 |
+
+#+BEGIN_SRC R
+rt_boxp <- ggplot(dit01, aes(x=factor(res),y=time,fill=factor(res)))+
+  geom_boxplot() + labs(title="RT by accuracy") + facet_wrap(~item)
+logrt_boxp <- ggplot(dit01, aes(x=factor(res),y=log(time),fill=factor(res)))+
+  geom_boxplot() + labs(title="log RT by accuracy") + facet_wrap(~item)
+#+END_SRC
+
+#+RESULTS:
+
+[[file:figure/RTs_S01.pdf]]
+
+#+BEGIN_SRC R
+pdf("figure/RTs_S01.pdf")
+rt_boxp
+logrt_boxp
+dev.off()
+#+END_SRC
+
+#+RESULTS:
+: null device
+:           1
+** numeric ID
+
+#+RESULTS:
+
+#+BEGIN_SRC R
+##di01_long <- melt(di01, id.vars=c("CNTSCHID","CNTSTUID","ST004D01T"))
+##dt01_long <- melt(dt01, id.vars=c("CNTSCHID","CNTSTUID","ST004D01T"))
+
+di01_long = di01 %>% select(- CNTSCHID, - CNTSTUID)
+dt01_long = dt01 %>% select(- CNTSCHID, - CNTSTUID)
+
+di01_long <- reshape2::melt(di01_long, id.vars=c("schid","stuid","ST004D01T"))
+dt01_long <- reshape2::melt(dt01_long, id.vars=c("schid","stuid","ST004D01T"))
+
+identical(di01_long[,1],dt01_long[,1])
+identical(di01_long[,2],dt01_long[,2])
+identical(di01_long[,3],dt01_long[,3])
+
+dit01 = cbind(di01_long, dt01_long[,5])
+colnames(dit01)[4:6] = c("item","res","time")
+
+dit01$item = to_numID(dit01$item, tab_item)
+#+END_SRC
+
+
+#+RESULTS:
+: [1] TRUE
+: [1] TRUE
+: [1] TRUE
+
+** knot selection
+#+begin_src R
+sdi01 = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix()
+sdt01 = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix()
+
+time = pull(dit01,time)
+ncut = 5
+## interval <- seq(from=0, to = max(time)+1,length.out = 8)
+pseq =  seq(from=0, to = 1, length.out = ncut + 1)
+sj = quantile(time, probs = pseq) %>% round()
+sj[1] = 0; sj[length(sj)] = sj[length(sj)] + 1
+N = ncol(sdi01)
+msj = array(0,dim=c(N,ncut+1,2))
+for (i in 1:N) {
+  msj[i,1,1]  = msj[i,1,1] = 0
+  msj[i,2:(ncut+1),2] = quantile(sdt01[sdi01[,i]==1,i], probs = pseq[-1]) %>% round()
+  msj[i,2:(ncut+1),1] = quantile(sdt01[sdi01[,i]==0,i], probs = pseq[-1]) %>% round()
+}
+#+end_src
+
+#+RESULTS:
+** survSplit
+*** To export long format data for STAN
+ #+begin_src R
+ library(survival)
+ status = !(dit01$res == 99)
+
+ tmp <- survival::survSplit(formula = Surv(time, status) ~ ., data = dit01, cut = sj, episode ="seg_g") %>%
+     mutate(seg = factor(tstart),
+            len = time - tstart,
+            status_T = 1 * (status == 1 & res == 1),
+            status_F = 1 * (status == 1 & res == 0)
+            ) %>%
+     as_tibble
+ to_stan = tmp %>% mutate(seg_g = seg_g - 1) %>% select(stuid, item, time, seg_g, len, status_F, status_T)
+ ## tmp %>% select(res,status,status_T,status_F)
+ #+end_src
+
+ #+begin_src R
+ ## data and fixed parameters
+ I = nrow(tab_item)
+ N = nrow(tab_stuid)
+ C = 2
+
+ L = nrow(to_stan)
+ G = ncut
+
+ with(to_stan,
+ rstan::stan_rdump(c('I','N','C','L','G','stuid','item', 'G', 'seg_g','len','status_F','status_T'),"pisa_data.R"))
+
+ #+end_src
+
+ #+RESULTS:
+
+*** To export short format data for STAN
+
+   #+BEGIN_SRC R
+   tt01 = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID)
+   nitem = ncol(tt01)
+   tt01 = data.frame(time = c(as.matrix(tt01)), status = 1)
+
+   tmp <- survival::survSplit(formula = survival::Surv(time, status) ~ ., data = tt01, cut = sj, episode ="seg_g") %>%
+       mutate(seg = factor(tstart),
+              seg_g = seg_g - 1,
+              len = time - tstart
+              ) %>% filter(status == 1) %>%
+       as_tibble
+   mseg = matrix(pull(tmp,seg_g),ncol=nitem) %>% t()
+   mh = matrix(pull(tmp,len),ncol=nitem) %>% t()
+   mlen = sj[2:(ncut+1)] - sj[1:(ncut)]
+   mt = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
+   mi = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
+   mi[mi==99] = 2
+   #+END_SRC
+
+   #+RESULTS:
+   : Error in Surv(time, status) : could not find function "Surv"
+   : Error in pull(tmp, seg_g) : object 'tmp' not found
+   : Error in pull(tmp, len) : object 'tmp' not found
+
+   #+begin_src R
+   ## data and fixed parameters
+   I = nrow(mt)
+   N = ncol(mt)
+   C = 2
+
+   G = ncut + 1
+
+   rstan::stan_rdump(c('I','N','C','G', 'mseg','mlen', 'mh', 'mt','mi'),"pisa_short.R")
+
+   #+end_src
+
+*** to export short format data for C++
+   #+BEGIN_SRC R
+   library(survival)
+   tt01 = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID)
+   ti01 = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID)
+   nitem = ncol(tt01)
+
+   tf01 = data.frame(time = c(as.matrix(tt01)), status = 1)
+   tmp <- survSplit(formula = Surv(time, status) ~ ., data = tf01, cut = sj, episode ="seg_g") %>%
+       mutate(seg = factor(tstart),
+              seg_g = seg_g - 2,
+              len = time - tstart
+              ) %>% filter(status == 1) %>%
+       as_tibble
+
+   mseg = matrix(pull(tmp,seg_g),ncol=nitem) %>% t()
+   mh = matrix(pull(tmp,len),ncol=nitem) %>% t()
+   mlen = sj[2:(ncut+1)] - msj[1:(ncut)]
+   mt = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
+   mi = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
+   mi[mi==99] = 2
+   #+END_SRC
+
+   #+RESULTS:
+
+   #+begin_src R
+   ## data and fixed parameters
+   I = nrow(mt)
+   N = ncol(mt)
+   C = 2
+   G = ncut #
+   write_csv(data.frame(I=I, N=N, C=C, G=G), "mvar.csv", col_names = FALSE)
+   write_csv(as.data.frame(mlen),"mlen.csv", col_names = FALSE)
+   write_csv(as.data.frame(mseg),"mseg.csv", col_names = FALSE)
+   write_csv(as.data.frame(mh),"mh.csv", col_names = FALSE)
+   write_csv(as.data.frame(mt),"mt.csv", col_names = FALSE)
+   write_csv(as.data.frame(mi),"mi.csv", col_names = FALSE)
+   #+end_src
+
+   #+RESULTS:
+
+   This is to export hyper-parameters and jumping rule
+   #+BEGIN_SRC R
+   mvar = readr::read_csv("mvar.csv", col_names=FALSE) %>% as.matrix()
+   I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
+
+   ## lambda
+   a_lambda = matrix(0.001,I,G)
+   b_lambda = matrix(0.001,I,G)
+   jump_lambda = matrix(1.0,I,G)
+
+   mu_beta = matrix(0.0,I,2)
+   sigma_beta = matrix(1.0,I,2)
+   jump_beta = matrix(1.0,I,2)
+
+   mu_theta = matrix(0.0,N,2)
+   sigma_theta = matrix(1.0,N,2)
+   jump_theta = matrix(1.0,N,2)
+
+   a_sigma = 1.0
+   b_sigma = 1.0
+
+   mu_gamma = matrix(0.0,1,2)
+   sigma_gamma = matrix(1.0,1,2)
+   jump_gamma = matrix(1.0,1,2)
+
+   mu_z = matrix(0.0,N,2)
+   sigma_z = matrix(1.0,N,2)
+   jump_z = matrix(1.0,N,2)
+
+   mu_w = matrix(0.0,I,2)
+   sigma_w = matrix(1.0,I,2)
+   jump_w = matrix(1.0,I,2)
+   #+END_SRC
+
+   #+RESULTS:
+   : Parsed with column specification:
+   : cols(
+   :   X1 = [32mcol_double()[39m,
+   :   X2 = [32mcol_double()[39m,
+   :   X3 = [32mcol_double()[39m,
+   :   X4 = [32mcol_double()[39m
+   : )
+
+   #+BEGIN_SRC R
+   write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"pj_lambda.csv", col_names = FALSE)
+   write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"pj_beta.csv", col_names = FALSE)
+   write_csv(as.data.frame(rbind(mu_theta,sigma_theta,jump_theta)),"pj_theta.csv", col_names = FALSE)
+   write_csv(as.data.frame(rbind(a_sigma,b_sigma)),"pj_sigma.csv", col_names = FALSE)
+   write_csv(as.data.frame(rbind(mu_gamma,sigma_gamma,jump_gamma)),"pj_gamma.csv", col_names = FALSE)
+   write_csv(as.data.frame(rbind(mu_z,sigma_z,jump_z)),"pj_z.csv", col_names = FALSE)
+   write_csv(as.data.frame(rbind(mu_w,sigma_w,jump_w)),"pj_w.csv", col_names = FALSE)
+   #+END_SRC
+
+   #+RESULTS:
+
+** not used
+#+BEGIN_SRC R
+item <- pull(info, Item)
+time <- pull(info, Time)
+cname <- colnames(df)
+#+END_SRC
+
+#+RESULTS:
+
+#+begin_src R
+item = item[info$Cluster_A == "S01"]
+time = time[info$Cluster_A == "S01"]
+yi = df[,cname %in% item]
+yt = df[,cname %in% time]
+
+idx = !apply(yi,1,function(x) all(is.na(x)))
+yi = yi[idx,]
+yt = yt[idx,]
+yi[is.na(yi)] = 99
+yi[yi == 2] = 1
+#+end_src
+
+#+RESULTS:
+
+
+#+BEGIN_SRC R
+boxplot(yt)
+#+END_SRC
+
+#+RESULTS:
+
+
+#+RESULTS:

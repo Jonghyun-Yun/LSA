@@ -476,24 +476,27 @@ int main(int argc, const char *argv[]) {
     if (RUN_PAR) {
 
     // updating lambda...
-      for (int g = 0; g < G; g++) {
-        tbb::parallel_for( tbb::blocked_range<int>(0,I), [&](tbb::blocked_range<int> r)
+      tbb::parallel_for(
+        tbb::blocked_range2d<int>(0, I, 0, G),
+        [&](tbb::blocked_range2d<int> r)
         {
-          for (int i=r.begin(); i<r.end(); ++i)
+          for (int i=r.rows().begin(); i<r.rows().end(); ++i)
           {
-            update_lambda(lambda0(i, g), acc_lambda0(i, g),
-                          a_lambda(i,g), b_lambda(i,g), jump_lambda(i,g), g,
-                          beta(i, 0), theta.col(0), gamma(0), z0, w.row(i),
-                          N, mlen(g), mseg.row(i), mH.row(i), mY.row(i), 0, rng);
+            for (int g=r.cols().begin(); g<r.cols().end(); ++g)
+            {
+              update_lambda(lambda0(i, g), acc_lambda0(i, g),
+                            a_lambda(i,g), b_lambda(i,g), jump_lambda(i,g), g,
+                            beta(i, 0), theta.col(0), gamma(0), z0, w.row(i),
+                            N, mlen(g), mseg.row(i), mH.row(i), mY.row(i), 0, rng);
 
-            update_lambda(lambda1(i, g), acc_lambda1(i, g),
-                          a_lambda(i,g), b_lambda(i,g), jump_lambda(i,g), g,
-                          beta(i, 1), theta.col(1), gamma(1), z1, w.row(i),
-                          N, mlen(g), mseg.row(i), mH.row(i), mY.row(i), 1, rng);
+              update_lambda(lambda1(i, g), acc_lambda1(i, g),
+                            a_lambda(i,g), b_lambda(i,g), jump_lambda(i,g), g,
+                            beta(i, 1), theta.col(1), gamma(1), z1, w.row(i),
+                            N, mlen(g), mseg.row(i), mH.row(i), mY.row(i), 1, rng);
+            }
           }
         });
-      }
-
+   
     // updating theta...
 
     tbb::parallel_for( tbb::blocked_range<int>(0,N), [&](tbb::blocked_range<int> r)

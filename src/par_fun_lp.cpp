@@ -27,7 +27,7 @@ double par_fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lamb
     using stan::math::inv_gamma_lpdf;
 
     double lp_ = 0.0;
-    Eigen::MatrixXd cum_lambda(I,G); // cumulative lambda for each cause
+    Eigen::MatrixXd cum_lambda(I,N); // cumulative lambda for each cause
     Eigen::MatrixXd lambda(I,G); 
     Eigen::MatrixXd z(N,2);
     // double log_prop_hazard; // to avoid double evaluation
@@ -56,7 +56,7 @@ double par_fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lamb
                             cum_lambda(i,k) += len(g) * lambda(i,g);
                         }
                         cum_lambda(i,k) += H(i,k) * lambda(i,seg(i,k));
-                        running_total -= cum_lambda(c) * exp( beta(i,c) + theta(k,c) - gamma(c) * distance(z.row(k), w.row(i)) );
+                        running_total -= cum_lambda(i,k) * exp( beta(i,c) + theta(k,c) - gamma(c) * distance(z.row(k), w.row(i)) );
 
                         if (Y(i,k) == c) {
                             running_total += beta(i,c) + theta(k,c) - gamma(c) * distance(z.row(k), w.row(i));
