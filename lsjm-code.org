@@ -338,37 +338,27 @@ target: $\prod_{k,c} N(\theta_{kc}|0,\sigma^{2}) inv-gamma(\sigma^{2}|a,b)$ -> n
 cat ../pisa2015/README.txt
 #+END_SRC
 
-#+RESULTS:
-#+begin_example
-1. Variable sequence
-1) CNTSCHID: school id
-2) CNTSTUID: student id
-3) ST004D01T: gender (male, female)
-4) item response variables -> 184 items
-5) response time variables -> 184 times
-	(the order of response time variable is consistent with item response's order)
-
-,* Note that
-<1> dichotomous items are coded as 0, 1 for incorrect and correct response, respectively.
-<2> polytomous items are coded as 0, 1, 2 for no credit, partial credit, and full credit, respectively.
- -> polytomous item list: "DS519Q01C","DS498Q04C","DS465Q01C","CS635Q01S",
-		"CS635Q04S","DS635Q05C","DS605Q04C","DS607Q03C","CS634Q02S",
-		"CS645Q01S","DS657Q04C","DS629Q01C","CS637Q02S"
-<3> missing responses are coded as NA.
-<4> response time of non-response (missing like omission) has its value.
-    they are not changed to NA.
-#+end_example
-
 ** notebook
-#+BEGIN_SRC R :results none
+#+BEGIN_SRC R
+
+## pick_person = 1:592
+pick_person = 1:100
+## pick_item = 1:21
+pick_item = 1:13
+
+ncut = 5 # segment # in piecewise approximation
+source('pisa-preprocess.R')
+#+END_SRC
+
+#+BEGIN_SRC R :results none :tangle pisa-preprocess.R
 setwd("~/Dropbox/research/lsjm-art/lsjm-code")
 
-source("fun_art_R.R")
+source("Rfunction.R")
 
 library(tidyverse)
-load("../pisa2015/US_PISA2015.rdata")
+load("data/pisa2015/US_PISA2015.rdata")
 df = as_tibble(US_2015)
-info = readr::read_csv("../pisa2015/ItemTimeInfo.csv")
+info = readr::read_csv("data/pisa2015/ItemTimeInfo.csv")
 polytomous = c("DS519Q01C","DS498Q04C","DS465Q01C","CS635Q01S", "CS635Q04S","DS635Q05C","DS605Q04C","DS607Q03C","CS634Q02S", "CS645Q01S","DS657Q04C","DS629Q01C","CS637Q02S")
 pdx = which(colnames(df) %in% polytomous)
 pdx = c(pdx,pdx + 184)
@@ -380,11 +370,7 @@ dim(df)
 length(unique(df$CNTSTUID)) # unique STUID?
 #+END_SRC
 
-#+RESULTS:
-: [1] 5712  371
-: [1] 5712
-
-#+begin_src R :tangle fun_art_R.R
+#+begin_src R :tangle Rfunction.R
 pullit = function(info,cl) {
 it = info %>% filter(Cluster_A == cl)# %>% select(Item,Time)
 item = pull(it,Item)
@@ -393,9 +379,7 @@ return(cbind(item,time))
 }
 #+end_src
 
-#+RESULTS:
-
-#+BEGIN_SRC R
+#+begin_src R :tangle pisa-preprocess.R
 di = df[,1:187]
 dt = df[,c(1:3,188:371)]
 its = pullit(info,"S01")
@@ -403,13 +387,11 @@ dt01 = dt %>% select(CNTSCHID,CNTSTUID,ST004D01T,any_of(its[,2])) %>% na.omit
 di01 = di %>% select(CNTSCHID,CNTSTUID,ST004D01T,any_of(its[,1])) %>% filter(CNTSTUID %in% dt01$CNTSTUID)
 
 di01[di01 == 2] = 1
-di01[is.na(di01)] = 99
+di01[is.na(di01)] = 999
 
-di01 = di01[,1:10]
-dt01 = dt01[,1:10]
+di01 = di01[pick_person,pick_item]
+dt01 = dt01[pick_person,pick_item]
 #+end_src
-
-#+RESULTS:
 
 ** boxplot :ARCHIVE:
 #+BEGIN_SRC R
@@ -426,40 +408,9 @@ dit01 = cbind(di01_long, dt01_long[,5])
 colnames(dit01)[4:6] = c("item","res","time")
 #+END_SRC
 
-#+RESULTS:
-:
-: Attaching package: 'reshape2'
-:
-: The following object is masked from 'package:tidyr':
-:
-:     smiths
-: [1] TRUE
-: [1] TRUE
-: [1] TRUE
-
 #+BEGIN_SRC R :results value
 dit01 %>% group_by(item) %>% summarise(F = sum(res == 0), T = sum(res == 1), mis = sum(res == 99))
 #+END_SRC
-
-#+RESULTS:
-| DS269Q01C | 353 | 218 | 21 |
-| DS269Q03C | 349 | 220 | 23 |
-| CS269Q04S | 421 | 167 |  4 |
-| CS408Q01S | 270 | 318 |  4 |
-| DS408Q03C | 350 | 228 | 14 |
-| CS408Q04S | 255 | 334 |  3 |
-| CS408Q05S | 429 | 158 |  5 |
-| CS466Q01S | 223 | 365 |  4 |
-| CS466Q05S | 318 | 265 |  9 |
-| CS466Q07S | 150 | 436 |  6 |
-| DS519Q01C | 297 | 275 | 20 |
-| CS519Q02S | 276 | 313 |  3 |
-| DS519Q03C | 461 | 112 | 19 |
-| CS521Q02S | 291 | 299 |  2 |
-| CS521Q06S |  77 | 511 |  4 |
-| CS527Q01S | 493 |  98 |  1 |
-| CS527Q03S | 219 | 370 |  3 |
-| CS527Q04S | 264 | 325 |  3 |
 
 #+BEGIN_SRC R
 rt_boxp <- ggplot(dit01, aes(x=factor(res),y=time,fill=factor(res)))+
@@ -467,8 +418,6 @@ rt_boxp <- ggplot(dit01, aes(x=factor(res),y=time,fill=factor(res)))+
 logrt_boxp <- ggplot(dit01, aes(x=factor(res),y=log(time),fill=factor(res)))+
   geom_boxplot() + labs(title="log RT by accuracy") + facet_wrap(~item)
 #+END_SRC
-
-#+RESULTS:
 
 [[file:figure/RTs_S01.pdf]]
 
@@ -478,12 +427,8 @@ rt_boxp
 logrt_boxp
 dev.off()
 #+END_SRC
-
-#+RESULTS:
-: null device
-:           1
 ** numeric ID
-#+BEGIN_SRC R :tangle fun_art_R.R
+#+BEGIN_SRC R :tangle Rfunction.R
 tabulate_id = function(chrid) {
 ## reference table of charactor and numeric id
   chr = sort(unique(chrid))
@@ -499,7 +444,7 @@ to_chrID = function(x, tab) {
 }
 #+END_SRC
 
-#+BEGIN_SRC R
+#+begin_src R :tangle pisa-preprocess.R
 tab_schid = tabulate_id(di01$CNTSCHID)
 tab_stuid = tabulate_id(di01$CNTSTUID)
 tab_item = tabulate_id(colnames(di01)[-(1:3)])
@@ -510,9 +455,7 @@ dt01$schid = to_numID(dt01$CNTSCHID, tab_schid)
 dt01$stuid = to_numID(dt01$CNTSTUID, tab_stuid)
 #+END_SRC
 
-#+RESULTS:
-
-#+BEGIN_SRC R
+#+begin_src R :tangle pisa-preprocess.R
 ##di01_long <- melt(di01, id.vars=c("CNTSCHID","CNTSTUID","ST004D01T"))
 ##dt01_long <- melt(dt01, id.vars=c("CNTSCHID","CNTSTUID","ST004D01T"))
 
@@ -532,19 +475,14 @@ colnames(dit01)[4:6] = c("item","res","time")
 dit01$item = to_numID(dit01$item, tab_item)
 #+END_SRC
 
-
-#+RESULTS:
-: [1] TRUE
-: [1] TRUE
-: [1] TRUE
-
 ** knot selection
-#+begin_src R
+#+begin_src R :tangle pisa-preprocess.R
 sdi01 = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix()
 sdt01 = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix()
 
 time = pull(dit01,time)
-ncut = 5
+## ncut = 5
+
 ## interval <- seq(from=0, to = max(time)+1,length.out = 8)
 pseq =  seq(from=0, to = 1, length.out = ncut + 1)
 sj = quantile(time, probs = pseq) %>% round()
@@ -557,8 +495,6 @@ for (i in 1:N) {
   msj[i,2:(ncut+1),1] = quantile(sdt01[sdi01[,i]==0,i], probs = pseq[-1]) %>% round()
 }
 #+end_src
-
-#+RESULTS:
 ** survSplit
 *** To export long format data for STAN
  #+begin_src R
@@ -590,8 +526,6 @@ for (i in 1:N) {
 
  #+end_src
 
- #+RESULTS:
-
 *** To export short format data for STAN
 
    #+BEGIN_SRC R
@@ -610,13 +544,7 @@ for (i in 1:N) {
    mlen = sj[2:(ncut+1)] - sj[1:(ncut)]
    mt = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
    mi = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
-   mi[mi==99] = 2
    #+END_SRC
-
-   #+RESULTS:
-   : Error in Surv(time, status) : could not find function "Surv"
-   : Error in pull(tmp, seg_g) : object 'tmp' not found
-   : Error in pull(tmp, len) : object 'tmp' not found
 
    #+begin_src R
    ## data and fixed parameters
@@ -631,7 +559,7 @@ for (i in 1:N) {
    #+end_src
 
 *** to export short format data for C++
-   #+BEGIN_SRC R
+#+BEGIN_SRC R :tangle pisa-preprocess.R
    library(survival)
    tt01 = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID)
    ti01 = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID)
@@ -650,12 +578,9 @@ for (i in 1:N) {
    mlen = sj[2:(ncut+1)] - msj[1:(ncut)]
    mt = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
    mi = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
-   mi[mi==99] = 2
    #+END_SRC
 
-   #+RESULTS:
-
-   #+begin_src R
+#+BEGIN_SRC R :tangle pisa-preprocess.R
    ## data and fixed parameters
    I = nrow(mt)
    N = ncol(mt)
@@ -669,10 +594,8 @@ for (i in 1:N) {
    write_csv(as.data.frame(mi),"mi.csv", col_names = FALSE)
    #+end_src
 
-   #+RESULTS:
-
    This is to export hyper-parameters and jumping rule
-   #+BEGIN_SRC R
+#+BEGIN_SRC R :tangle pisa-preprocess.R
    mvar = readr::read_csv("mvar.csv", col_names=FALSE) %>% as.matrix()
    I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
 
@@ -705,16 +628,7 @@ for (i in 1:N) {
    jump_w = matrix(1.0,I,2)
    #+END_SRC
 
-   #+RESULTS:
-   : Parsed with column specification:
-   : cols(
-   :   X1 = [32mcol_double()[39m,
-   :   X2 = [32mcol_double()[39m,
-   :   X3 = [32mcol_double()[39m,
-   :   X4 = [32mcol_double()[39m
-   : )
-
-   #+BEGIN_SRC R
+#+BEGIN_SRC R :tangle pisa-preprocess.R
    write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"pj_lambda.csv", col_names = FALSE)
    write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"pj_beta.csv", col_names = FALSE)
    write_csv(as.data.frame(rbind(mu_theta,sigma_theta,jump_theta)),"pj_theta.csv", col_names = FALSE)
@@ -724,16 +638,12 @@ for (i in 1:N) {
    write_csv(as.data.frame(rbind(mu_w,sigma_w,jump_w)),"pj_w.csv", col_names = FALSE)
    #+END_SRC
 
-   #+RESULTS:
-
 ** not used
 #+BEGIN_SRC R
 item <- pull(info, Item)
 time <- pull(info, Time)
 cname <- colnames(df)
 #+END_SRC
-
-#+RESULTS:
 
 #+begin_src R
 item = item[info$Cluster_A == "S01"]
@@ -748,14 +658,10 @@ yi[is.na(yi)] = 99
 yi[yi == 2] = 1
 #+end_src
 
-#+RESULTS:
-
 
 #+BEGIN_SRC R
 boxplot(yt)
 #+END_SRC
-
-#+RESULTS:
 
 
 #+RESULTS:
@@ -848,8 +754,6 @@ lsjmplot <- function( z, w, myname = NULL, xlim=NA, ylim=NA, lab = "Coordinate")
 }
 #+END_SRC
 
-#+RESULTS: mdsplot
-
 A function to convert mcmc.list to data.frame.
 #+begin_src R :tangle cdfa_df.R
 coda_df <- function(coda.object,
@@ -873,8 +777,6 @@ coda_df <- function(coda.object,
     out.df
 }
 #+end_src
-
-#+RESULTS:
 
 #+begin_src sh :async :results slient
 cd ~/stan-dev/cmdstan
@@ -929,8 +831,6 @@ Xstar =matrix(unlist(ss[star,]),2,nall)
 Xstar = t(Xstar)
 #+END_SRC
 
-#+RESULTS:
-
 #+begin_src R :results silent
 library(MCMCpack)
 mm = list()
@@ -956,14 +856,6 @@ z2 = posm[(nper + 1):(2*nper),]
 lsjmplot(z2,w,xlim=c(-2,2),ylim=c(-2,2),myname)
 dev.off()
 #+end_src
-
-#+RESULTS:
-: Warning message:
-: Ignoring unknown parameters: segment.colour
-: Warning message:
-: Ignoring unknown parameters: segment.colour
-: null device
-:           1
 
 #+BEGIN_SRC R
 construct_cumulative_hazard_function <- function(cutpoints, log_baseline_hazards, latent_effects) {
@@ -1003,8 +895,6 @@ construct_cumulative_hazard_function <- function(cutpoints, log_baseline_hazards
 }
 #+END_SRC
 
-#+RESULTS:
-
 
 #+BEGIN_SRC R
 df = sf
@@ -1013,13 +903,9 @@ source("pisa_short.R")
 dfname = colnames(df)
 #+END_SRC
 
-#+RESULTS:
-
 #+BEGIN_SRC R
 
 #+END_SRC
-
-#+RESULTS:
 
 #+BEGIN_SRC R
 lambda1.1dx = grepl("^lambda1.1", colnames(df))
@@ -1030,8 +916,6 @@ beta.1dx = grepl("^beta.1", colnames(df))
 w.1dx = grepl("^w.1", colnames(df))
 gamma.1dx = grepl("^gamma.1", colnames(df))
 #+END_SRC
-
-#+RESULTS:
 
 #+BEGIN_SRC R
 item_number = 3
@@ -1058,8 +942,6 @@ prop_hazard1 = rep(beta, nper) + theta - rep(gamma,nper) * dist
 colnames(prop_hazard1) = paste0("k",1:nper,".1")
 #+END_SRC
 
-#+RESULTS:
-
 #+BEGIN_SRC R
 lvar2 = list(
   lambda1.2 = str_subset(dfname, paste0("^lambda2.",item_number)),
@@ -1084,8 +966,6 @@ colnames(prop_hazard2) = paste0("k",1:nper,".2")
 
 #+END_SRC
 
-#+RESULTS:
-
 #+BEGIN_SRC R
 dat = tibble(prop_hazard1 = prop_hazard1,
              prop_hazard2 = prop_hazard2,
@@ -1100,15 +980,11 @@ dat = dat %>% mutate(acc1 = rep(lambda.1.1[,1], nper) * exp(prop_hazard1) / ( re
         acc5 = rep(lambda.1.1[,5], nper) * exp(prop_hazard1) / ( rep(lambda.1.1[,5], nper) * exp(prop_hazard1) +  rep(lambda.1.2[,5], nper) * exp(prop_hazard2)))
 #+END_SRC
 
-#+RESULTS:
-
 #+BEGIN_SRC R
 acc = dat %>% dplyr::select(acc1,acc2,acc3,acc4,acc5)
 mat = matrix(colSums(acc) / nrow(acc),nrow=50)
 sj = c(0, cumsum(mlen))
 #+END_SRC
-
-#+RESULTS:
 
 [[file:figure/tradeoff.pdf]]
 #+BEGIN_SRC R
@@ -1132,18 +1008,12 @@ ggplot(data=plotdf, aes(x=time, y=accuracy, group=person)) +
 dev.off()
 #+END_SRC
 
-#+RESULTS:
-: null device
-:           1
-
 #+BEGIN_SRC R
 prop_hazard <- function(beta, theta, gamma, z, w) {
   theta = matrix(theta,nrow=2)[1,]
   return(beta + theta - gamma * colSums((z - w)^2))
 }
 #+END_SRC
-
-#+RESULTS:
 
 #+BEGIN_SRC R
 cum_haz <- df %>%
@@ -1174,10 +1044,6 @@ cum_haz <- df %>%
                            })) %>%
     select(.chain, .iteration, .draw, `H(t|x)`)
 #+END_SRC
-
-#+RESULTS:
-: Error in tidybayes::tidy_draws(fit_leukemia_three) :
-:   object 'fit_leukemia_three' not found
 
 #+BEGIN_SRC R
 ss = df[10001,]
@@ -1349,8 +1215,6 @@ cd /opt/cmdstan
 make ~/workspace/hubViz-code/vb
 #+end_src
 
-#+RESULTS:
-
 #+begin_src R
 ## data, fixed parameters
 i = 1
@@ -1370,8 +1234,6 @@ theta = rnorm(n)
 rstan::stan_rdump(c('w_fr','theta','sigma_w'),"init_list.R")
 #+end_src
 
-#+RESULTS:
-
 - put ~init=init_list.R~ for custom initialization.
 #+begin_src sh :async :results none
 cd ~/workspace/hubViz-code
@@ -1387,14 +1249,6 @@ cname = colnames(mm[[i]])
 
 mdsplot(data.frame(x,y), cname)
 #+end_src
-
-#+RESULTS:
-: Parsed with column specification:
-: cols(
-:   .default = col_double()
-: )
-: See spec(...) for full column specifications.
-: #   -00:02/05:20#   -00:02/05:20#   -00:02/05:20#   -00:02/05:20#   -00:02/05:20#   -00:02/05:20
 
 
 *** no fixed points: user-defined $\sigma$'s :ARCHIVE:
@@ -1447,13 +1301,6 @@ cd /opt/cmdstan
 make ~/workspace/hubViz-code/vb
 #+end_src
 
-#+RESULTS:
-| ---       | Translating                                  | Stan                                      | model                     | to                | C++         | code | ---                                     |     |    |     |    |          |    |                     |    |                    |    |                                  |    |                                   |    |                                             |                       |                                        |                                        |                                         |                    |                                                                 |                                                             |                                                           |                                                             |                                        |                                              |                                                   |    |                                      |
-| bin/stanc | --o=/Users/yunj/workspace/hubViz-code/vb.hpp | /Users/yunj/workspace/hubViz-code/vb.stan |                           |                   |             |      |                                         |     |    |     |    |          |    |                     |    |                    |    |                                  |    |                                   |    |                                             |                       |                                        |                                        |                                         |                    |                                                                 |                                                             |                                                           |                                                             |                                        |                                              |                                                   |    |                                      |
-| ---       | Compiling,                                   | linking                                   | C++                       | code              | ---         |      |                                         |     |    |     |    |          |    |                     |    |                    |    |                                  |    |                                   |    |                                             |                       |                                        |                                        |                                         |                    |                                                                 |                                                             |                                                           |                                                             |                                        |                                              |                                                   |    |                                      |
-| clang++   | -std=c++1y                                   | -Wno-unknown-warning-option               | -Wno-tautological-compare | -Wno-sign-compare | -D_REENTRANT | -I   | stan/lib/stan_math/lib/tbb_2019_U8/include | -O3 | -I | src | -I | stan/src | -I | lib/rapidjson_1.1.0/ | -I | stan/lib/stan_math/ | -I | stan/lib/stan_math/lib/eigen_3.3.3 | -I | stan/lib/stan_math/lib/boost_1.69.0 | -I | stan/lib/stan_math/lib/sundials_4.1.0/include | -DBOOST_DISABLE_ASSERTS | -c                                     | -include-pch                           | stan/src/stan/model/model_header.hpp.gch | -x                 | c++                                                             | -o                                                          | /Users/yunj/workspace/hubViz-code/vb.o                    | /Users/yunj/workspace/hubViz-code/vb.hpp                    |                                        |                                              |                                                   |    |                                      |
-| clang++   | -std=c++1y                                   | -Wno-unknown-warning-option               | -Wno-tautological-compare | -Wno-sign-compare | -D_REENTRANT | -I   | stan/lib/stan_math/lib/tbb_2019_U8/include | -O3 | -I | src | -I | stan/src | -I | lib/rapidjson_1.1.0/ | -I | stan/lib/stan_math/ | -I | stan/lib/stan_math/lib/eigen_3.3.3 | -I | stan/lib/stan_math/lib/boost_1.69.0 | -I | stan/lib/stan_math/lib/sundials_4.1.0/include | -DBOOST_DISABLE_ASSERTS | /opt/cmdstan/stan/lib/stan_math/lib/tbb | /opt/cmdstan/stan/lib/stan_math/lib/tbb | /Users/yunj/workspace/hubViz-code/vb.o  | src/cmdstan/main.o | stan/lib/stan_math/lib/sundials_4.1.0/lib/libsundials_nvecserial.a | stan/lib/stan_math/lib/sundials_4.1.0/lib/libsundials_cvodes.a | stan/lib/stan_math/lib/sundials_4.1.0/lib/libsundials_idas.a | stan/lib/stan_math/lib/sundials_4.1.0/lib/libsundials_kinsol.a | stan/lib/stan_math/lib/tbb/libtbb.dylib | stan/lib/stan_math/lib/tbb/libtbbmalloc.dylib | stan/lib/stan_math/lib/tbb/libtbbmalloc_proxy.dylib | -o | /Users/yunj/workspace/hubViz-code/vb |
-
 #+begin_src R
 ## data, fixed parameters
 i = 2
@@ -1474,45 +1321,11 @@ theta = sigma_t*rnorm(n)
 rstan::stan_rdump(c('w','w_fr','theta','sigma_w'),"init_list.R")
 #+end_src
 
-#+RESULTS:
-
 - put =init=init_list.R= for custom initialization.
 #+begin_src sh :async
 cd ~/workspace/hubViz-code
 ./vb optimize data file=nofixed.R output file=optim.csv init=init_list.R
 #+end_src
-
-#+RESULTS:
-| method         | =          |    optimize |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
-| optimize       |            |             |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
-| algorithm      | =          |       lbfgs | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
-| lbfgs          |            |             |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
-| init_alpha      | =          |       0.001 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
-| tol_obj         | =          |       1e-12 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
-| tol_rel_obj      | =          |       10000 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
-| tol_grad        | =          |       1e-08 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
-| tol_rel_grad     | =          |    10000000 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
-| tol_param       | =          |       1e-08 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
-| history_size    | =          |           5 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
-| iter           | =          |        2000 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
-| save_iterations | =          |           0 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
-| id             | =          |           0 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
-| data           |            |             |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
-| file           | =          |   nofixed.R |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
-| init           | =          |  init_list.R |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
-| random         |            |             |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
-| seed           | =          |          -1 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
-| output         |            |             |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
-| file           | =          |   optim.csv |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
-| diagnostic_file | =          |   (Default) |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
-| refresh        | =          |         100 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
-| Initial        | log        |       joint | probability |         = | -36325.7 |       |           |   |   |      |   |   |       |        |   |       |       |
-| Iter           | log        |        prob |             |           |       dx |       |           |   |   | grad |   |   | alpha | alpha0 | # | evals | Notes |
-| 99             | -9512.25   |    0.110302 | 24.364      |         1 |        1 |   137 |           |   |   |      |   |   |       |        |   |       |       |
-| Iter           | log        |        prob |             |           |       dx |       |           |   |   | grad |   |   | alpha | alpha0 | # | evals | Notes |
-| 125            | -9512.02   | 5.24062e-05 | 23.602      |    0.1247 |   0.7561 |   182 |           |   |   |      |   |   |       |        |   |       |       |
-| Optimization   | terminated |   normally: |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
-| Convergence    | detected:  |    relative | gradient    | magnitude |       is | below | tolerance |   |   |      |   |   |       |        |   |       |       |
 
 #+begin_src R
 out = as.matrix(readr::read_csv("optim.csv", skip=27))
@@ -1523,14 +1336,6 @@ cname = colnames(mm[[i]])
 
 mdsplot(data.frame(x,y), cname)
 #+end_src
-
-#+RESULTS:
-: Parsed with column specification:
-: cols(
-:   .default = col_double()
-: )
-: See spec(...) for full column specifications.
-: #   -00:12/03:11#   -00:11/03:11#   -00:10/03:11#   -00:09/03:11
 * C++ MCMC output
 #+begin_src sh :tangle run.sh
 #!/usr/bin/env bash
@@ -1541,7 +1346,6 @@ for v in {1..5}
 do
 ./main parallel $v 5000 5000 10
 done
-Rscript art-analysis.R
 #+end_src
 
 #+begin_src sh :tangle run_more.sh
@@ -1553,9 +1357,441 @@ do
 done
 #+end_src
 
+#+BEGIN_SRC R
+Rcpp::sourceCpp("integrate_incirate.cpp")
+#+END_SRC
+
+#+BEGIN_SRC R
+source('load-output.R')
+source("Rfunction.R")
+library(coda)
+library(tidyverse)
+library(MCMCpack)
+library(bayesplot)
+#+END_SRC
+
+** load outputs
+#+begin_src R :results silent :tangle load-outputs.R
+mvar = read_csv("mvar.csv", col_names=F) %>% as.matrix()
+I = mvar[1]
+N = mvar[2]
+G = mvar[4]
+
+sj = read_csv("mlen.csv",col_names=F) %>% as.matrix()
+sj = c(0, cumsum(sj))
+H = sj[2:(G+1)] - sj[1:G]
+
+cnames = c(".chain", ".iteration")
+for (c in 0:1) {
+  for (i in 1:I) {
+    for (g in 1:G) {
+      cnames = c(cnames, paste0("lambda.",c,".",i,".",g))
+    }}}
+
+for (i in 1:I) {
+  for (c in 0:1) {
+    cnames = c(cnames, paste0("beta.",i,".",c))
+  }}
+
+for (k in 1:N) {
+  for (c in 0:1) {
+    cnames = c(cnames, paste0("theta.",k,".",c))
+  }}
+
+for(c in 0:1)
+  for (k in 1:N) {
+    for (d in 1:2) {
+      cnames = c(cnames, paste0("z.",c,".",k,".",d))
+    }}
+for (i in 1:I) {
+  for (d in 1:2) {
+    cnames = c(cnames, paste0("w.",i,".",d))
+  }}
+
+for (c in 0:1) {
+  cnames = c(cnames, paste0("gamma.",c))
+}
+
+cnames = c(cnames, "sigma", "lp_")
+#+end_src
+
+#+BEGIN_SRC R :results silent :tangle load-outputs.R
+## mythin = 10
+## mystart = 5001
+## myend = 25000
+mydf = list()
+mylist = mcmc.list()
+for (cid in 1:5) {
+mydf[[cid]] = read_csv(paste0("output/sample_chain",cid,".csv"), col_names=F) %>% as.data.frame()
+colnames(mydf[[cid]]) = cnames
+}
+
+## mylist[[cid]] = mcmc(df, start = mystart, end = myend, thin = mythin)
+#+END_SRC
+
+** convergence analysis
+ #+begin_src R :results silent :tangle load-outputs.R
+ Xstar = find_xstar_inlist(mydf)
+ temp = do_procrustes(Xstar, mydf, is_list = TRUE)
+ #+end_src
+
+ #+begin_src R :results silent :tangle load-outputs.R
+ mydf = temp$mydf
+ z0 = temp$z0
+ z1 = temp$z1
+ w = temp$w
+ xmin = min(z0[,1],z1[,1],w[,1])
+ ymin = min(z0[,2],z1[,2],w[,2])
+ xmax = max(z0[,1],z1[,1],w[,1])
+ ymax = max(z0[,2],z1[,2],w[,2])
+
+ #+end_src
+
+ #+BEGIN_SRC R :tangle load-outputs.R
+ mylist = mcmc.list()
+ for (cid in 1:5) {
+ mylist[[cid]] = mcmc(mydf[[cid]])
+ }
+ #+END_SRC
+
+** latent space
+  [[file:figure/temp_latent.pdf]]
+  #+BEGIN_SRC R
+  z0 = Xstar[1:N,]
+  z1 = Xstar[(N+1):(2*N),]
+  w = Xstar[(2*N + 1):nrow(Xstar),]
+  xmin = min(z0[,1],z1[,1],w[,1])
+  ymin = min(z0[,2],z1[,2],w[,2])
+  xmax = max(z0[,1],z1[,1],w[,1])
+  ymax = max(z0[,2],z1[,2],w[,2])
+
+ pdf("figure/temp_latent.pdf")
+  lsjmplot(z0,w,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname)
+  lsjmplot(z1,w,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname)
+ dev.off()
+  #+END_SRC
+
+  [[file:figure/latent_position_plot_1.pdf]]
+  [[file:figure/latent_position_plot_2.pdf]]
+  [[file:figure/latent_position_plot_3.pdf]]
+  [[file:figure/latent_position_plot_4.pdf]]
+  [[file:figure/latent_position_plot_5.pdf]]
+  [[file:figure/latent_position_plot.pdf]]
+  [[file:figure/latent_position_plot_0.pdf]]
+  [[file:figure/latent_position_plot_01.pdf]]
+  #+begin_src R
+  pdf("figure/latent_position_plot_01.pdf")
+  myname = c(1:N,paste0("I.",1:I))
+  lsjmplot(z0,w,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname)
+  lsjmplot(z1,w,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname)
+  dev.off()
+  #+end_src
+
+** trace plots
+   [[file:figure/lambda_mcmc_interval_plot.pdf]]
+   #+BEGIN_SRC R :tangle draw_trace_plot.pdf
+   pdf("figure/lambda_mcmc_interval_plot.pdf")
+   lambda0.sam = df[,grepl("^lambda.0", colnames(df))]
+   mcmc_intervals(lambda0.sam)
+   ##mcmc_areas(
+   ##  lambda0.sam,
+   ##  prob = 0.8, # 80% intervals
+   ##  prob_outer = 0.99, # 99%
+   ##  point_est = "mean"
+   ##)
+
+   lambda1.sam = df[,grepl("^lambda.1", colnames(df))]
+   mcmc_intervals(lambda1.sam)
+   dev.off()
+   #+END_SRC
+
+  [[file:figure/z_mcmc_trace_plot.pdf]]
+  [[file:figure/z_mcmc_trace_plot_1.pdf]]
+  [[file:figure/z_mcmc_trace_plot_2.pdf]]
+   #+BEGIN_SRC R :tangle draw_trace_plot.pdf
+   ## mcmc_intervals(mylist, pars=c("lambda.0.1.1")
+   pdf("figure/z_mcmc_trace_plot_2.pdf")
+   p <- mcmc_trace(mylist,
+                   ##pars = c("lambda.0.1.1",  "lambda.0.1.2",  "lambda.0.1.3", "lambda.0.1.4"),
+                   regex_pars = "^z.[0-1]\\.[1-2]\\.",
+                   ##transformations = "log",
+                   facet_args = list(nrow = 2, labeller = label_parsed))
+   p + facet_text(size = 15)
+   dev.off()
+   #+END_SRC
+
+  [[file:figure/w_mcmc_trace_plot.pdf]]
+  [[file:figure/w_mcmc_trace_plot_1.pdf]]
+   #+BEGIN_SRC R :tangle draw_trace_plot.pdf
+   ## mcmc_intervals(mylist, pars=c("lambda.0.1.1")
+   pdf("figure/w_mcmc_trace_plot_1.pdf")
+   p <- mcmc_trace(mylist,
+                   ##pars = c("lambda.0.1.1",  "lambda.0.1.2",  "lambda.0.1.3", "lambda.0.1.4"),
+                   regex_pars = "^w\\.[1-2]\\.",
+                   ##transformations = "log",
+                   facet_args = list(nrow = 2, labeller = label_parsed))
+   p + facet_text(size = 15)
+   dev.off()
+   #+END_SRC
+
+   [[file:figure/lambda_mcmc_trace_plot.pdf]]
+   [[file:figure/lambda_mcmc_trace_plot_1.pdf]]
+   #+BEGIN_SRC R :tangle draw_trace_plot.pdf
+   pdf("figure/lambda_mcmc_trace_plot_1.pdf")
+   color_scheme_set("mix-blue-pink")
+   p <- mcmc_trace(mylist,
+                   regex_pars = "^lambda\\.0\\.1\\.",
+                  transformations = "log",
+                   facet_args = list(nrow = 2, labeller = label_parsed))
+   p + facet_text(size = 15)
+   p <- mcmc_trace(mylist,
+                   regex_pars = "^lambda\\.1\\.1\\.",
+                  transformations = "log",
+                   facet_args = list(nrow = 2, labeller = label_parsed))
+   p + facet_text(size = 15)
+   dev.off()
+   #+END_SRC
+
+   [[file:figure/beta_mcmc_trace_plot.pdf]]
+   #+BEGIN_SRC R :tangle draw_trace_plot.pdf
+   pdf("figure/beta_mcmc_trace_plot.pdf")
+   color_scheme_set("mix-blue-pink")
+   p <- mcmc_trace(mylist,
+                   regex_pars = "^beta\\.[1-2]",
+                   facet_args = list(nrow = 2, labeller = label_parsed))
+   p + facet_text(size = 15)
+   dev.off()
+   #+END_SRC
+
+   [[file:figure/theta_mcmc_trace_plot.pdf]]
+   #+BEGIN_SRC R :tangle draw_trace_plot.pdf
+   pdf("figure/theta_mcmc_trace_plot.pdf")
+   color_scheme_set("mix-blue-pink")
+   p <- mcmc_trace(mylist,
+                   regex_pars = "^theta\\.[1-2]\\.",
+                   facet_args = list(nrow = 2, labeller = label_parsed))
+   p + facet_text(size = 15)
+   dev.off()
+   #+END_SRC
+
+   [[file:figure/lp_sigma_mcmc_trace_plot.pdf]]
+   [[file:figure/lp_sigma_mcmc_trace_plot_1.pdf]]
+   #+BEGIN_SRC R :tangle draw_trace_plot.pdf
+   pdf("figure/lp_sigma_mcmc_trace_plot_1.pdf")
+   color_scheme_set("mix-blue-pink")
+   p <- mcmc_trace(mylist,
+                   pars = c("sigma", "lp_"),
+                   facet_args = list(nrow = 2, labeller = label_parsed))
+   p + facet_text(size = 15)
+   dev.off()
+   #+END_SRC
+
+** output analysis
+
+#+BEGIN_SRC R
+library(foreach)
+library(doParallel)
+registerDoParallel(cores=4)
+t = 1:1000
+#+END_SRC
+
+#+BEGIN_SRC R
+tmp = foreach(v=1:5, .combine='rbind') %dopar% apply(mydf[[1]], 2, mean)
+posm = apply(tmp, 2, mean)
+cname = names(posm)
+#+END_SRC
+
+[[file:figure/tradeoff1_1.pdf]]
+#+BEGIN_SRC R
+accuracy = foreach(k=1:N, .combine='rbind') %dopar% fun_accuracy_ick(t,i,k,posm,cname,sj)
+
+pdf("figure/tradeoff1_1.pdf")
+
+plotdf <- reshape::melt(accuracy, id.vars=c("t"))
+colnames(plotdf) = c("person", "time", "accuracy")
+ggplot(data=plotdf, aes(x=time, y=accuracy, group=person)) +
+  geom_line(aes(color=factor(person)), show.legend=FALSE) +
+  # geom_line(group="3", col="red") +
+  ##scale_colour_grey() +
+  theme_bw() +
+  ggtitle(paste0("Plot of speed-accuracy tradeoff for item ",i,"."))
+dev.off()
+#+END_SRC
+
+[[file:figure/tradeoff2.pdf]]
+#+BEGIN_SRC R
+i = 2
+accuracy = foreach(k=1:N, .combine='rbind') %dopar% fun_accuracy_ick(t,i,k,posm,cname,sj)
+pdf("figure/tradeoff2.pdf")
+
+plotdf <- reshape::melt(accuracy, id.vars=c("t"))
+colnames(plotdf) = c("person", "time", "accuracy")
+ggplot(data=plotdf, aes(x=time, y=accuracy, group=person)) +
+  geom_line(aes(color=factor(person)), show.legend=FALSE) +
+  # geom_line(group="3", col="red") +
+  ##scale_colour_grey() +
+  theme_bw() +
+    ggtitle(paste0("Plot of speed-accuracy tradeoff for item ",i,"."))
+dev.off()
+#+END_SRC
+
+[[file:figure/tradeoff3.pdf]]
+#+BEGIN_SRC R
+i = 3
+accuracy = foreach(k=1:N, .combine='rbind') %dopar% fun_accuracy_ick(t,i,k,posm,cname,sj)
+pdf("figure/tradeoff3.pdf")
+
+plotdf <- reshape::melt(accuracy, id.vars=c("t"))
+colnames(plotdf) = c("person", "time", "accuracy")
+ggplot(data=plotdf, aes(x=time, y=accuracy, group=person)) +
+  geom_line(aes(color=factor(person)), show.legend=FALSE) +
+  # geom_line(group="3", col="red") +
+  ##scale_colour_grey() +
+  theme_bw() +
+    ggtitle(paste0("Plot of speed-accuracy tradeoff for item ",i,"."))
+dev.off()
+#+END_SRC
+
+#+BEGIN_SRC R :tangle Rfunction.R
+fun_hazard_surv = function(t,i,k,posm,cname,sj) {
+  z = posm[str_which(cname, paste0("z\\.[0-1]\\.",k,"\\.[1-2]"))] %>% matrix(ncol = 2)
+  w = rep(posm[str_which(cname, paste0("w\\.",i,"\\."))], 2)  %>% matrix(ncol = 2)
+  gamma = posm[str_which(cname, paste0("gamma"))] %>% matrix(ncol = 2)
+  beta = posm[str_which(cname, paste0("beta\\.",i,"\\."))] %>% matrix(ncol = 2)
+  theta = posm[str_which(cname, paste0("theta\\.",k,"\\."))] %>% matrix(ncol = 2)
+  lambda = posm[str_which(cname, paste0("lambda\\.[0-1]\\.",i,"\\."))] %>% matrix(ncol = 2)
+
+  G = length(lambda[,1])
+  H = sj[2:(G+1)] - sj[1:G]
+
+  seg = 0
+  for (g in 1:G) {
+    seg = seg + 1 * (t > sj[g])
+    }
+  out = lambda[seg,2] * exp(beta[,2] + theta[,2] - gamma[,2] * sqrt(sum((z[,2]-w[,2])^2)))
+  if (seg == 1) {
+    for (c in 1:2) {
+      out = out * exp(
+                    - ((t - sj[seg]) *lambda[seg,c]) * exp(beta[,c] + theta[,c] - gamma[,c] * sqrt( sum((z[,c]-w[,c])^2))))
+    }
+  } else {
+    for (c in 1:2) {
+      out = out * exp(
+                    - ((t - sj[seg]) *lambda[seg,c] + sum(H[1:(seg-1)] * lambda[1:(seg-1),c])) * exp(beta[,c] + theta[,c] - gamma[,c] * sqrt(sum((z[,c]-w[,c])^2))))
+    }
+    }
+    names(out) = NULL
+    return(out)
+  }
+#+END_SRC
+
+#+BEGIN_SRC R
+getparam = function(i,k,posm) {
+z = posm[str_which(cname, paste0("z\\..\\.",k,"\\.[1-2]"))] %>% matrix(ncol = 2) %>% t()
+w = posm[str_which(cname, paste0("w\\.",i,"\\."))]
+gamma = posm[str_which(cname, paste0("gamma"))]
+beta = posm[str_which(cname, paste0("beta\\.",i,"\\."))]
+theta = posm[str_which(cname, paste0("theta\\.",k,"\\."))]
+lambda = posm[str_which(cname, paste0("lambda\\..\\.",i,"\\."))] %>% matrix(ncol = 2) %>% t()
+return(list(lambda=lambda,beta=beta,theta=theta,gamma=gamma,z=z,w=w))
+}
+param = getparam(i,k,posm)
+H = sj[2:(G+1)] - sj[1:G]
+ll = 0;
+uu = 50
+
+integrate_incirate(ll, uu, 1, param$lambda, param$beta, param$theta, param$gamma, param$z, param$w, sj, H)
+eval_incirate(uu, 1, param$lambda, param$beta, param$theta, param$gamma, param$z, param$w, sj, H)
+## fun_hazard_surv(uu,i,k,posm,cname,sj)
+
+eval_accuracy(1:100, param$lambda, param$beta, param$theta, param$gamma, param$z, param$w, sj, H)
+#+END_SRC
+
+#+BEGIN_SRC R
+##CIF = foreach (k=1:50, .combine='rbind') %dopar% {
+##integrand <- function(t) {
+##  fun_hazard_surv(t,i,k,posm,cname,sj)
+##}
+##CIF_k = foreach(t=1:200, .combine='c') %dopar% {
+##  integrate(integrand, lower = t-1, upper = t)$value
+##}
+##cumsum(CIF_k)
+##}
+#+END_SRC
+
+#+BEGIN_SRC R
+i = 1
+myN = 100
+maxt = 300
+
+CIF_T = foreach (k=1:myN, .combine='rbind') %dopar% {
+  param = getparam(i,k,posm)
+  CIF_k = foreach(t=1:maxt, .combine='c') %dopar% {
+    integrate_incirate(t-1, t, 1, param$lambda, param$beta, param$theta, param$gamma, param$z, param$w, sj, H)$approximate
+  }
+  cumsum(CIF_k)
+}
+
+CIF_F = foreach (k=1:myN, .combine='rbind') %dopar% {
+  param = getparam(i,k,posm)
+  CIF_k = foreach(t=1:maxt, .combine='c') %dopar% {
+    integrate_incirate(t-1, t, 0, param$lambda, param$beta, param$theta, param$gamma, param$z, param$w, sj, H)$approximate
+  }
+  cumsum(CIF_k)
+}
+#+END_SRC
+
+[[file:figure/CIF_1.pdf]]
+#+BEGIN_SRC R
+pdf(paste0("figure/CIF_",i,".pdf"))
+t = 1:maxt
+plotdf <- reshape::melt(CIF_T, id.vars=c("t"))
+colnames(plotdf) = c("person", "time", "CIF")
+ggplot(data=plotdf, aes(x=time, y=CIF, group=person)) +
+  geom_line(aes(color=factor(person)), show.legend=FALSE) +
+  # geom_line(group="3", col="red") +
+  ##scale_colour_grey() +
+  theme_bw() +
+    ggtitle(paste0("Cumulative incidence function for TRUE response (item ",i,")."))
+plotdf <- reshape::melt(CIF_F, id.vars=c("t"))
+colnames(plotdf) = c("person", "time", "CIF")
+ggplot(data=plotdf, aes(x=time, y=CIF, group=person)) +
+  geom_line(aes(color=factor(person)), show.legend=FALSE) +
+  # geom_line(group="3", col="red") +
+  ##scale_colour_grey() +
+    ggtitle(paste0("Cumulative incidence function for 0RUE response (item ",i,")."))
+dev.off()
+#+END_SRC
+
+** custom functions
+
+#+BEGIN_SRC R :tangle Rfunction.R
+fun_hazard_ick = function(t,i,c,k,posm,cname,sj) {
+z = posm[str_which(cname, paste0("z\\.",c,"\\.",k,"\\.[1-2]"))]
+w = posm[str_which(cname, paste0("w\\.",i))]
+gamma = posm[str_which(cname, paste0("gamma\\.",c))]
+beta = posm[str_which(cname, paste0("beta\\.",i,"\\.",c))]
+theta = posm[str_which(cname, paste0("theta\\.",k,"\\.",c))]
+lambda = posm[str_which(cname, paste0("lambda\\.",c,"\\.",i,"\\."))]
+
+G = length(lambda)
+seg = 0 * t
+for (g in 1:G)
+  seg = seg + 1 * (t > sj[g])
+hazard = lambda[seg] * exp(beta + theta - gamma * sum((z-w)^2))
+names(hazard) = NULL
+return(hazard)
+}
+#+END_SRC
+
+#+BEGIN_SRC R :tangle Rfunction.R
+fun_accuracy_ick = function(t,i,k,posm,cname,sj) {
+fun_hazard_ick(t,i,1,k,posm,cname,sj) / (fun_hazard_ick(t,i,1,k,posm,cname,sj) + fun_hazard_ick(t,i,0,k,posm,cname,sj))
+}
+#+END_SRC
 
 #+NAME: mdsplot
-#+BEGIN_SRC R :tangle fun_art_R.R
+#+BEGIN_SRC R :tangle Rfunction.R
 library(ggplot2)
 library(ggrepel)
 
@@ -1611,451 +1847,7 @@ lsjmplot <- function( z, w, myname = NULL, xlim=NA, ylim=NA, lab = "Coordinate")
 }
 #+END_SRC
 
-#+RESULTS: mdsplot
-** load outputs
-#+begin_src R :results silent :tangle art-analysis.R
-source("fun_art_R.R")
-library(coda)
-library(tidyverse)
-library(MCMCpack)
-library(bayesplot)
-
-mvar = read_csv("mvar.csv", col_names=F) %>% as.matrix()
-I = mvar[1]
-N = mvar[2]
-G = mvar[4]
-
-cnames = c(".chain", ".iteration")
-for (c in 0:1) {
-  for (i in 1:I) {
-    for (g in 1:G) {
-      cnames = c(cnames, paste0("lambda.",c,".",i,".",g))
-    }}}
-
-for (i in 1:I) {
-  for (c in 0:1) {
-    cnames = c(cnames, paste0("beta.",i,".",c))
-  }}
-
-for (k in 1:N) {
-  for (c in 0:1) {
-    cnames = c(cnames, paste0("theta.",k,".",c))
-  }}
-
-for(c in 0:1)
-  for (k in 1:N) {
-    for (d in 1:2) {
-      cnames = c(cnames, paste0("z.",c,".",k,".",d))
-    }}
-for (i in 1:I) {
-  for (d in 1:2) {
-    cnames = c(cnames, paste0("w.",i,".",d))
-  }}
-
-for (c in 0:1) {
-  cnames = c(cnames, paste0("gamma.",c))
-}
-
-cnames = c(cnames, "sigma", "lp_")
-#+end_src
-
-#+BEGIN_SRC R :tangle art-analysis.R
-sj = read_csv("mlen.csv",col_names=F) %>% as.matrix()
-sj = c(0, cumsum(sj))
-
-#+END_SRC
-
-#+RESULTS:
-: Parsed with column specification:
-: cols(
-:   X1 = [32mcol_double()[39m
-: )
-
-#+BEGIN_SRC R :results silent :tangle art-analysis.R
-## mythin = 10
-## mystart = 5001
-## myend = 25000
-mydf = list()
-mylist = mcmc.list()
-for (cid in 1:5) {
-mydf[[cid]] = read_csv(paste0("output/sample_chain",cid,".csv"), col_names=F) %>% as.data.frame()
-colnames(mydf[[cid]]) = cnames
-}
-
-## mylist[[cid]] = mcmc(df, start = mystart, end = myend, thin = mythin)
-#+END_SRC
-
-** convergence analysis
- #+begin_src R :results silent :tangle art-analysis.R
- Xstar = find_xstar_inlist(mydf)
- temp = do_procrustes(Xstar, mydf, is_list = TRUE)
- #+end_src
-
- #+begin_src R :results silent :tangle art-analysis.R
- mydf = temp$mydf
- z0 = temp$z0
- z1 = temp$z1
- w = temp$w
- xmin = min(z0[,1],z1[,1],w[,1])
- ymin = min(z0[,2],z1[,2],w[,2])
- xmax = max(z0[,1],z1[,1],w[,1])
- ymax = max(z0[,2],z1[,2],w[,2])
-
- #+end_src
-
- #+BEGIN_SRC R :tangle art-analysis.R
- mylist = mcmc.list()
- for (cid in 1:5) {
- mylist[[cid]] = mcmc(mydf[[cid]])
- }
- #+END_SRC
-
- #+RESULTS:
-
- [[file:figure/temp_latent.pdf]]
- #+BEGIN_SRC R
- z0 = Xstar[1:N,]
- z1 = Xstar[(N+1):(2*N),]
- w = Xstar[(2*N + 1):nrow(Xstar),]
- xmin = min(z0[,1],z1[,1],w[,1])
- ymin = min(z0[,2],z1[,2],w[,2])
- xmax = max(z0[,1],z1[,1],w[,1])
- ymax = max(z0[,2],z1[,2],w[,2])
-
-pdf("figure/temp_latent.pdf")
- lsjmplot(z0,w,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname)
- lsjmplot(z1,w,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname)
-dev.off()
- #+END_SRC
-
- #+RESULTS:
- : Warning message:
- : Ignoring unknown parameters: segment.colour
- : Warning message:
- : Ignoring unknown parameters: segment.colour
- : null device
- :           1
-
- [[file:figure/latent_position_plot_1.pdf]]
- [[file:figure/latent_position_plot_2.pdf]]
- [[file:figure/latent_position_plot_3.pdf]]
- [[file:figure/latent_position_plot_4.pdf]]
- [[file:figure/latent_position_plot_5.pdf]]
- [[file:figure/latent_position_plot.pdf]]
- [[file:figure/latent_position_plot_0.pdf]]
- #+begin_src R :tangle art-analysis.R
- pdf("figure/latent_position_plot_0.pdf")
- myname = c(1:N,paste0("I.",1:I))
- lsjmplot(z0,w,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname)
- lsjmplot(z1,w,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname)
- dev.off()
- #+end_src
-
- #+RESULTS:
- : Warning message:
- : Ignoring unknown parameters: segment.colour
- : Warning message:
- : Ignoring unknown parameters: segment.colour
- : null device
- :           1
-
- [[file:figure/lambda_mcmc_interval_plot.pdf]]
- #+BEGIN_SRC R
- pdf("figure/lambda_mcmc_interval_plot.pdf")
- lambda0.sam = df[,grepl("^lambda.0", colnames(df))]
- mcmc_intervals(lambda0.sam)
- ##mcmc_areas(
- ##  lambda0.sam,
- ##  prob = 0.8, # 80% intervals
- ##  prob_outer = 0.99, # 99%
- ##  point_est = "mean"
- ##)
-
- lambda1.sam = df[,grepl("^lambda.1", colnames(df))]
- mcmc_intervals(lambda1.sam)
- dev.off()
- #+END_SRC
-
- #+RESULTS:
- : null device
- :           1
-
-[[file:figure/z_mcmc_trace_plot.pdf]]
-[[file:figure/z_mcmc_trace_plot_1.pdf]]
-[[file:figure/z_mcmc_trace_plot_2.pdf]]
- #+BEGIN_SRC R
- ## mcmc_intervals(mylist, pars=c("lambda.0.1.1")
- pdf("figure/z_mcmc_trace_plot_2.pdf")
- p <- mcmc_trace(mylist,
-                 ##pars = c("lambda.0.1.1",  "lambda.0.1.2",  "lambda.0.1.3", "lambda.0.1.4"),
-                 regex_pars = "^z.[0-1]\\.[1-2]\\.",
-                 ##transformations = "log",
-                 facet_args = list(nrow = 2, labeller = label_parsed))
- p + facet_text(size = 15)
- dev.off()
- #+END_SRC
-
- #+RESULTS:
- : null device
- :           1
-
-[[file:figure/w_mcmc_trace_plot.pdf]]
-[[file:figure/w_mcmc_trace_plot_1.pdf]]
- #+BEGIN_SRC R
- ## mcmc_intervals(mylist, pars=c("lambda.0.1.1")
- pdf("figure/w_mcmc_trace_plot_1.pdf")
- p <- mcmc_trace(mylist,
-                 ##pars = c("lambda.0.1.1",  "lambda.0.1.2",  "lambda.0.1.3", "lambda.0.1.4"),
-                 regex_pars = "^w\\.[1-2]\\.",
-                 ##transformations = "log",
-                 facet_args = list(nrow = 2, labeller = label_parsed))
- p + facet_text(size = 15)
- dev.off()
- #+END_SRC
-
- #+RESULTS:
- : quartz
- :      2
-
- [[file:figure/lambda_mcmc_trace_plot.pdf]]
- [[file:figure/lambda_mcmc_trace_plot_1.pdf]]
- #+BEGIN_SRC R
- pdf("figure/lambda_mcmc_trace_plot_1.pdf")
- color_scheme_set("mix-blue-pink")
- p <- mcmc_trace(mylist,
-                 regex_pars = "^lambda\\.0\\.1\\.",
-                transformations = "log",
-                 facet_args = list(nrow = 2, labeller = label_parsed))
- p + facet_text(size = 15)
- p <- mcmc_trace(mylist,
-                 regex_pars = "^lambda\\.1\\.1\\.",
-                transformations = "log",
-                 facet_args = list(nrow = 2, labeller = label_parsed))
- p + facet_text(size = 15)
- dev.off()
- #+END_SRC
-
- #+RESULTS:
- : quartz
- :      2
-
- [[file:figure/beta_mcmc_trace_plot.pdf]]
- #+BEGIN_SRC R
- pdf("figure/beta_mcmc_trace_plot.pdf")
- color_scheme_set("mix-blue-pink")
- p <- mcmc_trace(mylist,
-                 regex_pars = "^beta\\.[1-2]",
-                 facet_args = list(nrow = 2, labeller = label_parsed))
- p + facet_text(size = 15)
- dev.off()
- #+END_SRC
-
- #+RESULTS:
- : null device
- :           1
-
- [[file:figure/theta_mcmc_trace_plot.pdf]]
- #+BEGIN_SRC R
- pdf("figure/theta_mcmc_trace_plot.pdf")
- color_scheme_set("mix-blue-pink")
- p <- mcmc_trace(mylist,
-                 regex_pars = "^theta\\.[1-2]\\.",
-                 facet_args = list(nrow = 2, labeller = label_parsed))
- p + facet_text(size = 15)
- dev.off()
- #+END_SRC
-
- #+RESULTS:
- : null device
- :           1
-
- [[file:figure/lp_sigma_mcmc_trace_plot.pdf]]
- [[file:figure/lp_sigma_mcmc_trace_plot_1.pdf]]
- #+BEGIN_SRC R
- pdf("figure/lp_sigma_mcmc_trace_plot_1.pdf")
- color_scheme_set("mix-blue-pink")
- p <- mcmc_trace(mylist,
-                 pars = c("sigma", "lp_"),
-                 facet_args = list(nrow = 2, labeller = label_parsed))
- p + facet_text(size = 15)
- dev.off()
- #+END_SRC
-
- #+RESULTS:
- :
- : null device
- :           1
-
-** output analysis
- #+BEGIN_SRC R
- df = sf
- library(stringr)
- source("pisa_short.R")
- dfname = colnames(df)
- #+END_SRC
-
- #+BEGIN_SRC R
- lambda1.1dx = grepl("^lambda1.1", colnames(df))
- z1dx = grepl("^z1", colnames(df))
- z2dx = grepl("^z2", colnames(df))
- thetadx = grepl("^theta", colnames(df))
- beta.1dx = grepl("^beta.1", colnames(df))
- w.1dx = grepl("^w.1", colnames(df))
- gamma.1dx = grepl("^gamma.1", colnames(df))
- #+END_SRC
-
- #+RESULTS:
-
-#+BEGIN_SRC R
-df = mydf[[1]]
-posm = apply(df, 2, mean)
-cname = names(posm)
-
-fun_hazard_ick = function(t,i,c,k,posm,cname,sj) {
-z = posm[str_which(cname, paste0("z\\.",c,"\\.",k,"\\.[1-2]"))]
-w = posm[str_which(cname, paste0("w\\.",i))]
-gamma = posm[str_which(cname, paste0("gamma\\.",c))]
-beta = posm[str_which(cname, paste0("beta\\.",i,"\\.",c))]
-theta = posm[str_which(cname, paste0("theta\\.",k,"\\.",c))]
-lambda = posm[str_which(cname, paste0("lambda\\.",c,"\\.",i,"\\."))]
-
-G = length(lambda)
-seg = 0 * t
-for (g in 1:G)
-  seg = seg + 1 * (t > sj[g])
-hazard = lambda[seg] * exp(beta + theta - gamma * sum((z-w)^2))
-names(hazard) = NULL
-return(hazard)
-}
-#+END_SRC
-
-#+RESULTS:
-
-#+BEGIN_SRC R
-fun_accuracy_ick = function(t,i,k,posm,cname,sj) {
-fun_hazard_ick(t,i,1,k,posm,cname,sj) / (fun_hazard_ick(t,i,1,k,posm,cname,sj) + fun_hazard_ick(t,i,0,k,posm,cname,sj))
-}
-#+END_SRC
-
-#+RESULTS:
-
-#+BEGIN_SRC R
-library(foreach)
-library(doParallel)
-registerDoParallel(cores=4)
-t = 1:1000
-#+END_SRC
-
-[[file:figure/tradeoff1_1.pdf]]
-#+BEGIN_SRC R
-i = 1
-accuracy = foreach(k=1:N, .combine='rbind') %dopar% fun_accuracy_ick(t,i,k,posm,cname,sj)
-
-pdf("figure/tradeoff1_1.pdf")
-
-plotdf <- reshape::melt(accuracy, id.vars=c("t"))
-colnames(plotdf) = c("person", "time", "accuracy")
-ggplot(data=plotdf, aes(x=time, y=accuracy, group=person)) +
-  geom_line(aes(color=factor(person)), show.legend=FALSE) +
-  # geom_line(group="3", col="red") +
-  ##scale_colour_grey() +
-  theme_bw() +
-  ggtitle(paste0("Plot of speed-accuracy tradeoff for item ",i,"."))
-dev.off()
-#+END_SRC
-
-#+RESULTS:
-#+begin_example
-Error in foreach(k = 1:N, .combine = "rbind") %dopar% fun_accuracy_ick(t,  :
-  could not find function "%dopar%"
-Error in reshape::melt(accuracy, id.vars = c("t")) :
-  object 'accuracy' not found
-Error in colnames(plotdf) = c("person", "time", "accuracy") :
-  object 'plotdf' not found
-Error in ggplot(data = plotdf, aes(x = time, y = accuracy, group = person)) :
-  object 'plotdf' not found
-null device
-          1
-#+end_example
-
-[[file:figure/tradeoff2.pdf]]
-#+BEGIN_SRC R
-i = 2
-accuracy = foreach(k=1:N, .combine='rbind') %dopar% fun_accuracy_ick(t,i,k,posm,cname,sj)
-pdf("figure/tradeoff2.pdf")
-
-plotdf <- reshape::melt(accuracy, id.vars=c("t"))
-colnames(plotdf) = c("person", "time", "accuracy")
-ggplot(data=plotdf, aes(x=time, y=accuracy, group=person)) +
-  geom_line(aes(color=factor(person)), show.legend=FALSE) +
-  # geom_line(group="3", col="red") +
-  ##scale_colour_grey() +
-  theme_bw() +
-    ggtitle(paste0("Plot of speed-accuracy tradeoff for item ",i,"."))
-dev.off()
-#+END_SRC
-
-#+RESULTS:
-: pdf
-:   2
-
-[[file:figure/tradeoff3.pdf]]
-#+BEGIN_SRC R
-i = 3
-accuracy = foreach(k=1:N, .combine='rbind') %dopar% fun_accuracy_ick(t,i,k,posm,cname,sj)
-pdf("figure/tradeoff3.pdf")
-
-plotdf <- reshape::melt(accuracy, id.vars=c("t"))
-colnames(plotdf) = c("person", "time", "accuracy")
-ggplot(data=plotdf, aes(x=time, y=accuracy, group=person)) +
-  geom_line(aes(color=factor(person)), show.legend=FALSE) +
-  # geom_line(group="3", col="red") +
-  ##scale_colour_grey() +
-  theme_bw() +
-    ggtitle(paste0("Plot of speed-accuracy tradeoff for item ",i,"."))
-dev.off()
-#+END_SRC
-
-#+BEGIN_SRC R
-fun_hazard_surv = function(t,i,k,posm,cname,sj) {
-z = posm[str_which(cname, paste0("z\\.[0-1]\\.",k,"\\.[1-2]"))] %>% matrix(ncol = 2)
-w = rep(posm[str_which(cname, paste0("w\\.",i))], 2)  %>% matrix(ncol = 2)
-gamma = posm[str_which(cname, paste0("gamma"))] %>% matrix(ncol = 2)
-beta = posm[str_which(cname, paste0("beta\\.",i))] %>% matrix(ncol = 2)
-theta = posm[str_which(cname, paste0("theta\\.",k,"\\."))] %>% matrix(ncol = 2)
-lambda = posm[str_which(cname, paste0("lambda\\.[0-1]\\.",i,"\\."))] %>% matrix(ncol = 2)
-
-G = length(lambda[,1])
-seg = 0 * t
-for (g in 1:G)
-  seg = seg + 1 * (t > sj[g])
-out = lambda[seg,1] * exp(beta[,1] + theta[,1] - gamma[,1] * sum((z[,1]-w[,1])^2))
-for (c in 1:2) {
-out = out * exp(
-- ((sj[seg + 1]-t) *lambda[seg,c] + (sj[1:seg][-1] * lambda[seg-1,c])) * exp(beta[,c] + theta[,c] - gamma[,c] * sum((z[,c]-w[,c])^2)))
-}
-names(out) = NULL
-return(out)
-}
-#+END_SRC
-
-#+BEGIN_SRC R
-library(CFC)
-integrand <- function(t) {fun_accuracy_ick(t,i,k,posm,cname,sj)}
-
-#+END_SRC
-
-#+BEGIN_SRC R
-CIF = foreach (k=1:N, .combine='rbind') %do% {
-integrand <- function(t) {fun_accuracy_ick(t,i,k,posm,cname,sj)}
-CIF_k = foreach(t=1:500, .combine='c') %dopar% integrate(integrand, lower = t-1, upper = t)$value
-}
-#+END_SRC
-
-#+RESULTS:
-: 3.369823 with absolute error < 3.7e-14
-** custom functions
-#+BEGIN_SRC R :tangle fun_art_R.R
+#+BEGIN_SRC R :tangle Rfunction.R
 find_xstar = function(df) {
 num_samples = nrow(df)
 
@@ -2071,9 +1863,7 @@ Xstar = matrix(unlist(lpos[star,]), ncol = 2)
 return(list(lp_ = mlp_, Xstar=Xstar))}
 #+END_SRC
 
-#+RESULTS:
-
-#+BEGIN_SRC R :tangle fun_art_R.R
+#+BEGIN_SRC R :tangle Rfunction.R
 find_xstar_inlist = function(mydf) {
 num_chain = length(mydf)
 mlp = -Inf
@@ -2083,10 +1873,7 @@ mlp = -Inf
   }
 return(Xstar)}
 #+END_SRC
-
-#+RESULTS:
-
-#+BEGIN_SRC R :tangle fun_art_R.R
+#+BEGIN_SRC R :tangle Rfunction.R
 do_procrustes = function(Xstar, mydf, is_list = FALSE, translation = TRUE, dilation = FALSE) {
   posm = 0
   if (is_list == TRUE) {
@@ -2119,16 +1906,8 @@ do_procrustes = function(Xstar, mydf, is_list = FALSE, translation = TRUE, dilat
     if (is_list == TRUE) { mydf[[i]] = df
     } else { mydf = df }
   }
-
-  posm = posm / num_chain
-  z0= posm[1:N,]
-  w = posm[-(1:(2*N)),]
-  z1 = posm[(N + 1):(2*N),]
-  return(list(mydf = mydf,  z0=z0, z1=z1, w=w))
-}
 #+END_SRC
 
-#+RESULTS:
 * opusIII-matrices-data.dat
 
 #+BEGIN_SRC R :results none
@@ -2137,7 +1916,7 @@ num_item
 
 setwd("~/Dropbox/research/lsjm-art/lsjm-code")
 
-source("fun_art_R.R")
+source("Rfunction.R")
 
 library(tidyverse)
 
@@ -2152,10 +1931,6 @@ dt = df[,-3]
 di = reshape2::dcast(di, item ~ person)
 dt = reshape2::dcast(dt, item ~ person)
 #+END_SRC
-
-#+RESULTS:
-: Using PbyI as value column: use value.var to override.
-: Using PbyI as value column: use value.var to override.
 
 ** boxplot :ARCHIVE:
 #+BEGIN_SRC R
@@ -2172,40 +1947,9 @@ dit01 = cbind(di01_long, dt01_long[,5])
 colnames(dit01)[4:6] = c("item","res","time")
 #+END_SRC
 
-#+RESULTS:
-:
-: Attaching package: 'reshape2'
-:
-: The following object is masked from 'package:tidyr':
-:
-:     smiths
-: [1] TRUE
-: [1] TRUE
-: [1] TRUE
-
 #+BEGIN_SRC R :results value
 dit01 %>% group_by(item) %>% summarise(F = sum(res == 0), T = sum(res == 1), mis = sum(res == 99))
 #+END_SRC
-
-#+RESULTS:
-| DS269Q01C | 353 | 218 | 21 |
-| DS269Q03C | 349 | 220 | 23 |
-| CS269Q04S | 421 | 167 |  4 |
-| CS408Q01S | 270 | 318 |  4 |
-| DS408Q03C | 350 | 228 | 14 |
-| CS408Q04S | 255 | 334 |  3 |
-| CS408Q05S | 429 | 158 |  5 |
-| CS466Q01S | 223 | 365 |  4 |
-| CS466Q05S | 318 | 265 |  9 |
-| CS466Q07S | 150 | 436 |  6 |
-| DS519Q01C | 297 | 275 | 20 |
-| CS519Q02S | 276 | 313 |  3 |
-| DS519Q03C | 461 | 112 | 19 |
-| CS521Q02S | 291 | 299 |  2 |
-| CS521Q06S |  77 | 511 |  4 |
-| CS527Q01S | 493 |  98 |  1 |
-| CS527Q03S | 219 | 370 |  3 |
-| CS527Q04S | 264 | 325 |  3 |
 
 #+BEGIN_SRC R
 rt_boxp <- ggplot(dit01, aes(x=factor(res),y=time,fill=factor(res)))+
@@ -2213,8 +1957,6 @@ rt_boxp <- ggplot(dit01, aes(x=factor(res),y=time,fill=factor(res)))+
 logrt_boxp <- ggplot(dit01, aes(x=factor(res),y=log(time),fill=factor(res)))+
   geom_boxplot() + labs(title="log RT by accuracy") + facet_wrap(~item)
 #+END_SRC
-
-#+RESULTS:
 
 [[file:figure/RTs_S01.pdf]]
 
@@ -2224,10 +1966,6 @@ rt_boxp
 logrt_boxp
 dev.off()
 #+END_SRC
-
-#+RESULTS:
-: null device
-:           1
 ** numeric ID
 
 #+RESULTS:
@@ -2252,12 +1990,6 @@ colnames(dit01)[4:6] = c("item","res","time")
 dit01$item = to_numID(dit01$item, tab_item)
 #+END_SRC
 
-
-#+RESULTS:
-: [1] TRUE
-: [1] TRUE
-: [1] TRUE
-
 ** knot selection
 #+begin_src R
 sdi01 = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix()
@@ -2277,8 +2009,6 @@ for (i in 1:N) {
   msj[i,2:(ncut+1),1] = quantile(sdt01[sdi01[,i]==0,i], probs = pseq[-1]) %>% round()
 }
 #+end_src
-
-#+RESULTS:
 ** survSplit
 *** To export long format data for STAN
  #+begin_src R
@@ -2310,8 +2040,6 @@ for (i in 1:N) {
 
  #+end_src
 
- #+RESULTS:
-
 *** To export short format data for STAN
 
    #+BEGIN_SRC R
@@ -2330,13 +2058,7 @@ for (i in 1:N) {
    mlen = sj[2:(ncut+1)] - sj[1:(ncut)]
    mt = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
    mi = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
-   mi[mi==99] = 2
    #+END_SRC
-
-   #+RESULTS:
-   : Error in Surv(time, status) : could not find function "Surv"
-   : Error in pull(tmp, seg_g) : object 'tmp' not found
-   : Error in pull(tmp, len) : object 'tmp' not found
 
    #+begin_src R
    ## data and fixed parameters
@@ -2370,10 +2092,7 @@ for (i in 1:N) {
    mlen = sj[2:(ncut+1)] - msj[1:(ncut)]
    mt = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
    mi = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
-   mi[mi==99] = 2
    #+END_SRC
-
-   #+RESULTS:
 
    #+begin_src R
    ## data and fixed parameters
@@ -2388,8 +2107,6 @@ for (i in 1:N) {
    write_csv(as.data.frame(mt),"mt.csv", col_names = FALSE)
    write_csv(as.data.frame(mi),"mi.csv", col_names = FALSE)
    #+end_src
-
-   #+RESULTS:
 
    This is to export hyper-parameters and jumping rule
    #+BEGIN_SRC R
@@ -2425,15 +2142,6 @@ for (i in 1:N) {
    jump_w = matrix(1.0,I,2)
    #+END_SRC
 
-   #+RESULTS:
-   : Parsed with column specification:
-   : cols(
-   :   X1 = [32mcol_double()[39m,
-   :   X2 = [32mcol_double()[39m,
-   :   X3 = [32mcol_double()[39m,
-   :   X4 = [32mcol_double()[39m
-   : )
-
    #+BEGIN_SRC R
    write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"pj_lambda.csv", col_names = FALSE)
    write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"pj_beta.csv", col_names = FALSE)
@@ -2444,16 +2152,12 @@ for (i in 1:N) {
    write_csv(as.data.frame(rbind(mu_w,sigma_w,jump_w)),"pj_w.csv", col_names = FALSE)
    #+END_SRC
 
-   #+RESULTS:
-
 ** not used
 #+BEGIN_SRC R
 item <- pull(info, Item)
 time <- pull(info, Time)
 cname <- colnames(df)
 #+END_SRC
-
-#+RESULTS:
 
 #+begin_src R
 item = item[info$Cluster_A == "S01"]
@@ -2468,14 +2172,14 @@ yi[is.na(yi)] = 99
 yi[yi == 2] = 1
 #+end_src
 
-#+RESULTS:
-
 
 #+BEGIN_SRC R
 boxplot(yt)
 #+END_SRC
 
-#+RESULTS:
-
 
 #+RESULTS:
+* Local Variables
+# Local Variables:
+# eval: (flyspell-mode -1)
+# End:

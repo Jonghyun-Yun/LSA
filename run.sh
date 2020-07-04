@@ -6,4 +6,3 @@ for v in {1..5}
 do
 ./main parallel $v 5000 5000 10
 done
-Rscript art-analysis.R
