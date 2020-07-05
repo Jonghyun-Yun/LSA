@@ -13,11 +13,9 @@ using std::exp;
 typedef Eigen::Map<Eigen::MatrixXd> MapMatd;
 typedef Eigen::Map<Eigen::VectorXd> MapVecd;
 
-// P(0.3 < X < 0.8), X ~ Beta(a, b)
-class incirate: public Func
+class comprisk: public Func
 {
     private:
-        bool T_F;
         MatrixXd lambda;
         VectorXd beta;
         VectorXd theta;
@@ -26,13 +24,19 @@ class incirate: public Func
         VectorXd w;
         VectorXd sj;
         VectorXd H;
+        bool T_F; // T_F = 1: incidence rate for true response
         int G;
     public:
-        incirate(bool T_F_, MatrixXd lambda_,
-                 VectorXd beta_, VectorXd theta_, VectorXd gamma_,
-                 MatrixXd z_, VectorXd w_, VectorXd sj_, VectorXd H_) :
-            T_F(T_F_), lambda(lambda_), beta(beta_), theta(theta_),
-            gamma(gamma_), z(z_), w(w_), sj(sj_), H(H_){
+        comprisk(Rcpp::List list_, bool T_F_) :
+            lambda( Rcpp::as<MapMatd>(list_["lambda"]) ),
+            beta( Rcpp::as<MapVecd>(list_["beta"]) ),
+            theta( Rcpp::as<MapVecd>(list_["theta"]) ),
+            gamma( Rcpp::as<MapVecd>(list_["gamma"]) ),
+            z( Rcpp::as<MapMatd>(list_["z"]) ),
+            w( Rcpp::as<MapVecd>(list_["w"]) ),
+            sj( Rcpp::as<MapVecd>(list_["sj"]) ),
+            H( Rcpp::as<MapVecd>(list_["H"]) ),
+            T_F( T_F_ ) {
             G = H.size();
         }
 
@@ -42,12 +46,12 @@ class incirate: public Func
 
             double res = 1.0;
 
-            int g = 0;
-            while (t > sj(g+1)) {
+            size_t g = 0;
+            while (t > sj(g+1) && g < (G - 1) )  {
                 cum_lambda += H(g) * lambda.col(g);
                 g++;
             }
-            for (int c=0; c<2; c++) {
+            for (size_t c=0; c<2; c++) {
                 res *= exp( -1.0 * ( cum_lambda(c) + ( t - sj(g) ) * lambda(c,g) ) * exp( beta(c) + theta(c) - gamma(c) * (z.row(c)-w).norm() ));
             }
             if (T_F) {
@@ -59,13 +63,13 @@ class incirate: public Func
             return res;
         }
 
-        double hazard(const double &t, const bool T_F) {
+        double hazard(const double &t, const bool cause) {
             double res;
-            int g = 0;
-            while (t > sj(g)) {
+            size_t g = 0;
+            while (t > sj(g) && g < (G - 1) ) {
                 g++;
             }
-            if (T_F) {
+            if (cause) {
                 res = lambda(1,g) * exp( beta(1) + theta(1) - gamma(1) * (z.row(1)-w).norm() );
             }
             else {
@@ -80,11 +84,9 @@ class incirate: public Func
 };
 
 // [[Rcpp::export]]
-Rcpp::List integrate_incirate(double lower, double upper, bool T_F, MatrixXd lambda,
-                              VectorXd beta,  VectorXd theta, VectorXd gamma,
-                              MatrixXd z, VectorXd w, VectorXd sj, VectorXd H)
+Rcpp::List cumcifun(Rcpp::List &param, bool T_F, double lower, double upper)
 {
-    incirate f(T_F, lambda, beta, theta, gamma, z, w, sj, H);
+    comprisk f(param, T_F);
     double err_est;
     int err_code;
     const double res = integrate(f, lower, upper, err_est, err_code);
@@ -96,26 +98,36 @@ Rcpp::List integrate_incirate(double lower, double upper, bool T_F, MatrixXd lam
 }
 
 // [[Rcpp::export]]
-VectorXd eval_incirate(VectorXd t, bool T_F, MatrixXd lambda,
-                    VectorXd beta,  VectorXd theta, VectorXd gamma,
-                    MatrixXd z, VectorXd w, VectorXd sj, VectorXd H)
+VectorXd cumcicurve(Rcpp::List &param, bool T_F, double lower, double upper, int npar)
 {
-    incirate f(T_F, lambda, beta, theta, gamma, z, w, sj, H);
+    VectorXd res(npar);
+    double delta = (upper - lower) / (double) npar;
+    comprisk f(param, T_F);
+    double err_est;
+    int err_code;
+    for (size_t n=0; n<npar; n++) {
+        res(n) = integrate(f, lower, lower + (n + 1) * delta, err_est, err_code);
+    }
+    return res;
+}
+
+// [[Rcpp::export]]
+VectorXd eval_incirate(Rcpp::List &param, bool T_F, VectorXd t)
+{
+    comprisk f(param, T_F);
     VectorXd res(t.size());
-    for (int i=0; i<t.size(); i++) {
+    for (size_t i=0; i<t.size(); i++) {
         res(i) = f(t(i));
     }
     return res;
 }
 
 // [[Rcpp::export]]
-VectorXd eval_accuracy(VectorXd t, MatrixXd lambda,
-                    VectorXd beta,  VectorXd theta, VectorXd gamma,
-                    MatrixXd z, VectorXd w, VectorXd sj, VectorXd H)
+VectorXd eval_accuracy(Rcpp::List &param, VectorXd t)
 {
-    incirate f(1, lambda, beta, theta, gamma, z, w, sj, H);
+    comprisk f(param, 1);
     VectorXd res(t.size());
-    for (int i=0; i<t.size(); i++) {
+    for (size_t i=0; i<t.size(); i++) {
         res(i) = f.accuracy(t(i));
     }
     return res;

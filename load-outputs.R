@@ -53,18 +53,21 @@ colnames(mydf[[cid]]) = cnames
 ## mylist[[cid]] = mcmc(df, start = mystart, end = myend, thin = mythin)
 
 Xstar = find_xstar_inlist(mydf)
-temp = do_procrustes(Xstar, mydf, is_list = TRUE)
+matched = do_procrustes(Xstar, mydf, is_list = TRUE)
+mydf = matched$mydf
 
-mydf = temp$mydf
-z0 = temp$z0
-z1 = temp$z1
-w = temp$w
-xmin = min(z0[,1],z1[,1],w[,1])
-ymin = min(z0[,2],z1[,2],w[,2])
-xmax = max(z0[,1],z1[,1],w[,1])
-ymax = max(z0[,2],z1[,2],w[,2])
+item = 1
+  cname = names(mydf[[1]])
+  mylist = mcmc.list()
+  for (cid in 1:5) {
+    for (c in 0:1) {
+##      for (k in 1:N) {
+##        z = mydf[[cid]][,str_which(cname, paste0("z\\.",c,"\\.",k,"\\.[1-2]"))]
+##        w = mydf[[cid]][,str_which(cname, paste0("w\\.",item,"\\."))]
+##        mydf[[cid]][[paste0("dist_z.",c,".",k,"_","w.",item)]] = sqrt(rowSums((z-2)^2))
+##      }
+ }
+    mylist[[cid]] = mcmc(mydf[[cid]])
+  }
 
-mylist = mcmc.list()
-for (cid in 1:5) {
-mylist[[cid]] = mcmc(mydf[[cid]])
-}
+

@@ -19,6 +19,18 @@ to_chrID = function(x, tab) {
     sapply(x, function(x) tab$chr[which(tab$num == x)])
 }
 
+getparam = function(posm, sj, i, k) {
+cname = names(posm)
+z = posm[str_which(cname, paste0("z\\..\\.",k,"\\.[1-2]"))] %>% matrix(ncol = 2) %>% t()
+w = posm[str_which(cname, paste0("w\\.",i,"\\."))]
+gamma = posm[str_which(cname, paste0("gamma"))]
+beta = posm[str_which(cname, paste0("beta\\.",i,"\\."))]
+theta = posm[str_which(cname, paste0("theta\\.",k,"\\."))]
+lambda = posm[str_which(cname, paste0("lambda\\..\\.",i,"\\."))] %>% matrix(ncol = 2) %>% t()
+H = sj[2:(G+1)] - sj[1:G]
+return(list(lambda=lambda,beta=beta,theta=theta,gamma=gamma,z=z,w=w,sj=sj,H=H))
+}
+
 fun_hazard_surv = function(t,i,k,posm,cname,sj) {
   z = posm[str_which(cname, paste0("z\\.[0-1]\\.",k,"\\.[1-2]"))] %>% matrix(ncol = 2)
   w = rep(posm[str_which(cname, paste0("w\\.",i,"\\."))], 2)  %>% matrix(ncol = 2)
@@ -120,7 +132,9 @@ lsjmplot <- function( z, w, myname = NULL, xlim=NA, ylim=NA, lab = "Coordinate")
     geom_vline(xintercept = 0, color = "gray70", linetype=2)
   ##  pp = pp + geom_text_repel(label=rownames(position), segment.color = "grey50", size=6)
   if (!is.null(myname)) {
-    pp = pp + geom_text(label=myname, segment.color = "grey50",check_overlap = FALSE, show.legend=FALSE,size = 2)
+    pp = pp + geom_text(label=myname,
+                        ## segment.color = "grey50",
+                        check_overlap = FALSE, show.legend=FALSE,size = 2)
   } else pp = pp + geom_point()
   pp + mytheme
 }
@@ -148,10 +162,10 @@ mlp = -Inf
   }
 return(Xstar)}
 
-do_procrustes = function(Xstar, mydf, is_list = FALSE, translation = TRUE, dilation = FALSE) {
+do_procrustes = function(Xstar, mydf, is_list = FALSE, translation = TRUE, dilation = FALSE, scale = FALSE) {
   posm = 0
   if (is_list == TRUE) {
-      num_chain = length(mydf)
+    num_chain = length(mydf)
   } else { num_chain = 1 }
   for (i in 1:num_chain) {
     if (is_list == TRUE) { df = mydf[[i]]
@@ -159,8 +173,8 @@ do_procrustes = function(Xstar, mydf, is_list = FALSE, translation = TRUE, dilat
 
     num_samples = nrow(df)
 
-    z0dx = grepl("^z.0", colnames(df))
-    z1dx = grepl("^z.1", colnames(df))
+    z0dx = grepl("^z\\.0\\.", colnames(df))
+    z1dx = grepl("^z\\.1\\.", colnames(df))
     wdx = grepl("^w", colnames(df))
     adx = z0dx | z1dx | wdx
     N = sum(z0dx) / 2
@@ -170,13 +184,29 @@ do_procrustes = function(Xstar, mydf, is_list = FALSE, translation = TRUE, dilat
     star = min(which.max(df$lp_))
     lpos = df[,adx]
 
-    mm = list()
-    for (k in 1:num_samples) {
-      X = matrix(unlist(lpos[k,]), nrow = 2) %>% t()
-      mm[[k]] = procrustes(X, Xstar, translation = TRUE, dilation = FALSE)$X.new
-      df[k,adx] = mm[[k]] %>% t() %>% c()
+    ## mm = list()
+    ## for (k in 1:num_samples) {
+    ##   X = matrix(unlist(lpos[k,]), nrow = 2) %>% t()
+    ##   ## mm[[k]] = MCMCpack::procrustes(X, Xstar, translation, dilation)$X.new #MCMCpack
+    ##   mm[[k]] = vegan::procrustes(X, Xstar, scale = scale)$Yrot #vegan
+    ##   df[k,adx] = mm[[k]] %>% t() %>% c()
+    ## }
+
+    mm = foreach (k = 1:num_samples) %dopar% {
+      ## X = matrix(unlist(lpos[k,]), nrow = 2) %>% t()
+      ## mm[[k]] = MCMCpack::procrustes(X, Xstar, translation, dilation)$X.new #MCMCpack
+      vegan::procrustes(t( matrix(unlist(lpos[k,]), nrow = 2) ), Xstar, scale = scale)$Yrot #vegan
     }
+    df[,adx] = t( matrix(unlist(mm), nrow = sum(adx)) )
+   
     posm = posm + Reduce("+",mm) / num_samples
     if (is_list == TRUE) { mydf[[i]] = df
     } else { mydf = df }
   }
+
+  posm = posm / num_chain
+  z0= posm[1:N,]
+  w = posm[-(1:(2*N)),]
+  z1 = posm[(N + 1):(2*N),]
+  return(list(mydf = mydf,  z0=z0, z1=z1, w=w))
+}

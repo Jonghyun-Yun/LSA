@@ -47,7 +47,9 @@ lsjmplot <- function( z, w, myname = NULL, xlim=NA, ylim=NA, lab = "Coordinate")
     geom_vline(xintercept = 0, color = "gray70", linetype=2)
   ##  pp = pp + geom_text_repel(label=rownames(position), segment.color = "grey50", size=6)
   if (!is.null(myname)) {
-    pp = pp + geom_text(label=myname, segment.color = "grey50",check_overlap = FALSE, show.legend=FALSE,size = 2)
+    pp = pp + geom_text(label=myname,
+                        ## segment.color = "grey50",
+                        check_overlap = FALSE, show.legend=FALSE,size = 2)
   } else pp = pp + geom_point()
   pp + mytheme
 }

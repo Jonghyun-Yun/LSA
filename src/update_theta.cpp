@@ -5,6 +5,7 @@ void update_theta(double &theta, double &acc_theta,
                   const double &mu_theta, const double &jump_theta,
                   const double &sigma,
                   const Eigen::MatrixXd &lambda,
+                  const Eigen::VectorXd &cum_lambda,
                   const Eigen::MatrixXd::ColXpr &beta,
                   const double &gamma,
                   const Eigen::MatrixXd::RowXpr &z, const Eigen::MatrixXd &w,
@@ -17,7 +18,7 @@ void update_theta(double &theta, double &acc_theta,
   // log-acceptance ratio
   double logr_theta = 0.0;
   double theta_s;
-  double cum_lambda;
+  // double cum_lambda;
 
   // std::cout << "Drawing...\n";
   theta_s = stan::math::normal_rng(theta, jump_theta, rng);
@@ -29,13 +30,13 @@ void update_theta(double &theta, double &acc_theta,
 
   // std::cout << "Calculating the log-acceptance ratio of lambda...\n";
   for (int i = 0; i < I; i++) {
-  cum_lambda = 0.0;
-    for (int g = 0; g < seg(i); g++) {
-      cum_lambda += len(g) * lambda(i,g);
-    }
-    cum_lambda += H(i) * lambda(i,seg(i));
+  // cum_lambda = 0.0;
+  //   for (int g = 0; g < seg(i); g++) {
+  //     cum_lambda += len(g) * lambda(i,g);
+  //   }
+  //   cum_lambda += H(i) * lambda(i,seg(i));
 
-    logr_theta -= cum_lambda * ( stan::math::exp( beta(i) + theta_s - gamma * stan::math::distance(z, w.row(i))) -
+    logr_theta -= cum_lambda(i) * ( stan::math::exp( beta(i) + theta_s - gamma * stan::math::distance(z, w.row(i))) -
                                  stan::math::exp( beta(i) + theta - gamma * stan::math::distance(z, w.row(i))));
 
       if (Y_k(i) == cause) {

@@ -109,7 +109,7 @@ jump_lambda = matrix(1.0,I,G)
 
 mu_beta = matrix(0.0,I,2)
 sigma_beta = matrix(1.0,I,2)
-jump_beta = matrix(1.0,I,2)
+jump_beta = matrix(0.5,I,2)
 
 mu_theta = matrix(0.0,N,2)
 sigma_theta = matrix(1.0,N,2)
@@ -128,7 +128,7 @@ jump_z = matrix(1.0,N,2)
 
 mu_w = matrix(0.0,I,2)
 sigma_w = matrix(1.0,I,2)
-jump_w = matrix(1.0,I,2)
+jump_w = matrix(0.5,I,2)
 
 write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"pj_lambda.csv", col_names = FALSE)
 write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"pj_beta.csv", col_names = FALSE)
