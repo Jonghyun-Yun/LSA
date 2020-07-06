@@ -4,11 +4,6 @@
 #include <RcppNumerical.h>
 
 using namespace Numer;
-// using Numer::integrate;
-using Eigen::MatrixXd;                  // variable size matrix, double precision
-using Eigen::VectorXd;                  // variable size vector, double precision
-using std::log;
-using std::exp;
 
 typedef Eigen::Map<Eigen::MatrixXd> MapMatd;
 typedef Eigen::Map<Eigen::VectorXd> MapVecd;
@@ -16,14 +11,14 @@ typedef Eigen::Map<Eigen::VectorXd> MapVecd;
 class comprisk: public Func
 {
     private:
-        MatrixXd lambda;
-        VectorXd beta;
-        VectorXd theta;
-        VectorXd gamma;
-        MatrixXd z;
-        VectorXd w;
-        VectorXd sj;
-        VectorXd H;
+        Eigen::MatrixXd lambda;
+        Eigen::VectorXd beta;
+        Eigen::VectorXd theta;
+        Eigen::VectorXd gamma;
+        Eigen::MatrixXd z;
+        Eigen::VectorXd w;
+        Eigen::VectorXd sj;
+        Eigen::VectorXd H;
         bool T_F; // T_F = 1: incidence rate for true response
         int G;
     public:
@@ -41,7 +36,7 @@ class comprisk: public Func
         }
 
         double operator()(const double& t) const {
-            VectorXd cum_lambda(2);
+            Eigen::VectorXd cum_lambda(2);
             cum_lambda.setZero();
 
             double res = 1.0;
@@ -52,13 +47,13 @@ class comprisk: public Func
                 g++;
             }
             for (size_t c=0; c<2; c++) {
-                res *= exp( -1.0 * ( cum_lambda(c) + ( t - sj(g) ) * lambda(c,g) ) * exp( beta(c) + theta(c) - gamma(c) * (z.row(c)-w).norm() ));
+                res *= std::exp( -1.0 * ( cum_lambda(c) + ( t - sj(g) ) * lambda(c,g) ) * std::exp( beta(c) + theta(c) - gamma(c) * (z.row(c)-w).norm() ));
             }
             if (T_F) {
-                res *= lambda(1,g) * exp( beta(1) + theta(1) - gamma(1) * (z.row(1)-w).norm() );
+                res *= lambda(1,g) * std::exp( beta(1) + theta(1) - gamma(1) * (z.row(1)-w).norm() );
             }
             else {
-                res *= lambda(0,g) * exp( beta(0) + theta(0) - gamma(0) * (z.row(0)-w).norm() );
+                res *= lambda(0,g) * std::exp( beta(0) + theta(0) - gamma(0) * (z.row(0)-w).norm() );
             }
             return res;
         }
@@ -70,10 +65,10 @@ class comprisk: public Func
                 g++;
             }
             if (cause) {
-                res = lambda(1,g) * exp( beta(1) + theta(1) - gamma(1) * (z.row(1)-w).norm() );
+                res = lambda(1,g) * std::exp( beta(1) + theta(1) - gamma(1) * (z.row(1)-w).norm() );
             }
             else {
-                res = lambda(0,g) * exp( beta(0) + theta(0) - gamma(0) * (z.row(0)-w).norm() );
+                res = lambda(0,g) * std::exp( beta(0) + theta(0) - gamma(0) * (z.row(0)-w).norm() );
             }
             return res;
         }
@@ -98,9 +93,9 @@ Rcpp::List cumcifun(Rcpp::List &param, bool T_F, double lower, double upper)
 }
 
 // [[Rcpp::export]]
-VectorXd cumcicurve(Rcpp::List &param, bool T_F, double lower, double upper, int npar)
+Eigen::VectorXd cumcicurve(Rcpp::List &param, bool T_F, double lower, double upper, int npar)
 {
-    VectorXd res(npar);
+    Eigen::VectorXd res(npar);
     double delta = (upper - lower) / (double) npar;
     comprisk f(param, T_F);
     double err_est;
@@ -112,10 +107,10 @@ VectorXd cumcicurve(Rcpp::List &param, bool T_F, double lower, double upper, int
 }
 
 // [[Rcpp::export]]
-VectorXd eval_incirate(Rcpp::List &param, bool T_F, VectorXd t)
+Eigen::VectorXd eval_incirate(Rcpp::List &param, bool T_F, Eigen::VectorXd t)
 {
     comprisk f(param, T_F);
-    VectorXd res(t.size());
+    Eigen::VectorXd res(t.size());
     for (size_t i=0; i<t.size(); i++) {
         res(i) = f(t(i));
     }
@@ -123,10 +118,10 @@ VectorXd eval_incirate(Rcpp::List &param, bool T_F, VectorXd t)
 }
 
 // [[Rcpp::export]]
-VectorXd eval_accuracy(Rcpp::List &param, VectorXd t)
+Eigen::VectorXd eval_accuracy(Rcpp::List &param, Eigen::VectorXd t)
 {
     comprisk f(param, 1);
-    VectorXd res(t.size());
+    Eigen::VectorXd res(t.size());
     for (size_t i=0; i<t.size(); i++) {
         res(i) = f.accuracy(t(i));
     }

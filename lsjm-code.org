@@ -1377,7 +1377,9 @@ done
 #+end_src
 
 #+BEGIN_SRC R :results none
-Rcpp::sourceCpp("comprisk.cpp")
+## Rcpp::sourceCpp("comprisk.cpp")
+## install.packages("art_1.0.tar.gz", repos = NULL, type="source")
+library(art)
 #+END_SRC
 
 #+BEGIN_SRC R :results none

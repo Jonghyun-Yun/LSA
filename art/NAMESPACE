@@ -1,0 +1,5 @@
+useDynLib(art, .registration=TRUE)
+exportPattern("^[[:alpha:]]+")
+importFrom(Rcpp, evalCpp)
+importFrom(RcppParallel,RcppParallelLibs)
+import(RcppNumerical)
