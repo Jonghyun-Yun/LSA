@@ -14,8 +14,8 @@ df[,-pdx]
 di = df[,1:187]
 dt = df[,c(1:3,188:371)]
 its = pullit(info,"S01")
-dt01 = dt %>% select(CNTSCHID,CNTSTUID,ST004D01T,any_of(its[,2])) %>% na.omit
-di01 = di %>% select(CNTSCHID,CNTSTUID,ST004D01T,any_of(its[,1])) %>% filter(CNTSTUID %in% dt01$CNTSTUID)
+dt01 = dt %>% dplyr::select(CNTSCHID,CNTSTUID,ST004D01T,any_of(its[,2])) %>% na.omit
+di01 = di %>% dplyr::select(CNTSCHID,CNTSTUID,ST004D01T,any_of(its[,1])) %>% filter(CNTSTUID %in% dt01$CNTSTUID)
 
 di01[di01 == 2] = 1
 di01[is.na(di01)] = 999
@@ -35,8 +35,8 @@ dt01$stuid = to_numID(dt01$CNTSTUID, tab_stuid)
 ##di01_long <- melt(di01, id.vars=c("CNTSCHID","CNTSTUID","ST004D01T"))
 ##dt01_long <- melt(dt01, id.vars=c("CNTSCHID","CNTSTUID","ST004D01T"))
 
-di01_long = di01 %>% select(- CNTSCHID, - CNTSTUID)
-dt01_long = dt01 %>% select(- CNTSCHID, - CNTSTUID)
+di01_long = di01 %>% dplyr::select(- CNTSCHID, - CNTSTUID)
+dt01_long = dt01 %>% dplyr::select(- CNTSCHID, - CNTSTUID)
 
 di01_long <- reshape2::melt(di01_long, id.vars=c("schid","stuid","ST004D01T"))
 dt01_long <- reshape2::melt(dt01_long, id.vars=c("schid","stuid","ST004D01T"))
@@ -50,8 +50,8 @@ colnames(dit01)[4:6] = c("item","res","time")
 
 dit01$item = to_numID(dit01$item, tab_item)
 
-sdi01 = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix()
-sdt01 = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix()
+sdi01 = di01 %>% dplyr::select(-ST004D01T,-schid,-stuid) %>% dplyr::select(- CNTSCHID, - CNTSTUID) %>% as.matrix()
+sdt01 = dt01 %>% dplyr::select(-ST004D01T,-schid,-stuid) %>% dplyr::select(- CNTSCHID, - CNTSTUID) %>% as.matrix()
 
 time = pull(dit01,time)
 ## ncut = 5
@@ -69,8 +69,8 @@ for (i in 1:N) {
 }
 
 library(survival)
-tt01 = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID)
-ti01 = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID)
+tt01 = dt01 %>% dplyr::select(-ST004D01T,-schid,-stuid) %>% dplyr::select(- CNTSCHID, - CNTSTUID)
+ti01 = di01 %>% dplyr::select(-ST004D01T,-schid,-stuid) %>% dplyr::select(- CNTSCHID, - CNTSTUID)
 nitem = ncol(tt01)
 
 tf01 = data.frame(time = c(as.matrix(tt01)), status = 1)
@@ -84,8 +84,8 @@ tmp <- survSplit(formula = Surv(time, status) ~ ., data = tf01, cut = sj, episod
 mseg = matrix(pull(tmp,seg_g),ncol=nitem) %>% t()
 mh = matrix(pull(tmp,len),ncol=nitem) %>% t()
 mlen = sj[2:(ncut+1)] - msj[1:(ncut)]
-mt = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
-mi = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
+mt = dt01 %>% dplyr::select(-ST004D01T,-schid,-stuid) %>% dplyr::select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
+mi = di01 %>% dplyr::select(-ST004D01T,-schid,-stuid) %>% dplyr::select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
 
 ## data and fixed parameters
 I = nrow(mt)

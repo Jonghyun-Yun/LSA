@@ -42,8 +42,8 @@ Eigen::VectorXd update_beta(double &beta, double &acc_beta,
     }
 
   // accept or reject?
-  if ((logr_beta > 0.0) || (logr_beta >
-                              stan::math::log(stan::math::uniform_rng(0.0, 1.0, rng)))) {
+  if ((logr_beta > 0.0) ||
+      (logr_beta > stan::math::log(stan::math::uniform_rng(0.0, 1.0, rng)))) {
     beta = beta_s;
     acc_beta += 1.0;
   }

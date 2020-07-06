@@ -2,32 +2,35 @@
 #include "update_gamma.h"
 
 void update_gamma(Eigen::VectorXd &gamma, Eigen::VectorXd &acc_gamma,
-                  const Eigen::VectorXd &mu_gamma, const Eigen::VectorXd &sigma_gamma, const Eigen::VectorXd &jump_gamma,
-                  const Eigen::MatrixXd &lambda0, const Eigen::MatrixXd &lambda1,
+                  const Eigen::VectorXd &mu_gamma,
+                  const Eigen::VectorXd &sigma_gamma,
+                  const Eigen::VectorXd &jump_gamma,
+                  const Eigen::MatrixXd &cum_lambda,
                   const Eigen::MatrixXd &beta, const Eigen::MatrixXd &theta,
-                  const Eigen::MatrixXd &z0, const Eigen::MatrixXd &z1,
-                  const Eigen::MatrixXd &w,
-                  const int &I, const int &N, const int &G, const Eigen::VectorXd &len, const Eigen::MatrixXi &seg,
+                  const Eigen::MatrixXd &z, const Eigen::MatrixXd &w,
+                  const int &I, const int &N, const int &G,
+                  const Eigen::VectorXd &len, const Eigen::MatrixXi &seg,
                   const Eigen::MatrixXd &H, const Eigen::MatrixXi &Y,
                   boost::ecuyer1988 &rng) {
-  
+
   // log-acceptance ratio
   Eigen::VectorXd logr_gamma(2); // gamma for each cause
   logr_gamma.setZero();
   Eigen::VectorXd gamma_s(2);
-  Eigen::VectorXd cum_lambda(2); // cumulative lambda for each cause
-  Eigen::MatrixXd lambda(I,G); 
-  Eigen::MatrixXd z(N,2); 
+  // Eigen::VectorXd cum_lambda(2); // cumulative lambda for each cause
+  // Eigen::MatrixXd lambda(I, G);
+  // Eigen::MatrixXd z(N, 2);
 
   for (int c = 0; c < 2; c++) {
-    if (c == 0) {
-      lambda = lambda0;
-      z = z0;
-    }
-    else {
-      lambda = lambda1;
-      z = z1;
-    } 
+
+    // if (c == 0) {
+    //   lambda = lambda0;
+    //   z = z0;
+    // } else {
+    //   lambda = lambda1;
+    //   z = z1;
+    // }
+
     // std::cout << "Drawing...\n";
     gamma_s(c) = stan::math::lognormal_rng(stan::math::log(gamma(c)), jump_gamma(c), rng);
 
@@ -41,18 +44,24 @@ void update_gamma(Eigen::VectorXd &gamma, Eigen::VectorXd &acc_gamma,
     // std::cout << "Calculating the log-acceptance ratio...\n";
     for (int i = 0; i < I; i++) {
       for (int k = 0; k < N; k++) {
-        cum_lambda.setZero();
+        // cum_lambda.setZero();
 
-        for (int g = 0; g < seg(i,k); g++) {
-          cum_lambda(c) += len(g) * lambda(i,g);
-        }
-        cum_lambda(c) += H(i,k) * lambda(i,seg(i,k));
+        // for (int g = 0; g < seg(i,k); g++) {
+        //   cum_lambda(c) += len(g) * lambda(i,g);
+        // }
+        // cum_lambda(c) += H(i,k) * lambda(i,seg(i,k));
 
-        logr_gamma(c) -= cum_lambda(c) * ( stan::math::exp( beta(i,c) + theta(k,c) - gamma_s(c) * stan::math::distance(z.row(k), w.row(i))) -
-                                           stan::math::exp( beta(i,c) + theta(k,c) - gamma(c) * stan::math::distance(z.row(k), w.row(i))));
+        logr_gamma(c) -=
+            cum_lambda(c * I + i, k) *
+            (stan::math::exp(beta(i, c) + theta(k, c) -
+                             gamma_s(c) *
+                                 stan::math::distance(z.row(c*N + k), w.row(i))) -
+             stan::math::exp(beta(i, c) + theta(k, c) -
+                             gamma(c) *
+                                 stan::math::distance(z.row(c*N + k), w.row(i))));
 
-        if (Y(i,k) == c) {
-          logr_gamma(c) += (gamma_s(c) - gamma(c)) * stan::math::distance(z.row(k), w.row(i));
+        if (Y(i, k) == c) {
+          logr_gamma(c) += (gamma_s(c) - gamma(c)) * stan::math::distance(z.row(c*N + k), w.row(i));
         }
       }
     }

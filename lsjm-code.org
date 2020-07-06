@@ -244,7 +244,7 @@ r =& \prod_{i=1}^{I} \frac{
 =&
 \frac{\pi(z_{kc}^{* })}{\pi(z_{kc}^{t})}
 # \frac{J(z_{kc}^{t} -> z_{kc}^{* })}{J(z_{kc}^{* } -> z_{kc}^{t})}
-\exp[\gamma_{c}\sum_{i=1}^{I}
+\exp[-\gamma_{c}\sum_{i=1}^{I}
 (||z_{kc}^{* } - w_{i}||-||z_{kc}^{t} - w_{i}||)]\\
 &\times
    \exp[-\exp(\theta_{kc}) \sum_{i=1}^{I}\Lambda_{ic}(t)\exp(\beta_{ic}) \{\exp( - \gamma_{c}||z_{kc}^{* } - w_{i}||) - \exp(-\gamma_c||z_{kc}^{t} - w_{i}||)\}]
@@ -344,7 +344,7 @@ cat ../pisa2015/README.txt
 ## pick_person = 1:592
 pick_person = 1:592
 ## pick_item = 1:21 # (first 3 is not item-related)
-pick_item = 1:21
+pick_item = 1:13
 
 ncut = 5 # segment # in piecewise approximation
 source('pisa-preprocess.R')
@@ -373,7 +373,7 @@ length(unique(df$CNTSTUID)) # unique STUID?
 
 #+begin_src R :tangle Rfunction.R
 pullit = function(info,cl) {
-it = info %>% filter(Cluster_A == cl)# %>% select(Item,Time)
+it = info %>% filter(Cluster_A == cl)# %>% dplyr::select(Item,Time)
 item = pull(it,Item)
 time = pull(it,Time)
 return(cbind(item,time))
@@ -384,8 +384,8 @@ return(cbind(item,time))
 di = df[,1:187]
 dt = df[,c(1:3,188:371)]
 its = pullit(info,"S01")
-dt01 = dt %>% select(CNTSCHID,CNTSTUID,ST004D01T,any_of(its[,2])) %>% na.omit
-di01 = di %>% select(CNTSCHID,CNTSTUID,ST004D01T,any_of(its[,1])) %>% filter(CNTSTUID %in% dt01$CNTSTUID)
+dt01 = dt %>% dplyr::select(CNTSCHID,CNTSTUID,ST004D01T,any_of(its[,2])) %>% na.omit
+di01 = di %>% dplyr::select(CNTSCHID,CNTSTUID,ST004D01T,any_of(its[,1])) %>% filter(CNTSTUID %in% dt01$CNTSTUID)
 
 di01[di01 == 2] = 1
 di01[is.na(di01)] = 999
@@ -460,8 +460,8 @@ dt01$stuid = to_numID(dt01$CNTSTUID, tab_stuid)
 ##di01_long <- melt(di01, id.vars=c("CNTSCHID","CNTSTUID","ST004D01T"))
 ##dt01_long <- melt(dt01, id.vars=c("CNTSCHID","CNTSTUID","ST004D01T"))
 
-di01_long = di01 %>% select(- CNTSCHID, - CNTSTUID)
-dt01_long = dt01 %>% select(- CNTSCHID, - CNTSTUID)
+di01_long = di01 %>% dplyr::select(- CNTSCHID, - CNTSTUID)
+dt01_long = dt01 %>% dplyr::select(- CNTSCHID, - CNTSTUID)
 
 di01_long <- reshape2::melt(di01_long, id.vars=c("schid","stuid","ST004D01T"))
 dt01_long <- reshape2::melt(dt01_long, id.vars=c("schid","stuid","ST004D01T"))
@@ -478,8 +478,8 @@ dit01$item = to_numID(dit01$item, tab_item)
 
 ** knot selection
 #+begin_src R :tangle pisa-preprocess.R
-sdi01 = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix()
-sdt01 = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix()
+sdi01 = di01 %>% dplyr::select(-ST004D01T,-schid,-stuid) %>% dplyr::select(- CNTSCHID, - CNTSTUID) %>% as.matrix()
+sdt01 = dt01 %>% dplyr::select(-ST004D01T,-schid,-stuid) %>% dplyr::select(- CNTSCHID, - CNTSTUID) %>% as.matrix()
 
 time = pull(dit01,time)
 ## ncut = 5
@@ -509,8 +509,8 @@ for (i in 1:N) {
             status_F = 1 * (status == 1 & res == 0)
             ) %>%
      as_tibble
- to_stan = tmp %>% mutate(seg_g = seg_g - 1) %>% select(stuid, item, time, seg_g, len, status_F, status_T)
- ## tmp %>% select(res,status,status_T,status_F)
+ to_stan = tmp %>% mutate(seg_g = seg_g - 1) %>% dplyr::select(stuid, item, time, seg_g, len, status_F, status_T)
+ ## tmp %>% dplyr::select(res,status,status_T,status_F)
  #+end_src
 
  #+begin_src R
@@ -530,7 +530,7 @@ for (i in 1:N) {
 *** To export short format data for STAN
 
    #+BEGIN_SRC R
-   tt01 = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID)
+   tt01 = dt01 %>% dplyr::select(-ST004D01T,-schid,-stuid) %>% dplyr::select(- CNTSCHID, - CNTSTUID)
    nitem = ncol(tt01)
    tt01 = data.frame(time = c(as.matrix(tt01)), status = 1)
 
@@ -543,8 +543,8 @@ for (i in 1:N) {
    mseg = matrix(pull(tmp,seg_g),ncol=nitem) %>% t()
    mh = matrix(pull(tmp,len),ncol=nitem) %>% t()
    mlen = sj[2:(ncut+1)] - sj[1:(ncut)]
-   mt = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
-   mi = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
+   mt = dt01 %>% dplyr::select(-ST004D01T,-schid,-stuid) %>% dplyr::select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
+   mi = di01 %>% dplyr::select(-ST004D01T,-schid,-stuid) %>% dplyr::select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
    #+END_SRC
 
    #+begin_src R
@@ -562,8 +562,8 @@ for (i in 1:N) {
 *** to export short format data for C++
 #+BEGIN_SRC R :tangle pisa-preprocess.R
    library(survival)
-   tt01 = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID)
-   ti01 = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID)
+   tt01 = dt01 %>% dplyr::select(-ST004D01T,-schid,-stuid) %>% dplyr::select(- CNTSCHID, - CNTSTUID)
+   ti01 = di01 %>% dplyr::select(-ST004D01T,-schid,-stuid) %>% dplyr::select(- CNTSCHID, - CNTSTUID)
    nitem = ncol(tt01)
 
    tf01 = data.frame(time = c(as.matrix(tt01)), status = 1)
@@ -577,8 +577,8 @@ for (i in 1:N) {
    mseg = matrix(pull(tmp,seg_g),ncol=nitem) %>% t()
    mh = matrix(pull(tmp,len),ncol=nitem) %>% t()
    mlen = sj[2:(ncut+1)] - msj[1:(ncut)]
-   mt = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
-   mi = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
+   mt = dt01 %>% dplyr::select(-ST004D01T,-schid,-stuid) %>% dplyr::select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
+   mi = di01 %>% dplyr::select(-ST004D01T,-schid,-stuid) %>% dplyr::select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
    #+END_SRC
 
 #+BEGIN_SRC R :tangle pisa-preprocess.R
@@ -683,678 +683,6 @@ boxplot(yt)
 
 #+RESULTS:
 
-* STAN optimization using LBFGS
-- [[id:343fb468-844b-4f7e-840c-30161fa57835][STAN optimization for hubViz]]
-- Limited-memory BFGS (https://en.wikipedia.org/wiki/Limited-memory_BFGS)
-- Try to fix two points, and see if multiple results are similar
-- Variational Bayes + any optimization may get trapped in local modes.
-
-** stan code
-
- - stan_code: [[./stan/art.stan]]
-
- #+RESULTS:
-
- #+begin_src R
- ## initialization
- w_fr = matrix(rnorm(2*p),p,2)
- w = w_fr
- w_fr[1,] = c(0,0)
- w_fr[2,] = 1*c(1,1)
- theta = rnorm(n)
- sigma_w = 10
- rstan::stan_rdump(c('w','w_fr','theta','sigma_w'),"init_list.R")
- #+end_src
-
- #+begin_src sh :async :results slient
- cd ~/stan-dev/cmdstan
- # make ~/workspace/lsjm-code/stan/art
- # rm ~/workspace/lsjm-code/stan/par_art
- make STAN_THREADS=TRUE ~/workspace/lsjm-code/stan/parallel_art
- #+end_src
-
-** STAN MCMC
-#+NAME: mdsplot
-#+BEGIN_SRC R :tangle lsjmplot.R
-library(ggplot2)
-library(ggrepel)
-
-lsjmplot <- function( z, w, myname = NULL, xlim=NA, ylim=NA, lab = "Coordinate") {
-
-  ## extract objects
-
-  x = rbind(z,w)
-  idx = rep("w", nrow(x))
-  idx[1:nrow(z)] = "z"
-  position <- as.data.frame(x)
-  ndim <- dim(x)[2]
-
-  colnames(position) <- paste("position",1:ndim,sep="")
-
-  padding = 1.05
-  if (any(is.na(xlim))) {
-    x1 <- -max(abs(position[,1]))*padding
-    x2 <- max(abs(position[,1]))*padding
-  } else {
-    x1 <- xlim[1]
-    x2 <- xlim[2]
-  }
-  if (any(is.na(ylim))) {
-    y1 <- -max(abs(position[,2]))*padding
-    y2 <- max(abs(position[,2]))*padding
-  } else {
-    y1 <- ylim[1]
-    y2 <- ylim[2]
-  }
-
-  mytheme = theme(axis.line = element_line(colour = "black"),
-                  ##panel.grid.major = element_blank(),
-                  panel.grid.minor = element_blank(),
-                  ##panel.border = element_blank(),
-                  panel.background = element_blank()
-                  )
-
-  ## plot
-  pp = ggplot(position,aes(x=position1,y=position2,colour=idx)) +
-    theme(text=element_text(size=20)) +
-    ## geom_point()+
-    xlim(x1,x2) + ylim(y1,y2) +
-    xlab(paste(lab," 1",sep="")) + ylab(paste(lab," 2",sep="")) +
-    ##xlab("Position 1") + ylab("Position 2") +
-    geom_hline(yintercept = 0, color = "gray70", linetype=2) +
-    geom_vline(xintercept = 0, color = "gray70", linetype=2)
-  ##  pp = pp + geom_text_repel(label=rownames(position), segment.color = "grey50", size=6)
-  if (!is.null(myname)) {
-    pp = pp + geom_text(label=myname,
-                        ## segment.color = "grey50",
-                        check_overlap = FALSE, show.legend=FALSE,size = 2)
-  } else pp = pp + geom_point()
-  pp + mytheme
-}
-#+END_SRC
-
-A function to convert mcmc.list to data.frame.
-#+begin_src R :tangle cdfa_df.R
-coda_df <- function(coda.object,
-                    parameters = NULL) {
-
-    if (!coda::is.mcmc(coda.object) && !coda::is.mcmc.list(coda.object))
-        stop("Not an mcmc or mcmc.list object")
-
-    mat     <- as.matrix(coda.object, iter = TRUE, chain = TRUE)
-    df      <- as.data.frame(mat)
-
-    names(df)[names(df) == "CHAIN"] <- "chain"
-    names(df)[names(df) == "ITER"]  <- "iter"
-
-    if(is.null(parameters))
-        out.df <- df
-
-    if(!is.null(parameters))
-        out.df <- subset(df, select = c("chain", "iter", parameters))
-
-    out.df
-}
-#+end_src
-
-#+begin_src sh :async :results slient
-cd ~/stan-dev/cmdstan
-# make ~/workspace/lsjm-code/stan/art
-# rm ~/workspace/lsjm-code/stan/par_art
-make STAN_THREADS=TRUE ~/workspace/lsjm-code/stan/parallel_art
-#+end_src
-
-#+begin_src sh :async
-export STAN_NUM_THREADS=8
-
-cd ~/workspace/lsjm-code/stan
-time ~/workspace/lsjm-code/stan/parallel_art sample num_samples=20000 num_warmup=5000 \
-adapt delta=0.8 algorithm=hmc engine=nuts \
-metric=diag_e output file=single_mcmc.csv \
-data file=../pisa_short.R
-#+end_src
-
-#+begin_src sh :async
-~/stan-dev/cmdstan/bin/stansummary stan/single_mcmc.csv --sig_figs=3 > single_summary.csv
-#+end_src
-
-
-#+begin_src R :results silent
-source("lsjmplot.R")
-source("coda_df.R")
-library(rstan)
-library(coda)
-library(tidyverse)
-dstan = read_stan_csv("stan/single_mcmc.csv")
-##ll = As.mcmc.list(dstan)
-df = tidybayes::tidy_draws(dstan) %>% as.data.frame
-#+end_src
-
-#+BEGIN_SRC R
-n = nrow(df)
-ethin = 100
-idx = seq(1,n,ethin)
-
-z1dx = grepl("^z1", colnames(df))
-z2dx = grepl("^z2", colnames(df))
-wdx = grepl("^w", colnames(df))
-adx = z1dx | z2dx | wdx
-nper = sum(z1dx)/2
-nitem = sum(wdx)/2
-nall = sum(adx)/2
-
-sf = df[idx,]
-star = which.max(sf$lp__)
-ss = sf[,adx]
-Xstar =matrix(unlist(ss[star,]),2,nall)
-Xstar = t(Xstar)
-#+END_SRC
-
-#+begin_src R :results silent
-library(MCMCpack)
-mm = list()
-for (k in 1:nrow(ss)){
-X = t(matrix(unlist(ss[k,]),2,nall))
-mm[[k]] = procrustes(X, Xstar, translation = FALSE, dilation = FALSE)$X.new
-sf[k,adx] = c(t(mm[[k]]))
-}
-
-#+end_src
-
-
-[[file:figure/latent_plot.pdf]]
-#+begin_src R
-posm = Reduce("+",mm) / nrow(ss)
-pdf("figure/latent_plot.pdf")
-myname = c(1:nper,paste0("I.",1:nitem))
-z1= posm[1:nper,]
-w = posm[-(1:(2*nper)),]
-lsjmplot(z1,w,xlim=c(-2,2),ylim=c(-2,2),myname)
-
-z2 = posm[(nper + 1):(2*nper),]
-lsjmplot(z2,w,xlim=c(-2,2),ylim=c(-2,2),myname)
-dev.off(which = dev.cur())
-#+end_src
-
-#+BEGIN_SRC R
-construct_cumulative_hazard_function <- function(cutpoints, log_baseline_hazards, latent_effects) {
-
-    ## t is a vector of time points. group is {0,1} scalar
-    cumulative_hazard_function <- function(t, iper) {
-        ## Boolean for any exposed time in each interval
-        ## length(cutpoints) x length(t)
-        interval_exposed <- outer(cutpoints, t, `<`)
-
-        ## t - cutpoint. Multiply by interval exposed to avoid negative times.
-        time_exposed <-  -outer(cutpoints, t, `-`) * interval_exposed
-
-        ## Last interval is of width Inf
-        interval_widths <- c(diff(cutpoints), Inf)
-
-        ## For each interval, time exposed cannot exceed interval width.
-        time_exposed_correct  <- sweep(x = time_exposed,
-                                       MARGIN = 1,
-                                       STATS = interval_widths,
-                                       FUN = pmin)
-
-        ## Multiply by corresponding baseline hazards to get interval specific cumulative baseline hazards.
-        interval_baseline_cumulative_hazards <- sweep(x = time_exposed_correct,
-                                                      MARGIN = 1,
-                                                      STATS = exp(log_baseline_hazards),
-                                                      FUN = `*`)
-
-        ## Cumulative baseline hazard vector length(t)
-        baseline_cumulative_hazards <- colSums(interval_baseline_cumulative_hazards)
-
-        ## return after applying group effect
-        return(baseline_cumulative_hazards * exp(latent_effects[iper]))
-    }
-
-    return(cumulative_hazard_function)
-}
-#+END_SRC
-
-
-#+BEGIN_SRC R
-df = sf
-library(stringr)
-source("pisa_short.R")
-dfname = colnames(df)
-#+END_SRC
-
-#+BEGIN_SRC R
-
-#+END_SRC
-
-#+BEGIN_SRC R
-lambda1.1dx = grepl("^lambda1.1", colnames(df))
-z1dx = grepl("^z1", colnames(df))
-z2dx = grepl("^z2", colnames(df))
-thetadx = grepl("^theta", colnames(df))
-beta.1dx = grepl("^beta.1", colnames(df))
-w.1dx = grepl("^w.1", colnames(df))
-gamma.1dx = grepl("^gamma.1", colnames(df))
-#+END_SRC
-
-#+BEGIN_SRC R
-item_number = 3
-
-lvar1 = list(
-  lambda1.1 = str_subset(dfname, paste0("^lambda1.",item_number)),
-  z1 = str_subset(dfname,"^z1"),
-  theta = str_subset(str_subset(dfname,"^theta"), ".2$", negate = T),
-  beta.1 = str_subset(dfname,paste0("^beta.",item_number)) %>% str_subset(".2$", negate = T),
-  w.1 = str_subset(dfname,paste0("^w.",item_number)),
-  gamma.1 = str_subset(dfname,"^gamma.1")
-  )
-
-beta = df[lvar1$beta.1] %>% as.matrix()
-theta = df[lvar1$theta] %>% as.matrix()
-gamma = df[lvar1$gamma.1] %>% as.matrix()
-z = df[lvar1$z1] %>% as.matrix()
-w = df[lvar1$w.1] %>% as.matrix()
-
-d2 = (z - rep(w, nper))^2
-dist = apply(d2, 1, function(x) {x[seq(1,2*nper,2)] + x[seq(2,2*nper,2)]}) %>% sqrt() %>% t()
-
-prop_hazard1 = rep(beta, nper) + theta - rep(gamma,nper) * dist
-colnames(prop_hazard1) = paste0("k",1:nper,".1")
-#+END_SRC
-
-#+BEGIN_SRC R
-lvar2 = list(
-  lambda1.2 = str_subset(dfname, paste0("^lambda2.",item_number)),
-  z = str_subset(dfname,"^z2"),
-  theta = str_subset(str_subset(dfname,"^theta"), ".1$", negate = T),
-  beta.1 =  str_subset(dfname,paste0("^beta.",item_number)) %>% str_subset(".1$", negate = T),
-  w.1 = str_subset(dfname,paste0("^w.",item_number)),
-  gamma = str_subset(dfname,"^gamma.2")
-)
-
-beta = df[lvar2$beta.1] %>% as.matrix()
-theta = df[lvar2$theta] %>% as.matrix()
-gamma = df[lvar2$gamma] %>% as.matrix()
-z = df[lvar2$z] %>% as.matrix()
-w = df[lvar2$w.1] %>% as.matrix()
-
-d2 = (z - rep(w, nper))^2
-dist = apply(d2, 1, function(x) {x[seq(1,2*nper,2)] + x[seq(2,2*nper,2)]}) %>% sqrt() %>% t()
-
-prop_hazard2 = rep(beta, nper) + theta - rep(gamma,nper) * dist
-colnames(prop_hazard2) = paste0("k",1:nper,".2")
-
-#+END_SRC
-
-#+BEGIN_SRC R
-dat = tibble(prop_hazard1 = prop_hazard1,
-             prop_hazard2 = prop_hazard2,
-             lambda.1.1 = df[lvar1$lambda1.1] %>% as.matrix(),
-             lambda.1.2 = df[lvar2$lambda1.2] %>% as.matrix()
-             )
-
-dat = dat %>% mutate(acc1 = rep(lambda.1.1[,1], nper) * exp(prop_hazard1) / ( rep(lambda.1.1[,1], nper) * exp(prop_hazard1) +  rep(lambda.1.2[,1], nper) * exp(prop_hazard2)),
-  acc2 = rep(lambda.1.1[,2], nper) * exp(prop_hazard1) / ( rep(lambda.1.1[,2], nper) * exp(prop_hazard1) +  rep(lambda.1.2[,2], nper) * exp(prop_hazard2)),
-    acc3 = rep(lambda.1.1[,3], nper) * exp(prop_hazard1) / ( rep(lambda.1.1[,3], nper) * exp(prop_hazard1) +  rep(lambda.1.2[,3], nper) * exp(prop_hazard2)),
-      acc4 = rep(lambda.1.1[,4], nper) * exp(prop_hazard1) / ( rep(lambda.1.1[,4], nper) * exp(prop_hazard1) +  rep(lambda.1.2[,4], nper) * exp(prop_hazard2)),
-        acc5 = rep(lambda.1.1[,5], nper) * exp(prop_hazard1) / ( rep(lambda.1.1[,5], nper) * exp(prop_hazard1) +  rep(lambda.1.2[,5], nper) * exp(prop_hazard2)))
-#+END_SRC
-
-#+BEGIN_SRC R
-acc = dat %>% dplyr::select(acc1,acc2,acc3,acc4,acc5)
-mat = matrix(colSums(acc) / nrow(acc),nrow=50)
-sj = c(0, cumsum(mlen))
-#+END_SRC
-
-[[file:figure/tradeoff.pdf]]
-#+BEGIN_SRC R
-accuracy = c(rep(mat[1,1],mlen[1]),rep(mat[1,2],mlen[2]),rep(mat[1,3],mlen[3]),rep(mat[1,4],mlen[4]),rep(mat[1,5],100))
-time = 0:(length(accuracy)-1)
-person = rep(1,length(accuracy))
-plotdf = cbind(accuracy,time,person)
-for (k in 2:nper) {
-  accuracy = c(rep(mat[k,1],mlen[1]),rep(mat[k,2],mlen[2]),rep(mat[k,3],mlen[3]),rep(mat[k,4],mlen[4]),rep(mat[k,5],100))
-  person = rep(k,length(accuracy))
-  plotdf = rbind(plotdf, cbind(accuracy,time,person))
-}
-
-pdf("figure/tradeoff.pdf")
-plotdf = as.data.frame(plotdf)
-ggplot(data=plotdf, aes(x=time, y=accuracy, group=person)) +
-  geom_line(aes(color=factor(person)), show.legend=FALSE) +
-  # geom_line(group="3", col="red") +
-  ##scale_colour_grey() +
-  theme_bw()
-dev.off(which = dev.cur())
-#+END_SRC
-
-#+BEGIN_SRC R
-prop_hazard <- function(beta, theta, gamma, z, w) {
-  theta = matrix(theta,nrow=2)[1,]
-  return(beta + theta - gamma * colSums((z - w)^2))
-}
-#+END_SRC
-
-#+BEGIN_SRC R
-cum_haz <- df %>%
-#+END_SRC
-
-#+BEGIN_SRC R
-cum_haz <- df %>%
-  mutate(`H(t|x)` = pmap(mget(unlist(lvar)),
-                         function(mget(unlist(lvar))){
-                           construct_cumulative_hazard_function(
-                             cutpoints = c(0,cumsum(mlen)),
-                             log_baseline_hazards = mget(lvar$lambda1.1),
-                             latent_effects = prop_hazard(mget(lvar$beta.1),mget(lvar$theta),
-                                                          mget(lvar$gamma.1),mget(lvar$z1),
-                                                          mget(lvar$gamma.1)))
-                         })) %>%
-  select(.chain, .iteration, .draw, `H(t|x)`)
-#+END_SRC
-
-#+BEGIN_SRC R
-cum_haz <- df %>%
-    mutate(`H(t|x)` = pmap(list(interval0, interval14, interval31, xNonmaintained),
-                           function(interval0, interval14, interval31, xNonmaintained){
-                               cunstruct_cumulative_hazard_function(
-                                   cutpoints = c(0, cumsum(mlen)),
-                                   log_baseline_hazards = c(interval0, interval14, interval31),
-                                   group_effect = xNonmaintained)
-                           })) %>%
-    select(.chain, .iteration, .draw, `H(t|x)`)
-#+END_SRC
-
-#+BEGIN_SRC R
-ss = df[10001,]
-sqrt(sum((c(ss$w.2.1, ss$w.2.2) - c(ss$z1.1.1, ss$z1.1.2)))^2)
-ss$gamma.1
-ss$theta.1.1
-ss$beta.2.1
-ss$lambda.1.1
-ss$lambda.2.1
-
-log(ss$lambda.1.1) + log(to_stan$len[1]) + ss$beta.2.1 + ss$theta.1.1 - ss$gamma.1 * sqrt(sum((c(ss$w.2.1, ss$w.2.2) - c(ss$z1.1.1, ss$z1.1.2)))^2)
-
-log(ss$lambda.2.1) + log(to_stan$len[2]) + ss$beta.2.1 + ss$theta.1.1 - ss$gamma.1 * sqrt(sum((c(ss$w.2.1, ss$w.2.2) - c(ss$z1.1.1, ss$z1.1.2)))^2)
-
-log(ss$lambda.1.2) + log(to_stan$len[1]) + ss$beta.2.2 + ss$theta.1.2 - ss$gamma.2 * sqrt(sum((c(ss$w.2.1, ss$w.2.2) - c(ss$z2.1.1, ss$z2.1.2)))^2)
-
-log(ss$lambda.2.2) + log(to_stan$len[2]) + ss$beta.2.2 + ss$theta.1.2 - ss$gamma.2 * sqrt(sum((c(ss$w.2.1, ss$w.2.2) - c(ss$z2.1.1, ss$z2.1.2)))^2)
-
-
-#+END_SRC
-
-
-** data preprocessing
-#+begin_src R
-## data, fixed parameters
-i = 2
-Y = mm[[i]]
-n = nrow(Y)
-p = ncol(Y)
-sigma_t = 10
-rstan::stan_rdump(c('n','p','Y','sigma_t'),"free_sigma.R")
-
-## initialization
-w_fr = matrix(rnorm(2*p),p,2)
-w = w_fr
-w_fr[1,] = c(0,0)
-w_fr[2,] = 1*c(1,1)
-theta = rnorm(n)
-sigma_w = 10
-rstan::stan_rdump(c('w','w_fr','theta','sigma_w'),"init_list.R")
-#+end_src
-
-A good output is saved "optim_good.csv" (lp 8887.9)
-#+begin_src sh :async :results none
-cd ~/workspace/lsjm-code/stan
-./art optimize data file=../pisa_data.R output file=optim.csv
-#+end_src
-
-#+begin_src R
-out = as.matrix(readr::read_csv("optim.csv", skip=27))
-x = out[(1+n)+2:(2+p-1)]
-y = out[(1+n)+(2+p):(2+2*p-1)]
-cname = colnames(mm[[i]])
-
-pdf("figure/stan_optimization.pdf")
-mdsplot(data.frame(x,y), cname)
-dev.off(which = dev.cur())
-#+end_src
-
-
-** Procrustes matching
-- Do Procrustes in MCMCpack. Try two sets (each 10 results in sec) compare results.
-- https://rdrr.io/cran/MCMCpack/man/procrustes.html
-- Matching alone doesn't work. its results are still quite varying...
-
-#+begin_src sh :async :results silent
-mkdir -p out
-for i in {1..10}
-do
-./vb optimize data file=sim1_Y.R output file=out/optim$i.csv
-done
-wait
-#+end_src
-
-#+begin_src R :results value
-lp = numeric(10)
-out = list()
-cname = colnames(mm[[i]])
-
-for (k in 1:10){
-out[[k]] = as.matrix(readr::read_csv(paste0("out/optim",k,".csv"), skip=27))
-lp[k] = out[[k]][1]
-}
-#+end_src
-
-#+begin_src R :results value
-pp = list()
-for (k in 1:10){
-x = out[[k]][2:11]
-y = out[[k]][12:21]
-pp[[k]] = mdsplot(data.frame(x,y), cname)}
-#+end_src
-
-#+begin_src R
-library(MCMCpack)
-mm = list()
-tt = which.max(lp)
-Xstar = matrix(out[[tt]][2:21],10,2)
-for (k in 1:10){
-X = matrix(out[[k]][2:21],10,2)
-mm[[k]] = procrustes(X, Xstar, translation = FALSE, dilation = FALSE)$X.new
-}
-#+end_src
-
-#+begin_src R
-w = Reduce("+",mm)
-pdf("figure/plot4.pdf")
-mdsplot(data.frame(w), cname)
-dev.off(0)
-#+end_src
-
-
-*** fixed first two rows of $w$ :ARCHIVE:
-#+begin_src stan :tangle vb.stan
-data {
-  int<lower=1> n;
-  int<lower=1> p;
-  int<lower=0,upper=1> Y[n,p];
-  real w_2;
-  real<lower=0> sigma_w;
-}
-transformed data {
-  // STAN takes row vectors for matrix initialization.
-  int<lower=0,upper=1> u[n,p,p];
-  real<lower=machine_precision()> sigma_t = 10;
-  real<lower=machine_precision()> a = 0.001;
-  real<lower=machine_precision()> b = 0.001;
-  for (k in 1:n) {
-    for (i in 1:p) {
-      for (j in 1:p) {
-        if (i != j)
-          u[k,i,j] = Y[k,i] * Y[k,j];
-        else
-          u[k,i,j] = 0; }
-    }
-  }
-}
-parameters {
-  vector[n] theta;
-  /* real<lower=0> sigma_w; */
-  matrix[p,2] w_fr;
-}
-transformed parameters {
-  matrix[p,2] w;
-  w = w_fr;
-  w[1,1] = 0;
-  w[1,2] = 0;
-  w[2,1] = w_2;
-  w[2,2] = w_2;
-}
-model {
-  for (k in 1:n) {
-    target += normal_lpdf(theta[k] | 0, sigma_t);
-    for (i in 1:p) {
-      target += normal_lpdf(w[i,1]|0,sigma_w) + normal_lpdf(w[i,2]|0,sigma_w);
-      for (j in (i+1):p) {
-        target += - log(1 + exp(theta[k] - distance(row(w, i), row(w, j))));
-        if ( u[k,i,j] != 0)
-          target += theta[k] - distance(row(w,i), row(w, j));
-      }
-    }
-  }
-  /* target += inv_gamma_lpdf(sigma_w^2 | a,b); */
-}
-#+end_src
-
-#+begin_src sh :async
-cd /opt/cmdstan
-make ~/workspace/hubViz-code/vb
-#+end_src
-
-#+begin_src R
-## data, fixed parameters
-i = 1
-Y = mm[[i]]
-n = nrow(Y)
-p = ncol(Y)
-w_2 = 1
-sigma_w = 5
-rstan::stan_rdump(c('n','p','Y','w_2','sigma_w'),"fixedtwo.R")
-
-## initialization
-w_fr = matrix(rnorm(2*p),p,2)
-w_fr[1,] = c(0,0)
-w_fr[2,] = 1*c(1,1)
-theta = rnorm(n)
-#sigma_w = 10
-rstan::stan_rdump(c('w_fr','theta','sigma_w'),"init_list.R")
-#+end_src
-
-- put ~init=init_list.R~ for custom initialization.
-#+begin_src sh :async :results none
-cd ~/workspace/hubViz-code
-./vb optimize data file=fixedtwo.R output file=optim.csv init=init_list.R
-#+end_src
-
-#+begin_src R
-out = as.matrix(readr::read_csv("optim.csv", skip=27))
-
-x = out[(n+2*p)+2:(2+p-1)]
-y = out[(n+2*p)+(2+p):(2+2*p-1)]
-cname = colnames(mm[[i]])
-
-mdsplot(data.frame(x,y), cname)
-#+end_src
-
-
-*** no fixed points: user-defined $\sigma$'s :ARCHIVE:
-#+begin_src stan :tangle vb.stan
-data {
-  int<lower=1> n;
-  int<lower=1> p;
-  int<lower=0,upper=1> Y[n,p];
-  real<lower=machine_precision()> sigma_w;
-  real<lower=machine_precision()> sigma_t;
-}
-transformed data {
-  // STAN takes row vectors for matrix initialization.
-  int<lower=0,upper=1> u[n,p,p];
-  real<lower=machine_precision()> a = 0.001;
-  real<lower=machine_precision()> b = 0.001;
-  for (k in 1:n) {
-    for (i in 1:p) {
-      for (j in 1:p) {
-        if (i != j)
-          u[k,i,j] = Y[k,i] * Y[k,j];
-        else
-          u[k,i,j] = 0; }
-    }
-  }
-}
-parameters {
-  vector[n] theta;
-  /* real<lower=0> sigma_w; */
-  matrix[p,2] w;
-}
-model {
-  for (k in 1:n) {
-    target += normal_lpdf(theta[k] | 0, sigma_t);
-    for (i in 1:p) {
-      target += normal_lpdf(w[i,1]|0,sigma_w) + normal_lpdf(w[i,2]|0,sigma_w);
-      for (j in (i+1):p) {
-        target += - log(1 + exp(theta[k] - distance(row(w, i), row(w, j))));
-        if ( u[k,i,j] != 0)
-          target += theta[k] - distance(row(w,i), row(w, j));
-      }
-    }
-  }
-  /* target += inv_gamma_lpdf(sigma_w^2 | a,b); */
-}
-#+end_src
-
-#+begin_src sh :async
-cd /opt/cmdstan
-make ~/workspace/hubViz-code/vb
-#+end_src
-
-#+begin_src R
-## data, fixed parameters
-i = 2
-Y = mm[[i]]
-n = nrow(Y)
-p = ncol(Y)
-sigma_w = 20
-sigma_t = 10
-rstan::stan_rdump(c('n','p','Y','sigma_t','sigma_w'),"nofixed.R")
-
-## initialization
-w_fr = sigma_w*matrix(rnorm(2*p),p,2)
-w = w_fr
-w_fr[1,] = c(0,0)
-w_fr[2,] = 1*c(1,1)
-theta = sigma_t*rnorm(n)
-#sigma_w = 10
-rstan::stan_rdump(c('w','w_fr','theta','sigma_w'),"init_list.R")
-#+end_src
-
-- put =init=init_list.R= for custom initialization.
-#+begin_src sh :async
-cd ~/workspace/hubViz-code
-./vb optimize data file=nofixed.R output file=optim.csv init=init_list.R
-#+end_src
-
-#+begin_src R
-out = as.matrix(readr::read_csv("optim.csv", skip=27))
-
-x = out[(n)+2:(2+p-1)]
-y = out[(n)+(2+p):(2+2*p-1)]
-cname = colnames(mm[[i]])
-
-mdsplot(data.frame(x,y), cname)
-#+end_src
 * C++ MCMC output
 #+begin_src sh :tangle run.sh
 #!/usr/bin/env bash
@@ -1363,13 +691,13 @@ mkdir -p output
 rm output/*
 for v in {1..5}
 do
-./main parallel $v 2500 2500 10
+./main parallel latent no_gamma $v 2500 2500 10
 done
 #+end_src
 
 #+begin_src sh :tangle run_more.sh
 #!/usr/bin/env bash
-export STAN_NUM_THREADS=11
+export STAN_NUM_THREADS=10
 for v in {4..5}
 do
 ./main parallel $v 5000 5000 10
@@ -1384,9 +712,11 @@ library(art)
 
 #+BEGIN_SRC R :results none
 library(coda)
-library(tidyverse)
-## library(MCMCpack)
+## library(tidyverse)
 library(bayesplot)
+library(foreach)
+library(doParallel)
+registerDoParallel(cores=4)
 source("Rfunction.R")
 source('load-outputs.R')
 #+END_SRC
@@ -1475,17 +805,18 @@ colnames(mydf[[cid]]) = cnames
   mylist = mcmc.list()
   for (cid in 1:5) {
     for (c in 0:1) {
-##      for (k in 1:N) {
-##        z = mydf[[cid]][,str_which(cname, paste0("z\\.",c,"\\.",k,"\\.[1-2]"))]
-##        w = mydf[[cid]][,str_which(cname, paste0("w\\.",item,"\\."))]
-##        mydf[[cid]][[paste0("dist_z.",c,".",k,"_","w.",item)]] = sqrt(rowSums((z-2)^2))
-##      }
+     for (k in 1:N) {
+       z = mydf[[cid]][,str_which(cname, paste0("z\\.",c,"\\.",k,"\\.[1-2]"))]
+       w = mydf[[cid]][,str_which(cname, paste0("w\\.",item,"\\."))]
+       mydf[[cid]][[paste0("dist_z.",c,".",k,"_","w.",item)]] = sqrt(rowSums((z-2)^2))
+     }
  }
     mylist[[cid]] = mcmc(mydf[[cid]])
   }
  #+END_SRC
 
  #+RESULTS:
+ : 1
 
 ** latent space
   [[file:figure/star_latent.pdf]]
@@ -1498,6 +829,7 @@ colnames(mydf[[cid]]) = cnames
    xmax = max(z0.star[,1],z1.star[,1],w.star[,1])
    ymax = max(z0.star[,2],z1.star[,2],w.star[,2])
 
+  myname = c(1:N,paste0("I.",1:I))
   pdf("figure/star_latent.pdf")
    lsjmplot(z0.star,w.star,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname)
    lsjmplot(z1.star,w.star,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname)
@@ -1516,8 +848,6 @@ colnames(mydf[[cid]]) = cnames
   [[file:figure/latent_position_plot_4.pdf]]
   [[file:figure/latent_position_plot_5.pdf]]
   [[file:figure/latent_position_plot.pdf]]
-  [[file:figure/latent_position_plot_0.pdf]]
-  [[file:figure/latent_position_plot_01.pdf]]
   [[file:figure/latent_position_plot_vegan.pdf]]
   #+begin_src R
   pdf("figure/latent_position_plot_vegan.pdf")
@@ -1564,7 +894,6 @@ colnames(mydf[[cid]]) = cnames
    #+END_SRC
 
    #+RESULTS:
-   : 1
 
 #+BEGIN_SRC R
 mcmc_pairs(mylist,
@@ -1574,13 +903,42 @@ mcmc_pairs(mylist,
 
 #+RESULTS:
 
+[[file:figure/beta_parcoord.pdf]]
 #+BEGIN_SRC R
-mcmc_parcoord(mylist,
-           regex_pars = "^z.[0-1]\\.[1-2]\\.",
+pdf("figure/beta_parcoord.pdf")
+bayesplot::mcmc_parcoord(mylist,
+           regex_pars = "^beta\\.[1-5]\\.",
            off_diag_args = list(size = 0.75))
+dev.off(which = dev.cur())
 #+END_SRC
 
 #+RESULTS:
+: 2
+
+[[file:figure/theta_parcoord.pdf]]
+#+BEGIN_SRC R
+pdf("figure/theta_parcoord.pdf")
+bayesplot::mcmc_parcoord(mylist,
+           regex_pars = "^theta\\.[1-5]\\.",
+           off_diag_args = list(size = 0.75))
+dev.off(which = dev.cur())
+#+END_SRC
+
+#+RESULTS:
+: 2
+
+[[file:figure/lambda_parcoord.pdf]]
+#+BEGIN_SRC R
+pdf("figure/lambda_parcoord.pdf")
+bayesplot::mcmc_parcoord(mylist,
+           regex_pars = "^lambda\\.[0-1]\\.1\\.",
+           transfomrations = "log",
+           off_diag_args = list(size = 0.75))
+dev.off(which = dev.cur())
+#+END_SRC
+
+#+RESULTS:
+: 2
 
 #+BEGIN_SRC R
 mcmc_parcoord(mylist,
@@ -1649,10 +1007,10 @@ dev.off(which = dev.cur())
    #+END_SRC
 
    #+RESULTS:
-   : 1
+   : 2
 
    [[file:figure/lambda_mcmc_trace_plot.pdf]]
-   [[file:figure/lambda_mcmc_trace_plot_1.pdf]]
+   [[pdf:figure/lambda_mcmc_trace_plot_1.pdf]]
    #+BEGIN_SRC R
    pdf("figure/lambda_mcmc_trace_plot_1.pdf")
    color_scheme_set("mix-blue-pink")
@@ -1670,7 +1028,7 @@ dev.off(which = dev.cur())
    #+END_SRC
 
    #+RESULTS:
-   : 1
+   : 2
 
    [[file:figure/beta_mcmc_trace_plot.pdf]]
    #+BEGIN_SRC R
@@ -1684,7 +1042,7 @@ dev.off(which = dev.cur())
    #+END_SRC
 
    #+RESULTS:
-   : 1
+   : 2
 
    [[file:figure/theta_mcmc_trace_plot.pdf]]
    #+BEGIN_SRC R
@@ -1700,8 +1058,8 @@ dev.off(which = dev.cur())
    #+RESULTS:
    : 1
 
-   [[file:figure/lp_sigma_mcmc_trace_plot.pdf]]
-   [[file:figure/lp_sigma_mcmc_trace_plot_1.pdf]]
+   [[pdf:figure/lp_sigma_mcmc_trace_plot.pdf]]
+   [[pdf:figure/lp_sigma_mcmc_trace_plot_1.pdf]]
    #+BEGIN_SRC R
    pdf("figure/lp_sigma_mcmc_trace_plot_1.pdf")
    color_scheme_set("mix-blue-pink")
@@ -1713,17 +1071,9 @@ dev.off(which = dev.cur())
    #+END_SRC
 
    #+RESULTS:
-   : 1
+   : 2
 
 ** output analysis
-
-#+BEGIN_SRC R
-library(foreach)
-library(doParallel)
-registerDoParallel(cores=4)
-#+END_SRC
-
-#+RESULTS:
 
 #+BEGIN_SRC R
 tmp = foreach(v=1:5, .combine='rbind') %dopar% apply(mydf[[1]], 2, mean)
@@ -1736,11 +1086,10 @@ param = getparam(posm,sj,i,k)
 
 #+RESULTS:
 
-[[file:figure/tradeoff_1.pdf]]
-[[file:figure/tradeoff_3.pdf]]
+[[file:figure/tradeoff_4.pdf]]
 #+BEGIN_SRC R
 ## accuracy = foreach(k=1:N, .combine='rbind') %dopar% fun_accuracy_ick(t,i,k,posm,cname,sj)
-item = 3
+item = 4
 time = 1:(sj[G] + 200)
 accuracy = foreach(k=1:N, .combine='rbind') %dopar%
   {
@@ -2085,7 +1434,7 @@ return(Xstar)}
 #+END_SRC
 
 #+BEGIN_SRC R :tangle Rfunction.R
-do_procrustes = function(Xstar, mydf, is_list = FALSE, translation = TRUE, dilation = FALSE, scale = FALSE) {
+do_procrustes = function(Xstar, mydf, is_list = FALSE, translation = TRUE, dilation = FALSE, scale = FALSE, reflect = TRUE) {
   posm = 0
   if (is_list == TRUE) {
     num_chain = length(mydf)
@@ -2118,10 +1467,11 @@ do_procrustes = function(Xstar, mydf, is_list = FALSE, translation = TRUE, dilat
     mm = foreach (k = 1:num_samples) %dopar% {
       ## X = matrix(unlist(lpos[k,]), nrow = 2) %>% t()
       ## mm[[k]] = MCMCpack::procrustes(X, Xstar, translation, dilation)$X.new #MCMCpack
-      vegan::procrustes(t( matrix(unlist(lpos[k,]), nrow = 2) ), Xstar, scale = scale)$Yrot #vegan
+      ## vegan::procrustes(Xstar, t( matrix(unlist(lpos[k,]), nrow = 2) ), scale = scale)$Yrot #vegan
+      shapes::procOPA(Xstar, t( matrix(unlist(lpos[k,]), nrow = 2)) , scale = scale, reflect = reflect)$Bhat #shapes
     }
     df[,adx] = t( matrix(unlist(mm), nrow = sum(adx)) )
-   
+
     posm = posm + Reduce("+",mm) / num_samples
     if (is_list == TRUE) { mydf[[i]] = df
     } else { mydf = df }
@@ -2134,6 +1484,8 @@ do_procrustes = function(Xstar, mydf, is_list = FALSE, translation = TRUE, dilat
   return(list(mydf = mydf,  z0=z0, z1=z1, w=w))
 }
 #+END_SRC
+
+#+RESULTS:
 
 * opusIII-matrices-data.dat
 
@@ -2209,8 +1561,8 @@ dev.off(which = dev.cur())
 ##di01_long <- melt(di01, id.vars=c("CNTSCHID","CNTSTUID","ST004D01T"))
 ##dt01_long <- melt(dt01, id.vars=c("CNTSCHID","CNTSTUID","ST004D01T"))
 
-di01_long = di01 %>% select(- CNTSCHID, - CNTSTUID)
-dt01_long = dt01 %>% select(- CNTSCHID, - CNTSTUID)
+di01_long = di01 %>% dplyr::select(- CNTSCHID, - CNTSTUID)
+dt01_long = dt01 %>% dplyr::select(- CNTSCHID, - CNTSTUID)
 
 di01_long <- reshape2::melt(di01_long, id.vars=c("schid","stuid","ST004D01T"))
 dt01_long <- reshape2::melt(dt01_long, id.vars=c("schid","stuid","ST004D01T"))
@@ -2227,8 +1579,8 @@ dit01$item = to_numID(dit01$item, tab_item)
 
 ** knot selection
 #+begin_src R
-sdi01 = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix()
-sdt01 = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix()
+sdi01 = di01 %>% dplyr::select(-ST004D01T,-schid,-stuid) %>% dplyr::select(- CNTSCHID, - CNTSTUID) %>% as.matrix()
+sdt01 = dt01 %>% dplyr::select(-ST004D01T,-schid,-stuid) %>% dplyr::select(- CNTSCHID, - CNTSTUID) %>% as.matrix()
 
 time = pull(dit01,time)
 ncut = 5
@@ -2257,8 +1609,8 @@ for (i in 1:N) {
             status_F = 1 * (status == 1 & res == 0)
             ) %>%
      as_tibble
- to_stan = tmp %>% mutate(seg_g = seg_g - 1) %>% select(stuid, item, time, seg_g, len, status_F, status_T)
- ## tmp %>% select(res,status,status_T,status_F)
+ to_stan = tmp %>% mutate(seg_g = seg_g - 1) %>% dplyr::select(stuid, item, time, seg_g, len, status_F, status_T)
+ ## tmp %>% dplyr::select(res,status,status_T,status_F)
  #+end_src
 
  #+begin_src R
@@ -2278,7 +1630,7 @@ for (i in 1:N) {
 *** To export short format data for STAN
 
    #+BEGIN_SRC R
-   tt01 = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID)
+   tt01 = dt01 %>% dplyr::select(-ST004D01T,-schid,-stuid) %>% dplyr::select(- CNTSCHID, - CNTSTUID)
    nitem = ncol(tt01)
    tt01 = data.frame(time = c(as.matrix(tt01)), status = 1)
 
@@ -2291,8 +1643,8 @@ for (i in 1:N) {
    mseg = matrix(pull(tmp,seg_g),ncol=nitem) %>% t()
    mh = matrix(pull(tmp,len),ncol=nitem) %>% t()
    mlen = sj[2:(ncut+1)] - sj[1:(ncut)]
-   mt = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
-   mi = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
+   mt = dt01 %>% dplyr::select(-ST004D01T,-schid,-stuid) %>% dplyr::select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
+   mi = di01 %>% dplyr::select(-ST004D01T,-schid,-stuid) %>% dplyr::select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
    #+END_SRC
 
    #+begin_src R
@@ -2310,8 +1662,8 @@ for (i in 1:N) {
 *** to export short format data for C++
    #+BEGIN_SRC R
    library(survival)
-   tt01 = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID)
-   ti01 = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID)
+   tt01 = dt01 %>% dplyr::select(-ST004D01T,-schid,-stuid) %>% dplyr::select(- CNTSCHID, - CNTSTUID)
+   ti01 = di01 %>% dplyr::select(-ST004D01T,-schid,-stuid) %>% dplyr::select(- CNTSCHID, - CNTSTUID)
    nitem = ncol(tt01)
 
    tf01 = data.frame(time = c(as.matrix(tt01)), status = 1)
@@ -2325,8 +1677,8 @@ for (i in 1:N) {
    mseg = matrix(pull(tmp,seg_g),ncol=nitem) %>% t()
    mh = matrix(pull(tmp,len),ncol=nitem) %>% t()
    mlen = sj[2:(ncut+1)] - msj[1:(ncut)]
-   mt = dt01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
-   mi = di01 %>% select(-ST004D01T,-schid,-stuid) %>% select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
+   mt = dt01 %>% dplyr::select(-ST004D01T,-schid,-stuid) %>% dplyr::select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
+   mi = di01 %>% dplyr::select(-ST004D01T,-schid,-stuid) %>% dplyr::select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
    #+END_SRC
 
    #+begin_src R

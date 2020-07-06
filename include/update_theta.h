@@ -4,7 +4,6 @@
 void update_theta(double &theta, double &acc_theta,
                   const double &mu_theta, const double &jump_theta,
                   const double &sigma,
-                  const Eigen::MatrixXd &lambda,
                   const Eigen::VectorXd &cum_lambda,
                   const Eigen::MatrixXd::ColXpr &beta,
                   const double &gamma,

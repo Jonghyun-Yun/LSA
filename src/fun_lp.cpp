@@ -8,10 +8,10 @@ double fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lambda,
               const Eigen::VectorXd &mu_gamma, const Eigen::VectorXd &sigma_gamma,
               const Eigen::MatrixXd &mu_z, const Eigen::MatrixXd &sigma_z,
               const Eigen::MatrixXd &mu_w, const Eigen::MatrixXd &sigma_w,
-              const Eigen::MatrixXd &lambda0, const Eigen::MatrixXd &lambda1,
+              const Eigen::MatrixXd &lambda, const Eigen::MatrixXd &cum_lambda,
               const Eigen::MatrixXd &beta, const Eigen::MatrixXd &theta, const double &sigma,
               const Eigen::VectorXd &gamma,
-              const Eigen::MatrixXd &z0, const Eigen::MatrixXd &z1, const Eigen::MatrixXd &w,
+              const Eigen::MatrixXd &z, const Eigen::MatrixXd &w,
               const int &I, const int &N, const int &G,
               const Eigen::VectorXd &len, const Eigen::MatrixXi &seg,
               const Eigen::MatrixXd &H, const Eigen::MatrixXi &Y) {
@@ -26,36 +26,37 @@ double fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lambda,
     using stan::math::inv_gamma_lpdf;
 
     double lp_ = 0.0;
-    Eigen::MatrixXd cum_lambda(I,N); // cumulative lambda for each cause
-    Eigen::MatrixXd lambda(I,G); 
-    Eigen::MatrixXd z(N,2);
+    // Eigen::MatrixXd cum_lambda(I,N); // cumulative lambda for each cause
+    // Eigen::MatrixXd lambda(I,G);
+    // Eigen::MatrixXd z(N,2);
     double log_prop_hazard; // to avoid double evaluation
 
     for (int c = 0; c < 2; c++) {
-        cum_lambda.setZero();
-        if (c == 0) {
-            lambda = lambda0;
-            z = z0;
-        }
-        else {
-            lambda = lambda1;
-            z = z1;
-        } 
+
+        // cum_lambda.setZero();
+        // if (c == 0) {
+        //     lambda = lambda0;
+        //     z = z0;
+        // }
+        // else {
+        //     lambda = lambda1;
+        //     z = z1;
+        // }
         
         // std::cout << "Calculating the log-acceptance ratio...\n";
         for (int i = 0; i < I; i++) {
             for (int k = 0; k < N; k++) {
 
-                for (int g = 0; g < seg(i,k); g++) {
-                    cum_lambda(i,k) += len(g) * lambda(i,g);
-                }
-                cum_lambda(i,k) += H(i,k) * lambda(i,seg(i,k));
+                // for (int g = 0; g < seg(i,k); g++) {
+                //     cum_lambda(i,k) += len(g) * lambda(i,g);
+                // }
+                // cum_lambda(i,k) += H(i,k) * lambda(i,seg(i,k));
 
-                log_prop_hazard = beta(i,c) + theta(k,c) - gamma(c) * distance(z.row(k), w.row(i));
-                lp_ -= cum_lambda(i,k) * exp( log_prop_hazard );
+                log_prop_hazard = beta(i,c) + theta(k,c) - gamma(c) * distance(z.row(c*N + k), w.row(i));
+                lp_ -= cum_lambda(c*I + i,k) * exp( log_prop_hazard );
 
                 if (Y(i,k) == c) {
-                    lp_ += log_prop_hazard;
+                    lp_ += log(lambda(c * I + i, seg(i, k))) + log_prop_hazard;
                 }
             }
         }
@@ -63,13 +64,13 @@ double fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lambda,
 
         // priors...
     lp_ += inv_gamma_lpdf(square(sigma), a_sigma, b_sigma) +
-        gamma_lpdf(to_vector(lambda0), to_vector(a_lambda), to_vector(b_lambda)) +
-        gamma_lpdf(to_vector(lambda1), to_vector(a_lambda), to_vector(b_lambda)) +
+        gamma_lpdf(to_vector(lambda.block(0,0,I,G)), to_vector(a_lambda), to_vector(b_lambda)) +
+        gamma_lpdf(to_vector(lambda.block(I,0,I,G)), to_vector(a_lambda), to_vector(b_lambda)) +
         normal_lpdf(to_vector(beta), to_vector(mu_beta), to_vector(sigma_beta)) +
         normal_lpdf(to_vector(theta), to_vector(mu_theta), to_vector(sigma_theta)) +
         lognormal_lpdf(gamma, mu_gamma, sigma_gamma) +
-        normal_lpdf(to_vector(z0), to_vector(mu_z), to_vector(sigma_z)) +
-        normal_lpdf(to_vector(z1), to_vector(mu_z), to_vector(sigma_z)) +
+        normal_lpdf(to_vector(z.block(0,0,N,2)), to_vector(mu_z), to_vector(sigma_z)) +
+        normal_lpdf(to_vector(z.block(N,0,N,2)), to_vector(mu_z), to_vector(sigma_z)) +
         normal_lpdf(to_vector(w), to_vector(mu_w), to_vector(sigma_w));
  
     return lp_;

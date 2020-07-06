@@ -57,17 +57,17 @@ matched = do_procrustes(Xstar, mydf, is_list = TRUE)
 mydf = matched$mydf
 
 item = 1
-  cname = names(mydf[[1]])
-  mylist = mcmc.list()
-  for (cid in 1:5) {
-    for (c in 0:1) {
-##      for (k in 1:N) {
-##        z = mydf[[cid]][,str_which(cname, paste0("z\\.",c,"\\.",k,"\\.[1-2]"))]
-##        w = mydf[[cid]][,str_which(cname, paste0("w\\.",item,"\\."))]
-##        mydf[[cid]][[paste0("dist_z.",c,".",k,"_","w.",item)]] = sqrt(rowSums((z-2)^2))
-##      }
+ cname = names(mydf[[1]])
+ mylist = mcmc.list()
+ for (cid in 1:5) {
+   for (c in 0:1) {
+    for (k in 1:N) {
+      z = mydf[[cid]][,str_which(cname, paste0("z\\.",c,"\\.",k,"\\.[1-2]"))]
+      w = mydf[[cid]][,str_which(cname, paste0("w\\.",item,"\\."))]
+      mydf[[cid]][[paste0("dist_z.",c,".",k,"_","w.",item)]] = sqrt(rowSums((z-2)^2))
+    }
+}
+   mylist[[cid]] = mcmc(mydf[[cid]])
  }
-    mylist[[cid]] = mcmc(mydf[[cid]])
-  }
 
 

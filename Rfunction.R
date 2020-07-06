@@ -1,5 +1,5 @@
 pullit = function(info,cl) {
-it = info %>% filter(Cluster_A == cl)# %>% select(Item,Time)
+it = info %>% filter(Cluster_A == cl)# %>% dplyr::select(Item,Time)
 item = pull(it,Item)
 time = pull(it,Time)
 return(cbind(item,time))
@@ -162,7 +162,7 @@ mlp = -Inf
   }
 return(Xstar)}
 
-do_procrustes = function(Xstar, mydf, is_list = FALSE, translation = TRUE, dilation = FALSE, scale = FALSE) {
+do_procrustes = function(Xstar, mydf, is_list = FALSE, translation = TRUE, dilation = FALSE, scale = FALSE, reflect = TRUE) {
   posm = 0
   if (is_list == TRUE) {
     num_chain = length(mydf)
@@ -195,10 +195,11 @@ do_procrustes = function(Xstar, mydf, is_list = FALSE, translation = TRUE, dilat
     mm = foreach (k = 1:num_samples) %dopar% {
       ## X = matrix(unlist(lpos[k,]), nrow = 2) %>% t()
       ## mm[[k]] = MCMCpack::procrustes(X, Xstar, translation, dilation)$X.new #MCMCpack
-      vegan::procrustes(t( matrix(unlist(lpos[k,]), nrow = 2) ), Xstar, scale = scale)$Yrot #vegan
+      ## vegan::procrustes(Xstar, t( matrix(unlist(lpos[k,]), nrow = 2) ), scale = scale)$Yrot #vegan
+      shapes::procOPA(Xstar, t( matrix(unlist(lpos[k,]), nrow = 2)) , scale = scale, reflect = reflect)$Bhat #shapes
     }
     df[,adx] = t( matrix(unlist(mm), nrow = sum(adx)) )
-   
+
     posm = posm + Reduce("+",mm) / num_samples
     if (is_list == TRUE) { mydf[[i]] = df
     } else { mydf = df }

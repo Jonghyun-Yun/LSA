@@ -3,7 +3,7 @@
 
 Eigen::VectorXd update_z(const Eigen::MatrixXd::RowXpr &z, double &acc_z,
                          const double &mu_z, const double &sigma_z, const double &jump_z,
-                         const Eigen::MatrixXd &lambda, const Eigen::VectorXd &cum_lambda,
+                         const Eigen::VectorXd &cum_lambda,
                          const Eigen::MatrixXd::ColXpr &beta,
                          const double &theta, const double &gamma,
                          const Eigen::MatrixXd &w,
@@ -34,17 +34,17 @@ Eigen::VectorXd update_z(const Eigen::MatrixXd::RowXpr &z, double &acc_z,
   //   }
   //   cum_lambda += H(i) * lambda(i,seg(i));
 
-    logr_z -= cum_lambda(i) * ( stan::math::exp( beta(i) + theta - gamma * stan::math::distance(z, w.row(i))) -
-                             stan::math::exp( beta(i) + theta - gamma * stan::math::distance(z_s, w.row(i))));
+    logr_z -= cum_lambda(i) * ( stan::math::exp( beta(i) + theta - gamma * stan::math::distance(z_s, w.row(i))) -
+                             stan::math::exp( beta(i) + theta - gamma * stan::math::distance(z, w.row(i))));
 
       if (Y_k(i) == cause) {
-          logr_z -= gamma * ( stan::math::distance(z, w.row(i)) - stan::math::distance(z_s, w.row(i)));
+          logr_z -= gamma * ( stan::math::distance(z_s, w.row(i)) - stan::math::distance(z, w.row(i)));
       }
     }
 
   // accept or reject?
-  if ((logr_z > 0.0) || (logr_z >
-                              stan::math::log(stan::math::uniform_rng(0.0, 1.0, rng)))) {
+  if ((logr_z > 0.0) ||
+      (logr_z > stan::math::log(stan::math::uniform_rng(0.0, 1.0, rng)))) {
       acc_z += 1.0;
   }
   else {
