@@ -413,8 +413,9 @@ int main(int argc, const char *argv[]) {
         // updating w...
         // no updating w_1
         tbb::parallel_for(
-            tbb::blocked_range<int>(1, I), [&](tbb::blocked_range<int> r) {
+            tbb::blocked_range<int>(0, I), [&](tbb::blocked_range<int> r) {
               for (int i = r.begin(); i < r.end(); ++i) {
+
                 w.row(i) = update_w(
                     w.row(i), acc_w(i), mu_w(i), sigma_w(i), jump_w(i),
                     cum_lambda.row(i), cum_lambda.row(I + i), beta.row(i), theta, gamma,

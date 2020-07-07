@@ -83,7 +83,7 @@ tmp <- survSplit(formula = Surv(time, status) ~ ., data = tf01, cut = sj, episod
 
 mseg = matrix(pull(tmp,seg_g),ncol=nitem) %>% t()
 mh = matrix(pull(tmp,len),ncol=nitem) %>% t()
-mlen = sj[2:(ncut+1)] - msj[1:(ncut)]
+mlen = sj[2:(ncut+1)] - sj[1:(ncut)]
 mt = dt01 %>% dplyr::select(-ST004D01T,-schid,-stuid) %>% dplyr::select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
 mi = di01 %>% dplyr::select(-ST004D01T,-schid,-stuid) %>% dplyr::select(- CNTSCHID, - CNTSTUID) %>% as.matrix %>% t()
 
@@ -109,7 +109,7 @@ jump_lambda = matrix(1.0,I,G)
 
 mu_beta = matrix(0.0,I,2)
 sigma_beta = matrix(1.0,I,2)
-jump_beta = matrix(0.5,I,2)
+jump_beta = matrix(0.25,I,2)
 
 mu_theta = matrix(0.0,N,2)
 sigma_theta = matrix(1.0,N,2)
@@ -128,7 +128,7 @@ jump_z = matrix(1.0,N,2)
 
 mu_w = matrix(0.0,I,2)
 sigma_w = matrix(1.0,I,2)
-jump_w = matrix(0.5,I,2)
+jump_w = matrix(0.1,I,2)
 
 write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"pj_lambda.csv", col_names = FALSE)
 write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"pj_beta.csv", col_names = FALSE)

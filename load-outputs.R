@@ -1,9 +1,9 @@
-mvar = read_csv("mvar.csv", col_names=F) %>% as.matrix()
+mvar = readr::read_csv("mvar.csv", col_names=F) %>% as.matrix()
 I = mvar[1]
 N = mvar[2]
 G = mvar[4]
 
-sj = read_csv("mlen.csv",col_names=F) %>% as.matrix()
+sj = readr::read_csv("mlen.csv",col_names=F) %>% as.matrix()
 sj = c(0, cumsum(sj))
 H = sj[2:(G+1)] - sj[1:G]
 
@@ -46,7 +46,7 @@ cnames = c(cnames, "sigma", "lp_")
 mydf = list()
 mylist = mcmc.list()
 for (cid in 1:5) {
-mydf[[cid]] = read_csv(paste0("output/sample_chain",cid,".csv"), col_names=F) %>% as.data.frame()
+mydf[[cid]] = readr::read_csv(paste0("output/sample_chain",cid,".csv"), col_names=F) %>% as.data.frame()
 colnames(mydf[[cid]]) = cnames
 }
 
