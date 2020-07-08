@@ -13,6 +13,7 @@ double fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lambda,
               const Eigen::VectorXd &gamma,
               const Eigen::MatrixXd &z, const Eigen::MatrixXd &w,
               const int &I, const int &N, const int &G,
+              const Eigen::MatrixXi &NA,
               const Eigen::VectorXd &len, const Eigen::MatrixXi &seg,
               const Eigen::MatrixXd &H, const Eigen::MatrixXi &Y);
 

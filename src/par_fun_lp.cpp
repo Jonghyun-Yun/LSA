@@ -14,6 +14,7 @@ double par_fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lamb
                   const Eigen::VectorXd &gamma,
                   const Eigen::MatrixXd &z, const Eigen::MatrixXd &w,
                   const int &I, const int &N, const int &G,
+                  const Eigen::MatrixXi &NA,
                   const Eigen::VectorXd &len, const Eigen::MatrixXi &seg,
                   const Eigen::MatrixXd &H, const Eigen::MatrixXi &Y) {
 
@@ -59,17 +60,22 @@ double par_fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lamb
                         // }
                         // cum_lambda(i,k) += H(i,k) * lambda(i,seg(i,k));
 
-                        running_total -=
-                            cum_lambda(c * I + i, k) *
-                            exp(beta(i, c) + theta(k, c) -
-                                gamma(c) * distance(z.row(c*N + k), w.row(i)));
+                        if (NA(i,k) == 1) {
 
-                        if (Y(i, k) == c) {
-                          running_total +=
-                              log(lambda(c * I + i, seg(i, k))) + beta(i, c) +
-                              theta(k, c) -
-                              gamma(c) * distance(z.row(k), w.row(i));
+                            running_total -=
+                                cum_lambda(c * I + i, k) *
+                                exp(beta(i, c) + theta(k, c) -
+                                    gamma(c) * distance(z.row(c*N + k), w.row(i)));
+
+                            if (Y(i, k) == c) {
+                                running_total +=
+                                    log(lambda(c * I + i, seg(i, k))) + beta(i, c) +
+                                    theta(k, c) -
+                                    gamma(c) * distance(z.row(k), w.row(i));
+                            }
+
                         }
+
                     }
                 }
                 return running_total;

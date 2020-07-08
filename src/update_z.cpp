@@ -8,6 +8,7 @@ Eigen::VectorXd update_z(const Eigen::MatrixXd::RowXpr &z, double &acc_z,
                          const double &theta, const double &gamma,
                          const Eigen::MatrixXd &w,
                          const int &I,
+                         const Eigen::MatrixXi::ColXpr &NA,
                          const Eigen::VectorXd &len, const Eigen::MatrixXi::ColXpr &seg,
                          const Eigen::MatrixXd::ColXpr &H,
                          const Eigen::MatrixXi::ColXpr &Y_k, const int cause,
@@ -28,6 +29,9 @@ Eigen::VectorXd update_z(const Eigen::MatrixXd::RowXpr &z, double &acc_z,
 
   // std::cout << "Calculating the log-acceptance ratio of lambda...\n";
   for (int i = 0; i < I; i++) {
+
+    if(NA(i) == 1) {
+
   // cum_lambda = 0.0;
   //   for (int g = 0; g < seg(i); g++) {
   //     cum_lambda += len(g) * lambda(i,g);
@@ -41,6 +45,7 @@ Eigen::VectorXd update_z(const Eigen::MatrixXd::RowXpr &z, double &acc_z,
           logr_z -= gamma * ( stan::math::distance(z_s, w.row(i)) - stan::math::distance(z, w.row(i)));
       }
     }
+  }
 
   // accept or reject?
   if ((logr_z > 0.0) ||

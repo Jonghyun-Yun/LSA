@@ -9,7 +9,8 @@ Eigen::VectorXd update_w(const Eigen::MatrixXd::RowXpr &w, double &acc_w,
                          const Eigen::MatrixXd &theta,
                          const Eigen::VectorXd &gamma,
                          const Eigen::MatrixXd &z,
-                         const int &N, const int &G, const Eigen::VectorXd &len, const Eigen::MatrixXi::RowXpr &seg,
+                         const int &N, const int &G, const Eigen::MatrixXi::RowXpr &NA,
+                         const Eigen::VectorXd &len, const Eigen::MatrixXi::RowXpr &seg,
                          const Eigen::MatrixXd::RowXpr &H, const Eigen::MatrixXi::RowXpr &Y_i,
                          boost::ecuyer1988 &rng) {
 
@@ -39,26 +40,29 @@ Eigen::VectorXd update_w(const Eigen::MatrixXd::RowXpr &w, double &acc_w,
 
   // std::cout << "Calculating the log-acceptance ratio of lambda...\n";
   for (int k = 0; k < N; k++) {
-    // cum_lambda.setZero();
-    // tz.row(0) = z0.row(k);
-    // tz.row(1) = z1.row(k);
 
-    for (int c = 0; c < 2; c++) {
-      // for (int g = 0; g < seg(k); g++) {
-      // cum_lambda(c) += len(g) * lambda(c,g);
-      // }
-      // cum_lambda(c) += H(k) * lambda(c,seg(k));
+    if (NA(k) == 1) {
+      // cum_lambda.setZero();
+      // tz.row(0) = z0.row(k);
+      // tz.row(1) = z1.row(k);
 
-      logr_w -=
+      for (int c = 0; c < 2; c++) {
+        // for (int g = 0; g < seg(k); g++) {
+        // cum_lambda(c) += len(g) * lambda(c,g);
+        // }
+        // cum_lambda(c) += H(k) * lambda(c,seg(k));
+
+        logr_w -=
           cum_lambda(c, k) *
           (stan::math::exp(beta(c) + theta(k, c) -
                            gamma(c) * stan::math::distance(z.row(c*N + k), w_s)) -
            stan::math::exp(beta(c) + theta(k, c) -
                            gamma(c) * stan::math::distance(z.row(c*N + k), w)));
 
-      if (Y_i(k) == c) {
-        logr_w -= gamma(c) * (stan::math::distance(z.row(c*N + k), w_s) -
-                              stan::math::distance(z.row(c*N + k), w));
+        if (Y_i(k) == c) {
+          logr_w -= gamma(c) * (stan::math::distance(z.row(c*N + k), w_s) -
+                                stan::math::distance(z.row(c*N + k), w));
+        }
       }
     }
   }

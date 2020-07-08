@@ -121,7 +121,8 @@ edited a few lines from compiledb-generator and [[file:compile_commands.json][SA
   =compiledb-generator= can be used to generate the compilation database, but it doesn't generate a build system. So I may want to generate a Makefile to build sources. If I use CMAKE, which generate compilation database and build system, this step is not necessary.
 #+BEGIN_SRC sh :tangle Makefile
 MATH=/Users/yunj/stan-dev/math/
-
+INC_DIR=/Users/yunj/Dropbox/lsjm-art/lsjm-code/include:/Users/yunj/Dropbox/lsjm-art/lsjm-code/src
+CFLAGS=-c -Wall -I$(INC_DIR)/..  #
 main:
 	make -f $(MATH)make/standalone main
 

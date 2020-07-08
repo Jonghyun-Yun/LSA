@@ -8,6 +8,7 @@ Eigen::VectorXd update_beta(double &beta, double &acc_beta,
                            const double &gamma,
                            const Eigen::MatrixXd &z, const Eigen::MatrixXd::RowXpr &w,
                            const int &N,
+                           const Eigen::MatrixXi::RowXpr &NA,
                            const Eigen::VectorXd &len, const Eigen::MatrixXi::RowXpr &seg,
                            const Eigen::MatrixXd::RowXpr &H,
                            const Eigen::MatrixXi::RowXpr &Y_i, const int cause,
@@ -28,19 +29,23 @@ Eigen::VectorXd update_beta(double &beta, double &acc_beta,
 
   // std::cout << "Calculating the log-acceptance ratio of lambda...\n";
   for (int k = 0; k < N; k++) {
-    for (int g = 0; g < seg(k); g++) {
-      cum_lambda(k) += len(g) * lambda(g);
-    }
-    cum_lambda(k) += H(k) * lambda(seg(k));
 
-    logr_beta -= cum_lambda(k) * ( stan::math::exp( beta_s + theta(k) - gamma * stan::math::distance(z.row(k), w)) -
-                                   stan::math::exp( beta + theta(k) - gamma * stan::math::distance(z.row(k), w)));
+    if (NA(k) == 1) {
+
+      for (int g = 0; g < seg(k); g++) {
+        cum_lambda(k) += len(g) * lambda(g);
+      }
+      cum_lambda(k) += H(k) * lambda(seg(k));
+
+      logr_beta -= cum_lambda(k) * ( stan::math::exp( beta_s + theta(k) - gamma * stan::math::distance(z.row(k), w)) -
+                                     stan::math::exp( beta + theta(k) - gamma * stan::math::distance(z.row(k), w)));
 
       if (Y_i(k) == cause) {
         logr_beta += stan::math::log(beta_s) - stan::math::log(beta);
       }
     }
-
+  }
+ 
   // accept or reject?
   if ((logr_beta > 0.0) ||
       (logr_beta > stan::math::log(stan::math::uniform_rng(0.0, 1.0, rng)))) {

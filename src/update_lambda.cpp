@@ -6,6 +6,7 @@ void update_lambda(double &lambda, double &acc_lambda, const double &a_lambda,
                    const double &beta, const Eigen::MatrixXd::ColXpr &theta,
                    const double &gamma, const Eigen::MatrixXd &z,
                    const Eigen::MatrixXd::RowXpr &w, const int &N,
+                   const Eigen::MatrixXi::RowXpr &NA,
                    const double &len, const Eigen::MatrixXi::RowXpr &seg,
                    const Eigen::MatrixXd::RowXpr &H,
                    const Eigen::MatrixXi::RowXpr &Y_i, const int cause,
@@ -27,16 +28,20 @@ void update_lambda(double &lambda, double &acc_lambda, const double &a_lambda,
 
   // std::cout << "Calculating the log-acceptance ratio of lambda...\n";
   for (int k = 0; k < N; k++) {
-    if (g < seg(k)) {
-      logr_lambda -= len * (lambda_s - lambda) *
-                     stan::math::exp(beta + theta(k) -
-                                     gamma * stan::math::distance(z.row(k), w));
-    } else if (g == seg(k)) {
-      logr_lambda -= H(k) * (lambda_s - lambda) *
-                     stan::math::exp(beta + theta(k) -
-                                     gamma * stan::math::distance(z.row(k), w));
-      if (Y_i(k) == cause) {
-        logr_lambda += stan::math::log(lambda_s) - stan::math::log(lambda);
+
+    if (NA(k) == 1) {
+
+      if (g < seg(k)) {
+        logr_lambda -= len * (lambda_s - lambda) *
+          stan::math::exp(beta + theta(k) -
+                          gamma * stan::math::distance(z.row(k), w));
+      } else if (g == seg(k)) {
+        logr_lambda -= H(k) * (lambda_s - lambda) *
+          stan::math::exp(beta + theta(k) -
+                          gamma * stan::math::distance(z.row(k), w));
+        if (Y_i(k) == cause) {
+          logr_lambda += stan::math::log(lambda_s) - stan::math::log(lambda);
+        }
       }
     }
   }

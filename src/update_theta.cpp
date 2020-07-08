@@ -9,6 +9,7 @@ void update_theta(double &theta, double &acc_theta,
                   const double &gamma,
                   const Eigen::MatrixXd::RowXpr &z, const Eigen::MatrixXd &w,
                   const int &I,
+                  const Eigen::MatrixXi::ColXpr &NA,
                   const Eigen::VectorXd &len, const Eigen::MatrixXi::ColXpr &seg,
                   const Eigen::MatrixXd::ColXpr &H,
                   const Eigen::MatrixXi::ColXpr &Y_k, const int cause,
@@ -29,19 +30,23 @@ void update_theta(double &theta, double &acc_theta,
 
   // std::cout << "Calculating the log-acceptance ratio of lambda...\n";
   for (int i = 0; i < I; i++) {
-  // cum_lambda = 0.0;
-  //   for (int g = 0; g < seg(i); g++) {
-  //     cum_lambda += len(g) * lambda(i,g);
-  //   }
-  //   cum_lambda += H(i) * lambda(i,seg(i));
 
-    logr_theta -= cum_lambda(i) * ( stan::math::exp( beta(i) + theta_s - gamma * stan::math::distance(z, w.row(i))) -
-                                 stan::math::exp( beta(i) + theta - gamma * stan::math::distance(z, w.row(i))));
+    if (NA(i) == 1) {
+
+      // cum_lambda = 0.0;
+      //   for (int g = 0; g < seg(i); g++) {
+      //     cum_lambda += len(g) * lambda(i,g);
+      //   }
+      //   cum_lambda += H(i) * lambda(i,seg(i));
+
+      logr_theta -= cum_lambda(i) * ( stan::math::exp( beta(i) + theta_s - gamma * stan::math::distance(z, w.row(i))) -
+                                      stan::math::exp( beta(i) + theta - gamma * stan::math::distance(z, w.row(i))));
 
       if (Y_k(i) == cause) {
         logr_theta += stan::math::log(theta_s) - stan::math::log(theta);
       }
     }
+  }
 
   // accept or reject?
   if ((logr_theta > 0.0) || (logr_theta >

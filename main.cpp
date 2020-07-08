@@ -59,10 +59,20 @@ int main(int argc, const char *argv[]) {
     return 0;
   }
 
+  bool FULL_OBS;
+  if (sarg[2] == "full") {
+    FULL_OBS = true;
+  } else if (sarg[2] == "sparse") {
+    FULL_OBS = false;
+  } else {
+    std::cout << "invalid arguemnt for FULL_OBS.\n" << std::endl;
+    return 0;
+  }
+
   bool UPDATE_LATENT;
-  if (sarg[2] == "latent") {
+  if (sarg[3] == "latent") {
     UPDATE_LATENT = true;
-  } else if (sarg[2] == "no_latent") {
+  } else if (sarg[3] == "no_latent") {
     UPDATE_LATENT = false;
   } else {
     std::cout << "invalid arguemnt for UPDATE_LATENT.\n" << std::endl;
@@ -70,19 +80,19 @@ int main(int argc, const char *argv[]) {
   }
 
   bool UPDATE_GAMMA;
-  if (sarg[3] == "gamma") {
+  if (sarg[4] == "gamma") {
     UPDATE_GAMMA = true;
-  } else if (sarg[3] == "no_gamma") {
+  } else if (sarg[4] == "no_gamma") {
     UPDATE_GAMMA = false;
   } else {
     std::cout << "invalid arguemnt for UPDATE_GAMMA.\n" << std::endl;
     return 0;
   }
 
-  int chain_id = atoi(argv[4]);
-  int num_samples = atoi(argv[5]);
-  int num_warmup = atoi(argv[6]);
-  int thin = atoi(argv[7]);
+  int chain_id = atoi(argv[5]);
+  int num_samples = atoi(argv[6]);
+  int num_warmup = atoi(argv[7]);
+  int thin = atoi(argv[8]);
   // double my_eps = atof(argv[4]);
   // int my_L = atoi(argv[5]);
   // double min_E = atof(argv[6]);
@@ -140,6 +150,7 @@ int main(int argc, const char *argv[]) {
   Eigen::MatrixXd mH(I, N);
   // Eigen::MatrixXd mt(I, N);
   Eigen::MatrixXi mY(I, N);
+  Eigen::MatrixXi mNA(I, N);
 
   mlen = readCSV("mlen.csv", G, 1);
   tmp_mseg = readCSV("mseg.csv", I, N);
@@ -149,6 +160,15 @@ int main(int argc, const char *argv[]) {
 
   mseg = tmp_mseg.cast<int>();
   mY = tmp_mY.cast<int>();
+
+  if (FULL_OBS) {
+    mNA.setOnes();
+  }
+  else {
+  Eigen::MatrixXd tmp_mNA(I, N);
+  tmp_mNA = readCSV("mNA.csv", I, N);
+  mNA = tmp_mNA.cast<int>();
+  }
 
   // std::cout << I << ", " << N << ", " << ", " << C << ", " << G
   //           << std::endl;
@@ -334,7 +354,8 @@ int main(int argc, const char *argv[]) {
                 update_lambda(lambda((c * I) + i, g), acc_lambda((c * I) + i, g),
                               a_lambda(i,g), b_lambda(i,g), jump_lambda(i,g), g,
                               beta(i, c), theta.col(c), gamma(c), z.block(c*N,0,N,2), w.row(i),
-                              N, mlen(g), mseg.row(i), mH.row(i), mY.row(i), c, rng);
+                              N, mNA.row(i), mlen(g), mseg.row(i), mH.row(i), mY.row(i), c, rng);
+
               }
             }
           }
@@ -357,7 +378,7 @@ int main(int argc, const char *argv[]) {
               cum_lambda.row(c*I + i) =
                 update_beta(beta(i,c), acc_beta(i,c), mu_beta(i,c), sigma_beta(i,c), jump_beta(i,c),
                             lambda.row(c*I + i), theta.col(c), gamma(c), z.block(c*N,0,N,2), w.row(i),
-                            N, mlen, mseg.row(i), mH.row(i), mY.row(i), c, rng);
+                            N, mNA.row(i), mlen, mseg.row(i), mH.row(i), mY.row(i), c, rng);
             }
           }
         });
@@ -375,7 +396,7 @@ int main(int argc, const char *argv[]) {
               update_theta( theta(k,c), acc_theta(k,c), mu_theta(k,c), jump_theta(k,c), sigma,
                             cum_lambda.block(c*I,k,I,1),
                             beta.col(c), gamma(c), z.row(c*N + k), w,
-                            I, mlen, mseg.col(k), mH.col(k), mY.col(k), c, rng);
+                            I,  mNA.col(k), mlen, mseg.col(k), mH.col(k), mY.col(k), c, rng);
             }
           }
         });
@@ -386,7 +407,7 @@ int main(int argc, const char *argv[]) {
         // updating gamma...
         update_gamma(gamma, acc_gamma, mu_gamma, sigma_gamma, jump_gamma,
                      cum_lambda, beta, theta, z, w, I, N,
-                     G, mlen, mseg, mH, mY, rng);
+                     G, mNA, mlen, mseg, mH, mY, rng);
         }
        
         // // updating z...
@@ -404,7 +425,7 @@ int main(int argc, const char *argv[]) {
                   z.row(c * N + k) = update_z(
                       z.row(c * N + k), acc_z(c * N + k), mu_z(k), sigma_z(k),
                       jump_z(k), cum_lambda.block(c * I, k, I, 1), beta.col(c),
-                      theta(k, c), gamma(c), w, I, mlen, mseg.col(k), mH.col(k),
+                      theta(k, c), gamma(c), w, I, mNA.col(k), mlen, mseg.col(k), mH.col(k),
                       mY.col(k), c, rng);
                 }
               }
@@ -419,7 +440,7 @@ int main(int argc, const char *argv[]) {
                 w.row(i) = update_w(
                     w.row(i), acc_w(i), mu_w(i), sigma_w(i), jump_w(i),
                     cum_lambda.row(i), cum_lambda.row(I + i), beta.row(i), theta, gamma,
-                    z, N, G, mlen,
+                    z, N, G, mNA.row(i), mlen,
                     mseg.row(i), mH.row(i), mY.row(i), rng);
               }
             });
@@ -437,7 +458,7 @@ int main(int argc, const char *argv[]) {
             update_lambda(lambda((c * I) + i, g), acc_lambda((c * I) + i, g),
                           a_lambda(i,g), b_lambda(i,g), jump_lambda(i,g), g,
                           beta(i, c), theta.col(c), gamma(c), z.block(c*N,0,N,2), w.row(i),
-                          N, mlen(g), mseg.row(i), mH.row(i), mY.row(i), c, rng);
+                          N, mNA.row(i), mlen(g), mseg.row(i), mH.row(i), mY.row(i), c, rng);
 
           }
         }
@@ -450,7 +471,7 @@ int main(int argc, const char *argv[]) {
           cum_lambda.row(c*I + i) =
             update_beta(beta(i,c), acc_beta(i,c), mu_beta(i,c), sigma_beta(i,c), jump_beta(i,c),
                         lambda.row(c*I + i), theta.col(c), gamma(c), z.block(c*N,0,N,2), w.row(i),
-                        N, mlen, mseg.row(i), mH.row(i), mY.row(i), c, rng);
+                        N, mNA.row(i), mlen, mseg.row(i), mH.row(i), mY.row(i), c, rng);
 
         }
       }
@@ -461,7 +482,7 @@ int main(int argc, const char *argv[]) {
 
           update_theta( theta(k,c), acc_theta(k,c), mu_theta(k,c), jump_theta(k,c), sigma,
                         cum_lambda.block(c*I,k,I,1), beta.col(c), gamma(c), z.row(c*N + k), w,
-                        I, mlen, mseg.col(k), mH.col(k), mY.col(k), c, rng);
+                        I, mNA.col(k), mlen, mseg.col(k), mH.col(k), mY.col(k), c, rng);
 
         }
       }
@@ -472,7 +493,7 @@ int main(int argc, const char *argv[]) {
           // updating gamma...
           update_gamma(gamma, acc_gamma, mu_gamma, sigma_gamma, jump_gamma,
                        cum_lambda, beta, theta, z, w, I, N,
-                       G, mlen, mseg, mH, mY, rng);
+                       G, mNA, mlen, mseg, mH, mY, rng);
         }
 
       // updating z...
@@ -481,7 +502,7 @@ int main(int argc, const char *argv[]) {
 
           z.row(c*N + k) = update_z(z.row(c*N + k), acc_z(c*N + k), mu_z(k), sigma_z(k), jump_z(k),
                                     cum_lambda.block(c*I,k,I,1), beta.col(c), theta(k,c), gamma(c), w,
-                                    I, mlen, mseg.col(k), mH.col(k), mY.col(k), c, rng);
+                                    I, mNA.col(k), mlen, mseg.col(k), mH.col(k), mY.col(k), c, rng);
 
         }
       }
@@ -491,9 +512,8 @@ int main(int argc, const char *argv[]) {
 
         w.row(i) = update_w(w.row(i), acc_w(i), mu_w(i), sigma_w(i), jump_w(i),
                             cum_lambda.row(i), cum_lambda.row(I + i),
-                            beta.row(i), theta, gamma,
-                            z,
-                            N, G, mlen, mseg.row(i), mH.row(i), mY.row(i), rng);
+                            beta.row(i), theta, gamma, z,
+                            N, G, mNA.row(i), mlen, mseg.row(i), mH.row(i), mY.row(i), rng);
 
       }
 
@@ -524,13 +544,13 @@ int main(int argc, const char *argv[]) {
         lp_ = par_fun_lp(a_lambda, b_lambda, mu_beta, sigma_beta, mu_theta, sigma_theta,
                          a_sigma, b_sigma, mu_gamma, sigma_gamma, mu_z, sigma_z, mu_w, sigma_w,
                          lambda, cum_lambda, beta, theta, sigma, gamma, z, w,
-                         I, N, G, mlen, mseg, mH, mY);
+                         I, N, G, mNA, mlen, mseg, mH, mY);
       }
       else {
         lp_ = fun_lp(a_lambda, b_lambda, mu_beta, sigma_beta, mu_theta, sigma_theta,
                      a_sigma, b_sigma, mu_gamma, sigma_gamma, mu_z, sigma_z, mu_w, sigma_w,
                      lambda, cum_lambda, beta, theta, sigma, gamma, z, w,
-                     I, N, G, mlen, mseg, mH, mY);
+                     I, N, G, mNA, mlen, mseg, mH, mY);
       }
       // x.format(CommaInitFmt);
       osample << chain_id << ", " << ii

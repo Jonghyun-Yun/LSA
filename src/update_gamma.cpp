@@ -9,6 +9,7 @@ void update_gamma(Eigen::VectorXd &gamma, Eigen::VectorXd &acc_gamma,
                   const Eigen::MatrixXd &beta, const Eigen::MatrixXd &theta,
                   const Eigen::MatrixXd &z, const Eigen::MatrixXd &w,
                   const int &I, const int &N, const int &G,
+                  const Eigen::MatrixXi &NA,
                   const Eigen::VectorXd &len, const Eigen::MatrixXi &seg,
                   const Eigen::MatrixXd &H, const Eigen::MatrixXi &Y,
                   boost::ecuyer1988 &rng) {
@@ -44,24 +45,28 @@ void update_gamma(Eigen::VectorXd &gamma, Eigen::VectorXd &acc_gamma,
     // std::cout << "Calculating the log-acceptance ratio...\n";
     for (int i = 0; i < I; i++) {
       for (int k = 0; k < N; k++) {
-        // cum_lambda.setZero();
 
-        // for (int g = 0; g < seg(i,k); g++) {
-        //   cum_lambda(c) += len(g) * lambda(i,g);
-        // }
-        // cum_lambda(c) += H(i,k) * lambda(i,seg(i,k));
+        if (NA(i,k) == 1) {
 
-        logr_gamma(c) -=
+          // cum_lambda.setZero();
+
+          // for (int g = 0; g < seg(i,k); g++) {
+          //   cum_lambda(c) += len(g) * lambda(i,g);
+          // }
+          // cum_lambda(c) += H(i,k) * lambda(i,seg(i,k));
+
+          logr_gamma(c) -=
             cum_lambda(c * I + i, k) *
             (stan::math::exp(beta(i, c) + theta(k, c) -
                              gamma_s(c) *
-                                 stan::math::distance(z.row(c*N + k), w.row(i))) -
+                             stan::math::distance(z.row(c*N + k), w.row(i))) -
              stan::math::exp(beta(i, c) + theta(k, c) -
                              gamma(c) *
-                                 stan::math::distance(z.row(c*N + k), w.row(i))));
+                             stan::math::distance(z.row(c*N + k), w.row(i))));
 
-        if (Y(i, k) == c) {
-          logr_gamma(c) += (gamma_s(c) - gamma(c)) * stan::math::distance(z.row(c*N + k), w.row(i));
+          if (Y(i, k) == c) {
+            logr_gamma(c) += (gamma_s(c) - gamma(c)) * stan::math::distance(z.row(c*N + k), w.row(i));
+          }
         }
       }
     }

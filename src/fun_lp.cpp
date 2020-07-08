@@ -13,6 +13,7 @@ double fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lambda,
               const Eigen::VectorXd &gamma,
               const Eigen::MatrixXd &z, const Eigen::MatrixXd &w,
               const int &I, const int &N, const int &G,
+              const Eigen::MatrixXi &NA,
               const Eigen::VectorXd &len, const Eigen::MatrixXi &seg,
               const Eigen::MatrixXd &H, const Eigen::MatrixXi &Y) {
 
@@ -47,16 +48,18 @@ double fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lambda,
         for (int i = 0; i < I; i++) {
             for (int k = 0; k < N; k++) {
 
-                // for (int g = 0; g < seg(i,k); g++) {
-                //     cum_lambda(i,k) += len(g) * lambda(i,g);
-                // }
-                // cum_lambda(i,k) += H(i,k) * lambda(i,seg(i,k));
+                if (NA(i,k) == 1) {
+                    // for (int g = 0; g < seg(i,k); g++) {
+                    //     cum_lambda(i,k) += len(g) * lambda(i,g);
+                    // }
+                    // cum_lambda(i,k) += H(i,k) * lambda(i,seg(i,k));
 
-                log_prop_hazard = beta(i,c) + theta(k,c) - gamma(c) * distance(z.row(c*N + k), w.row(i));
-                lp_ -= cum_lambda(c*I + i,k) * exp( log_prop_hazard );
+                    log_prop_hazard = beta(i,c) + theta(k,c) - gamma(c) * distance(z.row(c*N + k), w.row(i));
+                    lp_ -= cum_lambda(c*I + i,k) * exp( log_prop_hazard );
 
-                if (Y(i,k) == c) {
-                    lp_ += log(lambda(c * I + i, seg(i, k))) + log_prop_hazard;
+                    if (Y(i,k) == c) {
+                        lp_ += log(lambda(c * I + i, seg(i, k))) + log_prop_hazard;
+                    }
                 }
             }
         }
