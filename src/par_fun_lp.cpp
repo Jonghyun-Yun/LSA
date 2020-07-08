@@ -71,7 +71,7 @@ double par_fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lamb
                                 running_total +=
                                     log(lambda(c * I + i, seg(i, k))) + beta(i, c) +
                                     theta(k, c) -
-                                    gamma(c) * distance(z.row(k), w.row(i));
+                                    gamma(c) * distance(z.row(c*N + k), w.row(i));
                             }
 
                         }
