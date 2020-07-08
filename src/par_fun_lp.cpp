@@ -46,6 +46,46 @@ double par_fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lamb
         //     z = z1;
         // }
 
+        if (SINGLE_Z) {
+
+        lp_ += tbb::parallel_reduce(
+            tbb::blocked_range2d<int>(0, I, 0, N),
+            0.0,
+            [&](tbb::blocked_range2d<int> r, double running_total)
+            {
+                for(int i=r.rows().begin(); i<r.rows().end(); ++i)
+                {
+                    for(int k=r.cols().begin(); k<r.cols().end(); ++k)
+                    {
+                        // for (int g = 0; g < seg(i,k); g++) {
+                        //     cum_lambda(c*I + i,k) += len(g) * lambda(i,g);
+                        // }
+                        // cum_lambda(i,k) += H(i,k) * lambda(i,seg(i,k));
+
+                        if (NA(i,k) == 1) {
+
+                            running_total -=
+                                cum_lambda(c * I + i, k) *
+                                exp(beta(i, c) + theta(k, c) -
+                                    gamma(c) * distance(z.row(k), w.row(i)));
+
+                            if (Y(i, k) == c) {
+                                running_total +=
+                                    log(lambda(c * I + i, seg(i, k))) + beta(i, c) +
+                                    theta(k, c) -
+                                    gamma(c) * distance(z.row(k), w.row(i));
+                            }
+
+                        }
+
+                    }
+                }
+                return running_total;
+            }, std::plus<double>() );
+        }
+
+        else {
+
         lp_ += tbb::parallel_reduce(
             tbb::blocked_range2d<int>(0, I, 0, N),
             0.0,
@@ -71,7 +111,7 @@ double par_fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lamb
                                 running_total +=
                                     log(lambda(c * I + i, seg(i, k))) + beta(i, c) +
                                     theta(k, c) -
-                                    gamma(c) * distance(z.row(k), w.row(i));
+                                    gamma(c) * distance(z.row(c*N + k), w.row(i));
                             }
 
                         }
@@ -80,6 +120,7 @@ double par_fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lamb
                 }
                 return running_total;
             }, std::plus<double>() );
+        }
 
         // std::cout << "Calculating the log-acceptance ratio...\n";
     }
