@@ -4,5 +4,5 @@ mkdir -p output
 rm output/*
 for v in {1..5}
 do
-./main parallel full latent no_gamma $v 1000 1000 10
+./main parallel sparse no_latent no_gamma $v 5000 5000 10
 done

@@ -691,7 +691,7 @@ mkdir -p output
 rm output/*
 for v in {1..5}
 do
-./main parallel full latent no_gamma $v 1000 1000 10
+./main parallel sparse no_latent no_gamma $v 5000 5000 10
 done
 #+end_src
 
@@ -712,7 +712,8 @@ library(art)
 
 #+BEGIN_SRC R :results none
 library(coda)
-library(tidyverse)
+library(dplyr)
+library(stringr)
 library(bayesplot)
 library(foreach)
 library(doParallel)
@@ -809,9 +810,9 @@ colnames(mydf[[cid]]) = cnames
   for (cid in 1:5) {
     for (c in 0:1) {
      for (k in 1:N) {
-       z = mydf[[cid]][,str_which(cname, paste0("z\\.",c,"\\.",k,"\\.[1-2]"))]
-       w = mydf[[cid]][,str_which(cname, paste0("w\\.",item,"\\."))]
-       mydf[[cid]][[paste0("dist_z.",c,".",k,"_","w.",item)]] = sqrt(rowSums((z-2)^2))
+       ## z = mydf[[cid]][,str_which(cname, paste0("z\\.",c,"\\.",k,"\\.[1-2]"))]
+       ## w = mydf[[cid]][,str_which(cname, paste0("w\\.",item,"\\."))]
+       ## mydf[[cid]][[paste0("dist_z.",c,".",k,"_","w.",item)]] = sqrt(rowSums((z-2)^2))
      }
  }
     mylist[[cid]] = mcmc(mydf[[cid]])
@@ -973,7 +974,6 @@ dev.off(which = dev.cur())
 #+END_SRC
 
 #+RESULTS:
-: 1
 
 
   [[file:figure/z_mcmc_trace_plot.pdf]]
@@ -1029,7 +1029,7 @@ dev.off(which = dev.cur())
    #+END_SRC
 
    #+RESULTS:
-   : 1
+   : 2
 
    [[file:figure/beta_mcmc_trace_plot.pdf]]
    #+BEGIN_SRC R
@@ -1046,7 +1046,7 @@ dev.off(which = dev.cur())
    #+END_SRC
 
    #+RESULTS:
-   : 1
+   : 2
 
    [[file:figure/theta_mcmc_trace_plot.pdf]]
    #+BEGIN_SRC R
@@ -1062,7 +1062,7 @@ dev.off(which = dev.cur())
    #+END_SRC
 
    #+RESULTS:
-   : 1
+   : 2
 
    [[pdf:figure/lp_sigma_mcmc_trace_plot.pdf]]
    #+BEGIN_SRC R
@@ -1076,7 +1076,7 @@ dev.off(which = dev.cur())
    #+END_SRC
 
    #+RESULTS:
-   : 1
+   : 2
 
 ** output analysis
 
@@ -1579,20 +1579,20 @@ mh[is.na(mh)] = -99
 #+RESULTS:
 : -99
 
-   #+begin_src R :results none :tangle opusIII-preprocess.R
-   ## data and fixed parameters
-   I = nrow(mt)
-   N = ncol(mt)
-   C = 2
-   G = ncut #
-   readr::write_csv(data.frame(I=I, N=N, C=C, G=G), "mvar.csv", col_names = FALSE)
-   readr::write_csv(as.data.frame(mlen),"mlen.csv", col_names = FALSE)
-   readr::write_csv(as.data.frame(mseg),"mseg.csv", col_names = FALSE)
-   readr::write_csv(as.data.frame(mh),"mh.csv", col_names = FALSE)
-   readr::write_csv(as.data.frame(mt),"mt.csv", col_names = FALSE)
-   readr::write_csv(as.data.frame(mi),"mi.csv", col_names = FALSE)
-   readr::write_csv(as.data.frame(mNA),"mNA.csv", col_names = FALSE)
-   #+end_src
+#+begin_src R :results none :tangle opusIII-preprocess.R
+## data and fixed parameters
+I = nrow(mt)
+N = ncol(mt)
+C = 2
+G = ncut #
+readr::write_csv(data.frame(I=I, N=N, C=C, G=G), "mvar.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mlen),"mlen.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mseg),"mseg.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mh),"mh.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mt),"mt.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mi),"mi.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mNA),"mNA.csv", col_names = FALSE)
+#+end_src
 ** prior & jump
    This is to export hyper-parameters and jumping rule
    #+BEGIN_SRC R :results none :tangle opusIII-preprocess.R
