@@ -2,7 +2,6 @@
 #include "tbb/blocked_range2d.h"
 #include "tbb/blocked_range3d.h"
 #include <iostream>
-#include "my_header.h"
 // basic file operations
 #include <fstream>
 // #include <cmath>
@@ -49,6 +48,9 @@ int main(int argc, const char *argv[]) {
   std::vector<std::string> sarg;
   sarg.assign(argv, argv + argc);
 
+  // commandline argument:
+
+  // use Intel TBB?
   bool RUN_PAR;
   if (sarg[1] == "parallel") {
     RUN_PAR = true;
@@ -59,17 +61,18 @@ int main(int argc, const char *argv[]) {
     return 0;
   }
 
-  bool SINGLE_Z
+  // single z or double z
   bool SINGLE_Z;
-  if (sarg[2] == "full") {
+  if (sarg[2] == "single_z") {
     SINGLE_Z = true;
-  } else if (sarg[2] == "sparse") {
+  } else if (sarg[2] == "double_z") {
     SINGLE_Z = false;
   } else {
     std::cout << "invalid arguemnt for SINGLE_Z.\n" << std::endl;
     return 0;
   }
 
+  // missing?
   bool FULL_OBS;
   if (sarg[3] == "full") {
     FULL_OBS = true;
@@ -80,6 +83,7 @@ int main(int argc, const char *argv[]) {
     return 0;
   }
 
+  // latent space or not
   bool UPDATE_LATENT;
   if (sarg[4] == "latent") {
     UPDATE_LATENT = true;
@@ -90,6 +94,7 @@ int main(int argc, const char *argv[]) {
     return 0;
   }
 
+  // gamma or not
   bool UPDATE_GAMMA;
   if (sarg[5] == "gamma") {
     UPDATE_GAMMA = true;
@@ -295,9 +300,7 @@ int main(int argc, const char *argv[]) {
   sigma = 1.0;
   // z0.setZero();
   // z1.setZero();
-  z.setZero();
   w.setZero();
-  gamma.setOnes();
   // lambda0.setOnes();
   // lambda1.setOnes();
   lambda.setOnes();
@@ -328,17 +331,20 @@ int main(int argc, const char *argv[]) {
   // acc_lambda1.setZero();
   // acc_lambda.setZero();
 
+  Eigen::MatrixXd z;
+  Eigen::VectorXd acc_z;
   if (SINGLE_Z) {
-      Eigen::MatrixXd z(N, 2);
-      Eigen::VectorXd acc_z = Eigen::VectorXd::Zero(N);
-      if ()
-      gamma(0) = -1.0;
-      gamma(1) = 1.0;
+    z = Eigen::MatrixXd::Zero(N, 2);
+    acc_z = Eigen::VectorXd::Zero(N);
+    gamma(0) = -1.0;
+    gamma(1) = 1.0;
   }
   else {
-      Eigen::MatrixXd z(2*N, 2);
-      Eigen::VectorXd acc_z = Eigen::VectorXd::Zero(2*N);
+    z = Eigen::MatrixXd::Zero(2*N, 2);
+    acc_z = Eigen::VectorXd::Zero(2*N);
+    gamma.setOnes();
   }
+  z.setZero();
 
   std::cout << std::fixed << std::setprecision(1);
   osample.open(fsample.str(), std::ios::app);
@@ -414,6 +420,7 @@ int main(int argc, const char *argv[]) {
                             lambda.row(c*I + i), theta.col(c), gamma(c), z.block(c*N,0,N,2), w.row(i),
                             N, mNA.row(i), mlen, mseg.row(i), mH.row(i), mY.row(i), c, rng);
               }
+
             }
           }
         });
@@ -440,6 +447,7 @@ int main(int argc, const char *argv[]) {
                             beta.col(c), gamma(c), z.row(c*N + k), w,
                             I,  mNA.col(k), mlen, mseg.col(k), mH.col(k), mY.col(k), c, rng);
               }
+
             }
           }
         });
@@ -459,15 +467,10 @@ int main(int argc, const char *argv[]) {
             [&](tbb::blocked_range2d<int> r) {
               for (int k = r.rows().begin(); k < r.rows().end(); ++k) {
                 for (int c = r.cols().begin(); c < r.cols().end(); ++c) {
-                  // z0.row(k) = update_z(z0.row(k), acc_z0(k), mu_z(k),
-                  // sigma_z(k), jump_z(k),
-                  //                      lambda0, beta.col(0), theta(k,0),
-                  //                      gamma(0), w, I, mlen, mseg.col(k),
-                  //                      mH.col(k), mY.col(k), 0, rng);
 
               if (SINGLE_Z) {
                   z.row(k) = update_z(
-                      z.row(c * N + k), acc_z(c * N + k), mu_z(k), sigma_z(k),
+                      z.row(k), acc_z(k), mu_z(k), sigma_z(k),
                       jump_z(k), cum_lambda.block(c * I, k, I, 1), beta.col(c),
                       theta(k, c), gamma(c), w, I, mNA.col(k), mlen, mseg.col(k), mH.col(k),
                       mY.col(k), c, rng);
@@ -478,8 +481,8 @@ int main(int argc, const char *argv[]) {
                       jump_z(k), cum_lambda.block(c * I, k, I, 1), beta.col(c),
                       theta(k, c), gamma(c), w, I, mNA.col(k), mlen, mseg.col(k), mH.col(k),
                       mY.col(k), c, rng);
+                      }
 
-              }
                 }
               }
             });
@@ -495,6 +498,7 @@ int main(int argc, const char *argv[]) {
                     cum_lambda.row(i), cum_lambda.row(I + i), beta.row(i), theta, gamma,
                     z, N, G, mNA.row(i), mlen,
                     mseg.row(i), mH.row(i), mY.row(i), SINGLE_Z, rng);
+
               }
             });
 
@@ -628,13 +632,13 @@ int main(int argc, const char *argv[]) {
         lp_ = par_fun_lp(a_lambda, b_lambda, mu_beta, sigma_beta, mu_theta, sigma_theta,
                          a_sigma, b_sigma, mu_gamma, sigma_gamma, mu_z, sigma_z, mu_w, sigma_w,
                          lambda, cum_lambda, beta, theta, sigma, gamma, z, w,
-                         I, N, G, mNA, mlen, mseg, mH, mY);
+                         I, N, G, mNA, mlen, mseg, mH, mY, SINGLE_Z, UPDATE_GAMMA);
       }
       else {
         lp_ = fun_lp(a_lambda, b_lambda, mu_beta, sigma_beta, mu_theta, sigma_theta,
                      a_sigma, b_sigma, mu_gamma, sigma_gamma, mu_z, sigma_z, mu_w, sigma_w,
                      lambda, cum_lambda, beta, theta, sigma, gamma, z, w,
-                     I, N, G, mNA, mlen, mseg, mH, mY);
+                     I, N, G, mNA, mlen, mseg, mH, mY, SINGLE_Z, UPDATE_GAMMA);
       }
       // x.format(CommaInitFmt);
       osample << chain_id << ", " << ii
