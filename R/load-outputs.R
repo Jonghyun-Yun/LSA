@@ -24,13 +24,12 @@ for (k in 1:N) {
     cnames = c(cnames, paste0("theta.",k,".",c))
   }}
 
-## for(c in 0:1) {
-c=0
+for(c in 0:1) {
   for (k in 1:N) {
     for (d in 1:2) {
       cnames = c(cnames, paste0("z.",c,".",k,".",d))
     }}
-  #}
+  }
 for (i in 1:I) {
   for (d in 1:2) {
     cnames = c(cnames, paste0("w.",i,".",d))
@@ -50,6 +49,9 @@ mylist = mcmc.list()
 for (cid in 1:num_chain) {
 mydf[[cid]] = readr::read_csv(paste0("output/sample_chain",cid,".csv"), col_names=F) %>% as.data.frame()
 colnames(mydf[[cid]]) = cnames
+if (single_z) {
+  mydf[[cid]] = mydf[[cid]][,!grepl("^z\\.1\\.", cnames)] ## remove duplicates when single_z
+}
 }
 
 ## mylist[[cid]] = mcmc(df, start = mystart, end = myend, thin = mythin)
@@ -59,15 +61,14 @@ matched = do_procrustes(Xstar, mydf, is_list = TRUE)
 mydf = matched$mydf
 
 item = 1
+ c = 0
  cname = names(mydf[[1]])
  mylist = mcmc.list()
  for (cid in 1:num_chain) {
-   for (c in 0) {
     for (k in 1:N) {
        z = mydf[[cid]][,str_which(cname, paste0("z\\.",c,"\\.",k,"\\.[1-2]"))]
        w = mydf[[cid]][,str_which(cname, paste0("w\\.",item,"\\."))]
-       mydf[[cid]][[paste0("dist_z.",c,".",k,"_","w.",item)]] = sqrt(rowSums((z-2)^2))
-    }
+       mydf[[cid]][[paste0("dist_z.",c,".",k,"_","w.",item)]] = sqrt(rowSums((z-w)^2))
 }
    mylist[[cid]] = mcmc(mydf[[cid]])
  }

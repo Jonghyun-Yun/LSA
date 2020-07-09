@@ -54,12 +54,7 @@ double fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lambda,
                     // }
                     // cum_lambda(i,k) += H(i,k) * lambda(i,seg(i,k));
 
-                    if (SINGLE_Z) {
-                    log_prop_hazard = beta(i,c) + theta(k,c) - gamma(c) * distance(z.row(k), w.row(i));
-                    }
-                    else {
                     log_prop_hazard = beta(i,c) + theta(k,c) - gamma(c) * distance(z.row(c*N + k), w.row(i));
-                    }
                     lp_ -= cum_lambda(c*I + i,k) * exp( log_prop_hazard );
 
                     if (Y(i,k) == c) {
@@ -80,7 +75,7 @@ double fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lambda,
 
 
     if (SINGLE_Z) {
-        lp_ += normal_lpdf(to_vector(z), to_vector(mu_z), to_vector(sigma_z));
+        lp_ += normal_lpdf(to_vector(z.block(0,0,N,2)), to_vector(mu_z), to_vector(sigma_z));
         if (UPDATE_GAMMA) {
             lp_ += lognormal_lpdf(-1.0*gamma(0), mu_gamma, sigma_gamma) + lognormal_lpdf(gamma(1), mu_gamma, sigma_gamma);
         }

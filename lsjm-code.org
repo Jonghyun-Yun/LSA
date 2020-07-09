@@ -1978,15 +1978,448 @@ boxplot(yt)
 
 #+RESULTS:
 
+* opusIII-matrices-data.dat
+
+#+BEGIN_SRC R :results none :tangle R/opusIII-preprocess.R
+num_person = 504 ## max 504: do not change
+num_item =35 ## max 35
+
+setwd("~/Dropbox/research/lsjm-art/lsjm-code")
+
+library(dplyr)
+
+source("R/art-functions.R")
+source("R/opusIII-preprocess.R")
+#+END_SRC
+
+#+BEGIN_SRC R :results none :tangle R/opusIII-preprocess.R
+opusIII = readr::read_delim("data/opusIII-matrices-data.dat"," ")
+df = as_tibble(opusIII[,-1])[,1:4] ## drop row names
+name_item = unique(df$item)
+pick_item = df$item %in% name_item[1:num_item]
+
+df = df[pick_item, ]
+
+pick_person = df$person %in% unique(df$person)[1:num_person]
+df = df[pick_person,]
+
+di = df[,-4]
+dt = df[,-3]
+
+nitem = length(unique(df$item))
+nperson = length(unique(df$person))
+#+END_SRC
+
+** knot selection
+#+begin_src R :tangle R/opusIII-preprocess.R
+time = pull(dt,RT)
+ncut = 5
+## interval <- seq(from=0, to = max(time)+1,length.out = 8)
+pseq =  seq(from=0, to = 1, length.out = ncut + 1)
+sj = quantile(time, probs = pseq) %>% round()
+sj[1] = 0; sj[length(sj)] = sj[length(sj)] + 1
+#+end_src
+
+#+RESULTS:
+: 1283
+
+** survSplit
+#+BEGIN_SRC R :results none :tangle R/opusIII-preprocess.R
+library(survival)
+status = rep(1, nrow(dt))
+
+tdf = data.frame(item = dt$item, person = dt$person, time = dt$RT, response = di$resp, status = 1)
+tmp <- survSplit(formula = Surv(time, status) ~ ., data = tdf, cut = sj, episode ="seg_g") %>%
+  mutate(seg = factor(tstart),
+         seg_g = seg_g - 2,
+         len = time - tstart
+         ) %>% filter(status == 1) %>%
+  as_tibble
+#+END_SRC
+
+#+BEGIN_SRC R :results none :tangle R/opusIII-preprocess.R
+item = pull(tmp, item)
+person = pull(tmp, person)
+seg_g = pull(tmp,seg_g)
+H = pull(tmp,len)
+#+END_SRC
+
+#+BEGIN_SRC R :tangle R/opusIII-preprocess.R
+mi = reshape2::dcast(tmp %>% select(item, person, response), item ~ person)[,-1]
+mt = reshape2::dcast(tmp %>% select(item, person, time), item ~ person)[,-1]
+mNA = mi; mNA[!is.na(mNA)] = 1;  mNA[is.na(mNA)] = 0
+mseg = reshape2::dcast(tmp %>% select(item, person, seg_g), item ~ person)[,-1]
+mh = reshape2::dcast(tmp %>% select(item, person, len), item ~ person)[,-1]
+mlen = sj[2:(ncut+1)] - sj[1:(ncut)]
+
+mi[is.na(mi)] = -99
+mt[is.na(mt)] = -99
+mseg[is.na(mseg)] = -99
+mh[is.na(mh)] = -99
+#+END_SRC
+
+#+RESULTS:
+: -99
+
+#+begin_src R :results none :tangle R/opusIII-preprocess.R
+## data and fixed parameters
+I = nrow(mt)
+N = ncol(mt)
+C = 2
+G = ncut #
+readr::write_csv(data.frame(I=I, N=N, C=C, G=G), "mvar.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mlen),"mlen.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mseg),"mseg.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mh),"mh.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mt),"mt.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mi),"mi.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mNA),"mNA.csv", col_names = FALSE)
+#+end_src
+** prior & jump
+   This is to export hyper-parameters and jumping rule
+   #+BEGIN_SRC R :results none :tangle R/opusIII-preprocess.R
+   mvar = readr::read_csv("mvar.csv", col_names=FALSE) %>% as.matrix()
+   I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
+
+   ## lambda
+   a_lambda = matrix(0.001,I,G)
+   b_lambda = matrix(0.001,I,G)
+   jump_lambda = matrix(1.0,I,G)
+
+   mu_beta = matrix(0.0,I,2)
+   sigma_beta = matrix(1.0,I,2)
+   jump_beta = matrix(0.25,I,2)
+
+   mu_theta = matrix(0.0,N,2)
+   sigma_theta = matrix(1.0,N,2)
+   jump_theta = matrix(1.0,N,2)
+
+   a_sigma = 1.0
+   b_sigma = 1.0
+
+   mu_gamma = matrix(0.0,1,2)
+   sigma_gamma = matrix(1.0,1,2)
+   jump_gamma = matrix(1.0,1,2)
+
+   mu_z = matrix(0.0,N,2)
+   sigma_z = matrix(1.0,N,2)
+   jump_z = matrix(1.0,N,2)
+
+   mu_w = matrix(0.0,I,2)
+   sigma_w = matrix(1.0,I,2)
+   jump_w = matrix(0.1,I,2)
+   #+END_SRC
+
+   #+BEGIN_SRC R :results none :tangle R/opusIII-preprocess.R
+   readr::write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"pj_lambda.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"pj_beta.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(rbind(mu_theta,sigma_theta,jump_theta)),"pj_theta.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(rbind(a_sigma,b_sigma)),"pj_sigma.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(rbind(mu_gamma,sigma_gamma,jump_gamma)),"pj_gamma.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(rbind(mu_z,sigma_z,jump_z)),"pj_z.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(rbind(mu_w,sigma_w,jump_w)),"pj_w.csv", col_names = FALSE)
+   #+END_SRC
+
+   #+RESULTS:
+
+** boxplot
+  #+BEGIN_SRC R :results value
+  df %>% group_by(item) %>% summarise(F = sum(resp == 0), T = sum(resp == 1))
+  #+END_SRC
+
+  #+RESULTS:
+  | MAT003 |  69 | 157 |
+  | MAT007 |  55 | 171 |
+  | MAT010 | 102 |  95 |
+  | MAT013 | 152 |  45 |
+  | MAT014 |  74 | 123 |
+  | MAT016 |  77 | 109 |
+  | MAT022 |  98 |  88 |
+  | MAT024 |  64 |  55 |
+  | MAT030 |  57 |  62 |
+  | MAT037 |  72 |  20 |
+  | MAT104 |  28 |  64 |
+  | MAT109 | 125 |  61 |
+  | MAT152 |  60 |  32 |
+  | MAT170 |  25 | 172 |
+  | MAT256 |  93 |  93 |
+  | MAT268 | 114 | 112 |
+  | MAT269 | 148 |  78 |
+  | MAT271 | 143 |  45 |
+  | MAT272 |  53 | 135 |
+  | MAT273 | 126 |  60 |
+  | MAT294 | 137 |  60 |
+  | MAT298 | 134 |  54 |
+  | MAT301 | 144 |  44 |
+  | MAT329 |  21 |  71 |
+  | MAT404 |  57 |  62 |
+  | MAT417 |  51 |  41 |
+  | MAT421 |  73 |  19 |
+  | MAT426 |  48 |  71 |
+  | MAT427 |  55 | 133 |
+  | MAT501 | 112 |  76 |
+  | MAT529 | 167 |  19 |
+  | MAT599 | 159 |  38 |
+  | MAT623 |  98 | 128 |
+  | MAT642 | 116 |   3 |
+  | MAT645 |  81 |  38 |
+
+ [[file:figure/boxplot_ART.pdf]]
+   #+BEGIN_SRC R
+   pdf("figure/boxplot_ART.pdf")
+   rt_boxp <- ggplot(df, aes(x=factor(resp),y=RT,fill=factor(resp)))+
+     geom_boxplot() + labs(title="RT by accuracy") + facet_wrap(~item)
+   logrt_boxp <- ggplot(df, aes(x=factor(resp),y=log(RT),fill=factor(resp)))+
+     geom_boxplot() + labs(title="log RT by accuracy") + facet_wrap(~item)
+   rt_boxp
+   logrt_boxp
+   dev.off(which = dev.cur())
+  #+END_SRC
+
+  #+RESULTS:
+  : 2
+
+* verbalIntelligence.dat
+
+#+BEGIN_SRC R :tangle no :results output :session
+source("R/verbal-preprocess.R")
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+Parsed with column specification:
+cols(
+  id = [32mcol_double()[39m,
+  PROBAND = [32mcol_double()[39m,
+  variable = [31mcol_character()[39m,
+  resp = [32mcol_double()[39m,
+  time = [32mcol_double()[39m
+)
+Using response as value column: use value.var to override.
+Using time as value column: use value.var to override.
+Using seg_g as value column: use value.var to override.
+Using len as value column: use value.var to override.
+Parsed with column specification:
+cols(
+  X1 = [32mcol_double()[39m,
+  X2 = [32mcol_double()[39m,
+  X3 = [32mcol_double()[39m,
+  X4 = [32mcol_double()[39m
+)
+`summarise()` ungrouping output (override with `.groups` argument)
+#+end_example
+
+#+BEGIN_SRC R :tangle R/verbal-preprocess.R
+num_person = 726 ## max 726: do not change
+num_item = 34 ## max 34
+
+setwd("~/Dropbox/research/lsjm-art/lsjm-code")
+
+library(dplyr)
+library(magrittr)
+
+source("R/art-functions.R")
+#+END_SRC
+
+#+RESULTS:
+
+#+BEGIN_SRC R :results none :tangle R/verbal-preprocess.R
+verbal = readr::read_delim("data/verbalIntelligence.dat"," ")
+df = as_tibble(verbal[,-1])[,1:4] ## drop row names
+names(df) = c("person", "item", "resp", "RT" )
+name_item = unique(df$item)
+pick_item = df$item %in% name_item[1:num_item]
+
+df = df[pick_item, ]
+
+pick_person = df$person %in% unique(df$person)[1:num_person]
+df = df[pick_person,]
+
+di = df[,-4]
+dt = df[,-3]
+
+nitem = length(unique(df$item))
+nperson = length(unique(df$person))
+#+END_SRC
+
+** knot selection
+#+begin_src R :tangle R/verbal-preprocess.R
+time = pull(dt,RT)
+ncut = 5
+## interval <- seq(from=0, to = max(time)+1,length.out = 8)
+pseq =  seq(from=0, to = 1, length.out = ncut + 1)
+sj = quantile(time, probs = pseq) %>% round()
+sj[1] = 0; sj[length(sj)] = sj[length(sj)] + 1
+#+end_src
+
+#+RESULTS:
+: 289
+
+** survSplit
+#+BEGIN_SRC R :results none :tangle R/verbal-preprocess.R
+library(survival)
+status = rep(1, nrow(dt))
+
+tdf = data.frame(item = dt$item, person = dt$person, time = dt$RT, response = di$resp, status = 1)
+tmp <- survSplit(formula = Surv(time, status) ~ ., data = tdf, cut = sj, episode ="seg_g") %>%
+  mutate(seg = factor(tstart),
+         seg_g = seg_g - 2,
+         len = time - tstart
+         ) %>% filter(status == 1) %>%
+  as_tibble
+#+END_SRC
+
+#+BEGIN_SRC R :results none :tangle R/verbal-preprocess.R
+item = pull(tmp, item)
+person = pull(tmp, person)
+seg_g = pull(tmp,seg_g)
+H = pull(tmp,len)
+#+END_SRC
+
+#+BEGIN_SRC R :tangle R/verbal-preprocess.R
+mi = reshape2::dcast(tmp %>% select(item, person, response), item ~ person)[,-1]
+mt = reshape2::dcast(tmp %>% select(item, person, time), item ~ person)[,-1]
+mNA = mi; mNA[!is.na(mNA)] = 1;  mNA[is.na(mNA)] = 0
+mseg = reshape2::dcast(tmp %>% select(item, person, seg_g), item ~ person)[,-1]
+mh = reshape2::dcast(tmp %>% select(item, person, len), item ~ person)[,-1]
+mlen = sj[2:(ncut+1)] - sj[1:(ncut)]
+
+mi[is.na(mi)] = -99
+mt[is.na(mt)] = -99
+mseg[is.na(mseg)] = -99
+mh[is.na(mh)] = -99
+#+END_SRC
+
+#+RESULTS:
+: -99
+
+#+begin_src R :results none :tangle R/verbal-preprocess.R
+## data and fixed parameters
+I = nrow(mt)
+N = ncol(mt)
+C = 2
+G = ncut #
+readr::write_csv(data.frame(I=I, N=N, C=C, G=G), "mvar.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mlen),"mlen.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mseg),"mseg.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mh),"mh.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mt),"mt.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mi),"mi.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mNA),"mNA.csv", col_names = FALSE)
+#+end_src
+** prior & jump
+   This is to export hyper-parameters and jumping rule
+   #+BEGIN_SRC R :results none :tangle R/verbal-preprocess.R
+   mvar = readr::read_csv("mvar.csv", col_names=FALSE) %>% as.matrix()
+   I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
+
+   ## lambda
+   a_lambda = matrix(0.001,I,G)
+   b_lambda = matrix(0.001,I,G)
+   jump_lambda = matrix(1.0,I,G)
+
+   mu_beta = matrix(0.0,I,2)
+   sigma_beta = matrix(1.0,I,2)
+   jump_beta = matrix(0.25,I,2)
+
+   mu_theta = matrix(0.0,N,2)
+   sigma_theta = matrix(1.0,N,2)
+   jump_theta = matrix(1.0,N,2)
+
+   a_sigma = 1.0
+   b_sigma = 1.0
+
+   mu_gamma = matrix(0.0,1,2)
+   sigma_gamma = matrix(1.0,1,2)
+   jump_gamma = matrix(1.0,1,2)
+
+   mu_z = matrix(0.0,N,2)
+   sigma_z = matrix(1.0,N,2)
+   jump_z = matrix(1.0,N,2)
+
+   mu_w = matrix(0.0,I,2)
+   sigma_w = matrix(1.0,I,2)
+   jump_w = matrix(0.1,I,2)
+   #+END_SRC
+
+   #+BEGIN_SRC R :results none :tangle R/verbal-preprocess.R
+   readr::write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"pj_lambda.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"pj_beta.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(rbind(mu_theta,sigma_theta,jump_theta)),"pj_theta.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(rbind(a_sigma,b_sigma)),"pj_sigma.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(rbind(mu_gamma,sigma_gamma,jump_gamma)),"pj_gamma.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(rbind(mu_z,sigma_z,jump_z)),"pj_z.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(rbind(mu_w,sigma_w,jump_w)),"pj_w.csv", col_names = FALSE)
+   #+END_SRC
+
+   #+RESULTS:
+
+** boxplot
+
+  #+BEGIN_SRC R :results value :tangle R/verbal-preprocess.R
+  df %>% group_by(item) %>% summarise(F = sum(resp == 0), T = sum(resp == 1))
+  #+END_SRC
+
+  #+RESULTS:
+  | VA001 |   5 | 267 |
+  | VA002 |   2 | 134 |
+  | VA017 |  19 | 257 |
+  | VA019 |  15 | 255 |
+  | VA027 |  18 | 300 |
+  | VA050 |  25 | 155 |
+  | VA054 |  34 | 146 |
+  | VA055 |  21 | 251 |
+  | VA059 |  29 | 247 |
+  | VA061 |  40 | 236 |
+  | VA064 |  22 | 296 |
+  | VA066 |  11 | 125 |
+  | VA067 |  24 | 156 |
+  | VA071 |  63 | 255 |
+  | VA079 |  24 | 248 |
+  | VA103 |  36 | 234 |
+  | VA107 |  12 | 258 |
+  | VA111 |  36 | 100 |
+  | VA129 | 104 | 214 |
+  | VA141 |  55 | 215 |
+  | VA160 |  90 | 182 |
+  | VA175 |  89 | 187 |
+  | VA178 |  33 | 147 |
+  | VA186 |  47 | 133 |
+  | VA193 |  59 |  77 |
+  | VA197 | 128 | 148 |
+  | VA198 | 134 | 184 |
+  | VA201 |  32 | 104 |
+  | VA213 | 146 | 126 |
+  | VA242 |  98 |  38 |
+  | VA243 | 210 |  62 |
+  | VA251 | 118 |  62 |
+  | VA253 | 245 |  73 |
+  | VA254 | 247 |  29 |
+
+ [[file:figure/boxplot_ART.pdf]]
+   #+BEGIN_SRC R :tangle R/verbal-preprocess.R
+   pdf("figure/boxplot_ART.pdf")
+   rt_boxp <- ggplot(df, aes(x=factor(resp),y=RT,fill=factor(resp)))+
+     geom_boxplot() + labs(title="RT by accuracy") + facet_wrap(~item)
+   logrt_boxp <- ggplot(df, aes(x=factor(resp),y=log(RT),fill=factor(resp)))+
+     geom_boxplot() + labs(title="log RT by accuracy") + facet_wrap(~item)
+   rt_boxp
+   logrt_boxp
+   dev.off(which = dev.cur())
+  #+END_SRC
+
+  #+RESULTS:
+  : 1
+
 * C++ MCMC output
 #+begin_src sh :tangle run.sh
 #!/usr/bin/env bash
-export STAN_NUM_THREADS=11
+export STAN_NUM_THREADS=10
 mkdir -p output
 rm output/*
 for v in {1..5}
 do
-./main parallel single_z full latent no_gamma $v 10000 10000 10
+./main parallel single_z sparse latent no_gamma $v 5000 5000 10
 done
 #+end_src
 
@@ -2009,7 +2442,8 @@ setwd("/Users/yunj/Dropbox/research/lsjm-art/lsjm-code")
 
 source("R/art-functions.R")
 
-num_chain = 3
+num_chain = 5
+single_z = 1
 #+END_SRC
 
 #+BEGIN_SRC R :results none
@@ -2018,14 +2452,17 @@ source('R/load-outputs.R')
 
 #+RESULTS:
 
+print average acceptance rate per type of quantities: \lambda, \beta, \theta, z, w, \gamma, \sigma
 #+BEGIN_SRC sh
 cat output/summary.csv
 #+END_SRC
 
 #+RESULTS:
-| 1 | 0.238374 | 0.219156 | 0.320623 |  0.83957 | 0.405558 | 0 | 1 |
-| 2 | 0.238677 | 0.218344 | 0.320853 | 0.839724 | 0.406503 | 0 | 1 |
-| 3 | 0.238212 | 0.218069 | 0.320768 | 0.840092 | 0.406411 | 0 | 1 |
+| 1 |  0.32754 | 0.358075 | 0.471852 | 0.348412 |  0.5356 | 0 | 1 |
+| 2 | 0.325735 | 0.363175 | 0.472144 | 0.345819 |  0.5351 | 0 | 1 |
+| 3 |  0.32611 |   0.3622 | 0.471981 | 0.345626 | 0.53985 | 0 | 1 |
+| 4 |  0.32677 |   0.3684 | 0.472382 | 0.345748 | 0.54235 | 0 | 1 |
+| 5 | 0.327055 |   0.3629 | 0.471529 | 0.345503 |  0.5297 | 0 | 1 |
 
 ** load outputs
 #+begin_src R :results silent :tangle R/load-outputs.R
@@ -2055,13 +2492,12 @@ for (k in 1:N) {
     cnames = c(cnames, paste0("theta.",k,".",c))
   }}
 
-## for(c in 0:1) {
-c=0
+for(c in 0:1) {
   for (k in 1:N) {
     for (d in 1:2) {
       cnames = c(cnames, paste0("z.",c,".",k,".",d))
     }}
-  #}
+  }
 for (i in 1:I) {
   for (d in 1:2) {
     cnames = c(cnames, paste0("w.",i,".",d))
@@ -2083,9 +2519,22 @@ mylist = mcmc.list()
 for (cid in 1:num_chain) {
 mydf[[cid]] = readr::read_csv(paste0("output/sample_chain",cid,".csv"), col_names=F) %>% as.data.frame()
 colnames(mydf[[cid]]) = cnames
+if (single_z) {
+  mydf[[cid]] = mydf[[cid]][,!grepl("^z\\.1\\.", cnames)] ## remove duplicates when single_z
+}
 }
 
 ## mylist[[cid]] = mcmc(df, start = mystart, end = myend, thin = mythin)
+#+END_SRC
+
+#+BEGIN_SRC sh
+coda::effectiveSize(mylist)
+#+END_SRC
+
+#+RESULTS:
+
+#+BEGIN_SRC R
+coda::gelman_diag(mylist)
 #+END_SRC
 
  #+begin_src R :results none :tangle R/load-outputs.R
@@ -2096,15 +2545,14 @@ colnames(mydf[[cid]]) = cnames
 
  #+BEGIN_SRC R :tangle R/load-outputs.R
   item = 1
+  c = 0
   cname = names(mydf[[1]])
   mylist = mcmc.list()
   for (cid in 1:num_chain) {
-    for (c in 0) {
      for (k in 1:N) {
         z = mydf[[cid]][,str_which(cname, paste0("z\\.",c,"\\.",k,"\\.[1-2]"))]
         w = mydf[[cid]][,str_which(cname, paste0("w\\.",item,"\\."))]
-        mydf[[cid]][[paste0("dist_z.",c,".",k,"_","w.",item)]] = sqrt(rowSums((z-2)^2))
-     }
+        mydf[[cid]][[paste0("dist_z.",c,".",k,"_","w.",item)]] = sqrt(rowSums((z-w)^2))
  }
     mylist[[cid]] = mcmc(mydf[[cid]])
   }
@@ -2128,44 +2576,34 @@ cat output/mcmc_summary.txt
 
 ** latent space
   [[file:figure/star_latent.pdf]]
-  #+BEGIN_SRC R :tangle R/visual-latent-star.R
-   z0.star = Xstar[1:N,]
-   z1.star = Xstar[(N+1):(2*N),]
-   w.star = Xstar[(2*N + 1):nrow(Xstar),]
-   xmin = min(z0.star[,1],z1.star[,1],w.star[,1])
-   ymin = min(z0.star[,2],z1.star[,2],w.star[,2])
-   xmax = max(z0.star[,1],z1.star[,1],w.star[,1])
-   ymax = max(z0.star[,2],z1.star[,2],w.star[,2])
+  #+BEGIN_SRC R :tangle R/visual-latent-space-plot.R
+  z0.star = Xstar[1:N,]
+  if (single_z) {
+    z1.star = NULL
+    w.star = Xstar[(N + 1):nrow(Xstar),]
+  } else {
+    z1.star = Xstar[(N+1):(2*N),]
+    w.star = Xstar[(2*N + 1):nrow(Xstar),]
+  }
+  xmin = min(z0.star[,1],z1.star[,1],w.star[,1])
+  ymin = min(z0.star[,2],z1.star[,2],w.star[,2])
+  xmax = max(z0.star[,1],z1.star[,1],w.star[,1])
+  ymax = max(z0.star[,2],z1.star[,2],w.star[,2])
 
   myname = c(1:N,paste0("I.",1:I))
   pdf("figure/star_latent.pdf")
-   lsjmplot(z0.star,w.star,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname)
-   lsjmplot(z1.star,w.star,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname)
+  lsjmplot(z0.star,w.star,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname)
+  if (!single_z) {
+    lsjmplot(z1.star,w.star,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname)
+  }
   dev.off(which = dev.cur())
   #+END_SRC
 
   #+RESULTS:
-
-  [[file:figure/star_latent.pdf]]
- #+BEGIN_SRC R :tangle R/visual-latent-star.R
-   z0.star = Xstar[1:N,]
-   w.star = Xstar[(N + 1):nrow(Xstar),]
-   xmin = min(z0.star[,1],w.star[,1])
-   ymin = min(z0.star[,2],w.star[,2])
-   xmax = max(z0.star[,1],w.star[,1])
-   ymax = max(z0.star[,2],w.star[,2])
-
-  myname = c(1:N,paste0("I.",1:I))
-  pdf("figure/star_latent.pdf")
-   lsjmplot(z0.star,w.star,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname)
-  dev.off(which = dev.cur())
-  #+END_SRC
-
-  #+RESULTS:
-  : 2
+  : 1
 
   [[file:figure/latent_position_plot_vegan.pdf]]
-  #+begin_src R :tangle R/visual-latent-star.R
+  #+begin_src R :tangle R/visual-latent-space-plot.R
   pdf("figure/latent_position_plot_vegan.pdf")
 
   z0 = matched$z0
@@ -2178,30 +2616,13 @@ cat output/mcmc_summary.txt
 
   myname = c(1:N,paste0("I.",1:I))
   lsjmplot(z0,w,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname)
-  lsjmplot(z1,w,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname)
+  if (!single_z) {
+    lsjmplot(z1,w,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname)
+  }
   dev.off(which = dev.cur())
   #+end_src
 
   #+RESULTS:
-
-  [[file:figure/latent_position_plot_vegan.pdf]]
-  #+begin_src R :tangle R/visual-latent-star.R
-  pdf("figure/latent_position_plot_vegan.pdf")
-
-  z0 = matched$z0
-  w = matched$w %>% as.matrix()
-  xmin = min(z0[,1],w[,1])
-  ymin = min(z0[,2],w[,2])
-  xmax = max(z0[,1],w[,1])
-  ymax = max(z0[,2],w[,2])
-
-  myname = c(1:N,paste0("I.",1:I))
-  lsjmplot(z0,w,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname)
-  dev.off(which = dev.cur())
-  #+end_src
-
-  #+RESULTS:
-  : 2
 
 *** trace plots
     [[file:figure/lambda_mcmc_interval_plot.pdf]]
@@ -2240,7 +2661,7 @@ cat output/mcmc_summary.txt
  #+END_SRC
 
  #+RESULTS:
- : 2
+ : 1
 
  [[file:figure/beta_parcoord.pdf]]
  #+BEGIN_SRC R :TANGLE R/visual-trace-plot.r
@@ -2283,13 +2704,12 @@ cat output/mcmc_summary.txt
  #+BEGIN_SRC R :TANGLE R/visual-trace-plot.r
  pdf("figure/w_parcoord_plot.pdf")
  mcmc_parcoord(mylist,
-            regex_pars = "^w.[1-5]\\.",
-            off_diag_args = list(size = 0.75))
+            regex_pars = "^w.[1-5]\\.")
  dev.off(which = dev.cur())
  #+END_SRC
 
  #+RESULTS:
- : 2
+ : 1
 
  [[file:figure/dist_mcmc_trace_plot.pdf]]
  #+BEGIN_SRC R :TANGLE R/visual-trace-plot.r
@@ -2311,7 +2731,7 @@ cat output/mcmc_summary.txt
  #+END_SRC
 
  #+RESULTS:
- : 2
+ : 1
 
 
    [[file:figure/z_mcmc_trace_plot.pdf]]
@@ -2328,7 +2748,7 @@ cat output/mcmc_summary.txt
     #+END_SRC
 
     #+RESULTS:
-    : 2
+    : 1
 
    [[file:figure/w_mcmc_trace_plot.pdf]]
     #+BEGIN_SRC R :TANGLE R/visual-trace-plot.r
@@ -2336,7 +2756,13 @@ cat output/mcmc_summary.txt
     pdf("figure/w_mcmc_trace_plot.pdf")
     p <- mcmc_trace(mylist,
                     ##pars = c("lambda.0.1.1",  "lambda.0.1.2",  "lambda.0.1.3", "lambda.0.1.4"),
-                    regex_pars = "^w\\.[0-9]\\.",
+                    regex_pars = "^w\\.[0-4]\\.",
+                    ##transformations = "log",
+                    facet_args = list(nrow = 2, labeller = label_parsed))
+    p + facet_text(size = 15)
+    p <- mcmc_trace(mylist,
+                    ##pars = c("lambda.0.1.1",  "lambda.0.1.2",  "lambda.0.1.3", "lambda.0.1.4"),
+                    regex_pars = "^w\\.[5-9]\\.",
                     ##transformations = "log",
                     facet_args = list(nrow = 2, labeller = label_parsed))
     p + facet_text(size = 15)
@@ -2344,7 +2770,7 @@ cat output/mcmc_summary.txt
     #+END_SRC
 
     #+RESULTS:
-    : 2
+    : 1
 
     [[file:figure/lambda_mcmc_trace_plot.pdf]]
     #+BEGIN_SRC R :TANGLE R/visual-trace-plot.r
@@ -2838,207 +3264,6 @@ do_procrustes = function(Xstar, mydf, is_list = FALSE, translation = TRUE, dilat
 #+END_SRC
 
 #+RESULTS:
-
-* opusIII-matrices-data.dat
-
-#+BEGIN_SRC R :results none :tangle R/opusIII-preprocess.R
-num_person = 504 ## max 504: do not change
-num_item =35 ## max 35
-
-setwd("~/Dropbox/research/lsjm-art/lsjm-code")
-
-library(dplyr)
-
-source("R/art-functions.R")
-source("R/opusIII-preprocess.R")
-#+END_SRC
-
-#+BEGIN_SRC R :results none :tangle R/opusIII-preprocess.R
-opusIII = readr::read_delim("data/opusIII-matrices-data.dat"," ")
-df = as_tibble(opusIII[,-1])[,1:4] ## drop row names
-name_item = unique(df$item)
-pick_item = df$item %in% name_item[1:num_item]
-
-df = df[pick_item, ]
-
-pick_person = df$person %in% unique(df$person)[1:num_person]
-df = df[pick_person,]
-
-di = df[,-4]
-dt = df[,-3]
-
-nitem = length(unique(df$item))
-nperson = length(unique(df$person))
-#+END_SRC
-
-** knot selection
-#+begin_src R :tangle R/opusIII-preprocess.R
-time = pull(dt,RT)
-ncut = 5
-## interval <- seq(from=0, to = max(time)+1,length.out = 8)
-pseq =  seq(from=0, to = 1, length.out = ncut + 1)
-sj = quantile(time, probs = pseq) %>% round()
-sj[1] = 0; sj[length(sj)] = sj[length(sj)] + 1
-#+end_src
-
-#+RESULTS:
-: 1283
-
-** survSplit
-#+BEGIN_SRC R :results none :tangle R/opusIII-preprocess.R
-library(survival)
-status = rep(1, nrow(dt))
-
-tdf = data.frame(item = dt$item, person = dt$person, time = dt$RT, response = di$resp, status = 1)
-tmp <- survSplit(formula = Surv(time, status) ~ ., data = tdf, cut = sj, episode ="seg_g") %>%
-  mutate(seg = factor(tstart),
-         seg_g = seg_g - 2,
-         len = time - tstart
-         ) %>% filter(status == 1) %>%
-  as_tibble
-#+END_SRC
-
-#+BEGIN_SRC R :results none :tangle R/opusIII-preprocess.R
-item = pull(tmp, item)
-person = pull(tmp, person)
-seg_g = pull(tmp,seg_g)
-H = pull(tmp,len)
-#+END_SRC
-
-#+BEGIN_SRC R :tangle R/opusIII-preprocess.R
-mi = reshape2::dcast(tmp %>% select(item, person, response), item ~ person)[,-1]
-mt = reshape2::dcast(tmp %>% select(item, person, time), item ~ person)[,-1]
-mNA = mi; mNA[!is.na(mNA)] = 1;  mNA[is.na(mNA)] = 0
-mseg = reshape2::dcast(tmp %>% select(item, person, seg_g), item ~ person)[,-1]
-mh = reshape2::dcast(tmp %>% select(item, person, len), item ~ person)[,-1]
-mlen = sj[2:(ncut+1)] - sj[1:(ncut)]
-
-mi[is.na(mi)] = -99
-mt[is.na(mt)] = -99
-mseg[is.na(mseg)] = -99
-mh[is.na(mh)] = -99
-#+END_SRC
-
-#+RESULTS:
-: -99
-
-#+begin_src R :results none :tangle R/opusIII-preprocess.R
-## data and fixed parameters
-I = nrow(mt)
-N = ncol(mt)
-C = 2
-G = ncut #
-readr::write_csv(data.frame(I=I, N=N, C=C, G=G), "mvar.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mlen),"mlen.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mseg),"mseg.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mh),"mh.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mt),"mt.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mi),"mi.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mNA),"mNA.csv", col_names = FALSE)
-#+end_src
-** prior & jump
-   This is to export hyper-parameters and jumping rule
-   #+BEGIN_SRC R :results none :tangle R/opusIII-preprocess.R
-   mvar = readr::read_csv("mvar.csv", col_names=FALSE) %>% as.matrix()
-   I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
-
-   ## lambda
-   a_lambda = matrix(0.001,I,G)
-   b_lambda = matrix(0.001,I,G)
-   jump_lambda = matrix(1.0,I,G)
-
-   mu_beta = matrix(0.0,I,2)
-   sigma_beta = matrix(1.0,I,2)
-   jump_beta = matrix(0.25,I,2)
-
-   mu_theta = matrix(0.0,N,2)
-   sigma_theta = matrix(1.0,N,2)
-   jump_theta = matrix(1.0,N,2)
-
-   a_sigma = 1.0
-   b_sigma = 1.0
-
-   mu_gamma = matrix(0.0,1,2)
-   sigma_gamma = matrix(1.0,1,2)
-   jump_gamma = matrix(1.0,1,2)
-
-   mu_z = matrix(0.0,N,2)
-   sigma_z = matrix(1.0,N,2)
-   jump_z = matrix(1.0,N,2)
-
-   mu_w = matrix(0.0,I,2)
-   sigma_w = matrix(1.0,I,2)
-   jump_w = matrix(0.1,I,2)
-   #+END_SRC
-
-   #+BEGIN_SRC R :results none :tangle R/opusIII-preprocess.R
-   readr::write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"pj_lambda.csv", col_names = FALSE)
-   readr::write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"pj_beta.csv", col_names = FALSE)
-   readr::write_csv(as.data.frame(rbind(mu_theta,sigma_theta,jump_theta)),"pj_theta.csv", col_names = FALSE)
-   readr::write_csv(as.data.frame(rbind(a_sigma,b_sigma)),"pj_sigma.csv", col_names = FALSE)
-   readr::write_csv(as.data.frame(rbind(mu_gamma,sigma_gamma,jump_gamma)),"pj_gamma.csv", col_names = FALSE)
-   readr::write_csv(as.data.frame(rbind(mu_z,sigma_z,jump_z)),"pj_z.csv", col_names = FALSE)
-   readr::write_csv(as.data.frame(rbind(mu_w,sigma_w,jump_w)),"pj_w.csv", col_names = FALSE)
-   #+END_SRC
-
-   #+RESULTS:
-
-** boxplot
-  #+BEGIN_SRC R :results value
-  df %>% group_by(item) %>% summarise(F = sum(resp == 0), T = sum(resp == 1))
-  #+END_SRC
-
-  #+RESULTS:
-  | MAT003 |  69 | 157 |
-  | MAT007 |  55 | 171 |
-  | MAT010 | 102 |  95 |
-  | MAT013 | 152 |  45 |
-  | MAT014 |  74 | 123 |
-  | MAT016 |  77 | 109 |
-  | MAT022 |  98 |  88 |
-  | MAT024 |  64 |  55 |
-  | MAT030 |  57 |  62 |
-  | MAT037 |  72 |  20 |
-  | MAT104 |  28 |  64 |
-  | MAT109 | 125 |  61 |
-  | MAT152 |  60 |  32 |
-  | MAT170 |  25 | 172 |
-  | MAT256 |  93 |  93 |
-  | MAT268 | 114 | 112 |
-  | MAT269 | 148 |  78 |
-  | MAT271 | 143 |  45 |
-  | MAT272 |  53 | 135 |
-  | MAT273 | 126 |  60 |
-  | MAT294 | 137 |  60 |
-  | MAT298 | 134 |  54 |
-  | MAT301 | 144 |  44 |
-  | MAT329 |  21 |  71 |
-  | MAT404 |  57 |  62 |
-  | MAT417 |  51 |  41 |
-  | MAT421 |  73 |  19 |
-  | MAT426 |  48 |  71 |
-  | MAT427 |  55 | 133 |
-  | MAT501 | 112 |  76 |
-  | MAT529 | 167 |  19 |
-  | MAT599 | 159 |  38 |
-  | MAT623 |  98 | 128 |
-  | MAT642 | 116 |   3 |
-  | MAT645 |  81 |  38 |
-
- [[file:figure/boxplot_ART.pdf]]
-   #+BEGIN_SRC R
-   pdf("figure/boxplot_ART.pdf")
-   rt_boxp <- ggplot(df, aes(x=factor(resp),y=RT,fill=factor(resp)))+
-     geom_boxplot() + labs(title="RT by accuracy") + facet_wrap(~item)
-   logrt_boxp <- ggplot(df, aes(x=factor(resp),y=log(RT),fill=factor(resp)))+
-     geom_boxplot() + labs(title="log RT by accuracy") + facet_wrap(~item)
-   rt_boxp
-   logrt_boxp
-   dev.off(which = dev.cur())
-  #+END_SRC
-
-  #+RESULTS:
-  : 2
 
 * Local Variables
 # Local Variables:

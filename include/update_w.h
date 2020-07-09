@@ -12,7 +12,6 @@ Eigen::VectorXd update_w(const Eigen::MatrixXd::RowXpr &w, double &acc_w,
                          const int &N, const int &G, const Eigen::MatrixXi::RowXpr &NA,
                          const Eigen::VectorXd &len, const Eigen::MatrixXi::RowXpr &seg,
                          const Eigen::MatrixXd::RowXpr &H, const Eigen::MatrixXi::RowXpr &Y_i,
-                         bool SINGLE_Z,
                          boost::ecuyer1988 &rng);
 
 #endif // __UPDATE_W_H_
