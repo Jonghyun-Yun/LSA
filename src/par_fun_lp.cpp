@@ -16,7 +16,7 @@ double par_fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lamb
                   const int &I, const int &N, const int &G,
                   const Eigen::MatrixXi &NA,
                   const Eigen::VectorXd &len, const Eigen::MatrixXi &seg,
-                  const Eigen::MatrixXd &H, const Eigen::MatrixXi &Y) {
+                  const Eigen::MatrixXd &H, const Eigen::MatrixXi &Y, bool SINGLE_Z, bool UPDATE_GAMMA) {
 
     using stan::math::to_vector;
     using stan::math::distance;
@@ -46,6 +46,45 @@ double par_fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lamb
         //     z = z1;
         // }
 
+        if (SINGLE_Z) {
+
+        lp_ += tbb::parallel_reduce(
+            tbb::blocked_range2d<int>(0, I, 0, N),
+            0.0,
+            [&](tbb::blocked_range2d<int> r, double running_total)
+            {
+                for(int i=r.rows().begin(); i<r.rows().end(); ++i)
+                {
+                    for(int k=r.cols().begin(); k<r.cols().end(); ++k)
+                    {
+                        // for (int g = 0; g < seg(i,k); g++) {
+                        //     cum_lambda(c*I + i,k) += len(g) * lambda(i,g);
+                        // }
+                        // cum_lambda(i,k) += H(i,k) * lambda(i,seg(i,k));
+
+                        if (NA(i,k) == 1) {
+
+                            running_total -=
+                                cum_lambda(c * I + i, k) *
+                                exp(beta(i, c) + theta(k, c) -
+                                    gamma(c) * distance(z.row(k), w.row(i)));
+
+                            if (Y(i, k) == c) {
+                                running_total +=
+                                    log(lambda(c * I + i, seg(i, k))) + beta(i, c) +
+                                    theta(k, c) -
+                                    gamma(c) * distance(z.row(c*N + k), w.row(i));
+                            }
+
+                        }
+
+                    }
+                }
+                return running_total;
+            }, std::plus<double>() );
+        }
+        else
+        {
         lp_ += tbb::parallel_reduce(
             tbb::blocked_range2d<int>(0, I, 0, N),
             0.0,
@@ -80,6 +119,7 @@ double par_fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lamb
                 }
                 return running_total;
             }, std::plus<double>() );
+        }
 
         // std::cout << "Calculating the log-acceptance ratio...\n";
     }
@@ -90,11 +130,21 @@ double par_fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lamb
         gamma_lpdf(to_vector(lambda.block(I,0,I,G)), to_vector(a_lambda), to_vector(b_lambda)) +
         normal_lpdf(to_vector(beta), to_vector(mu_beta), to_vector(sigma_beta)) +
         normal_lpdf(to_vector(theta), to_vector(mu_theta), to_vector(sigma_theta)) +
-        lognormal_lpdf(gamma, mu_gamma, sigma_gamma) +
-        normal_lpdf(to_vector(z.block(0,0,N,2)), to_vector(mu_z), to_vector(sigma_z)) +
-        normal_lpdf(to_vector(z.block(N,0,N,2)), to_vector(mu_z), to_vector(sigma_z)) +
         normal_lpdf(to_vector(w), to_vector(mu_w), to_vector(sigma_w));
 
+    if (SINGLE_Z) {
+        lp_ += normal_lpdf(to_vector(z), to_vector(mu_z), to_vector(sigma_z));
+        if (UPDATE_GAMMA) {
+            lp_ += lognormal_lpdf(-1.0*gamma(0), mu_gamma, sigma_gamma) + lognormal_lpdf(gamma(1), mu_gamma, sigma_gamma);
+        }
+    }
+    else {
+        lp_ += normal_lpdf(to_vector(z.block(0,0,N,2)), to_vector(mu_z), to_vector(sigma_z)) +
+        normal_lpdf(to_vector(z.block(N,0,N,2)), to_vector(mu_z), to_vector(sigma_z));
+        if (UPDATE_GAMMA) {
+            lp_ += lognormal_lpdf(gamma, mu_gamma, sigma_gamma);
+        }
+    }
     return lp_;
 }
 

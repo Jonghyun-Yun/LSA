@@ -47,7 +47,7 @@ cnames = c(cnames, "sigma", "lp_")
 ## myend = 25000
 mydf = list()
 mylist = mcmc.list()
-for (cid in 1:5) {
+for (cid in 1:num_chain) {
 mydf[[cid]] = readr::read_csv(paste0("output/sample_chain",cid,".csv"), col_names=F) %>% as.data.frame()
 colnames(mydf[[cid]]) = cnames
 }
@@ -61,7 +61,7 @@ mydf = matched$mydf
 item = 1
  cname = names(mydf[[1]])
  mylist = mcmc.list()
- for (cid in 1:5) {
+ for (cid in 1:num_chain) {
    for (c in 0) {
     for (k in 1:N) {
        z = mydf[[cid]][,str_which(cname, paste0("z\\.",c,"\\.",k,"\\.[1-2]"))]

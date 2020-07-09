@@ -15,6 +15,6 @@ double par_fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lamb
                   const int &I, const int &N, const int &G,
                   const Eigen::MatrixXi &NA,
                   const Eigen::VectorXd &len, const Eigen::MatrixXi &seg,
-                  const Eigen::MatrixXd &H, const Eigen::MatrixXi &Y);
+                  const Eigen::MatrixXd &H, const Eigen::MatrixXi &Y, bool SINGLE_Z, bool UPDATE_GAMMA);
 
 #endif // __PAR_FUN_LP_H_
