@@ -5,7 +5,7 @@ setwd("~/Dropbox/research/lsjm-art/lsjm-code")
 
 library(dplyr)
 
-source("R/Rfunction.R")
+source("R/art-functions.R")
 source("R/opusIII-preprocess.R")
 
 opusIII = readr::read_delim("data/opusIII-matrices-data.dat"," ")

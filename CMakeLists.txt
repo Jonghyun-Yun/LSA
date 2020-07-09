@@ -34,7 +34,7 @@ cmake_minimum_required(VERSION 3.0)
  SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -DBOOST_DISABLE_ASSERTS")
  SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wl,-L,${MATH}/lib/tbb -Wl,-rpath,${MATH}/lib/tbb")
  SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -isysroot ${Xcode_CLT}/SDKs/MacOSX.sdk/usr/include")
- SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk")
+ SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk")
  # SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-unused-parameter -Wno-unused-local-typedef -Wno-unused-function -Wno-ignored-qualifiers -Wno-unused-variable -Wno-sign-compare -Wno-infinite-recursion")
 
 include_directories(${PROJROOT}/include)

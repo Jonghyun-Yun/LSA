@@ -1,6 +1,6 @@
 setwd("~/Dropbox/research/lsjm-art/lsjm-code")
 
-source("R/Rfunction.R")
+source("R/art-functions.R")
 
 library(tidyverse)
 load("data/pisa2015/US_PISA2015.rdata")

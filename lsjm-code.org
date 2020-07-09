@@ -354,7 +354,7 @@ source('R/pisa-preprocess.R')
 #+BEGIN_SRC R :results none :tangle R/pisa-preprocess.R
 setwd("~/Dropbox/research/lsjm-art/lsjm-code")
 
-source("R/Rfunction.R")
+source("R/art-functions.R")
 
 library(tidyverse)
 load("data/pisa2015/US_PISA2015.rdata")
@@ -371,7 +371,7 @@ dim(df)
 length(unique(df$CNTSTUID)) # unique STUID?
 #+END_SRC
 
-#+begin_src R :tangle R/Rfunction.R
+#+begin_src R :tangle R/art-functions.R
 pullit = function(info,cl) {
 it = info %>% filter(Cluster_A == cl)# %>% dplyr::select(Item,Time)
 item = pull(it,Item)
@@ -1023,7 +1023,7 @@ logrt_boxp
 dev.off(which = dev.cur())
 #+END_SRC
 ** numeric ID
-#+BEGIN_SRC R :tangle R/Rfunction.R
+#+BEGIN_SRC R :tangle R/art-functions.R
 tabulate_id = function(chrid) {
 ## reference table of charactor and numeric id
   chr = sort(unique(chrid))
@@ -2004,7 +2004,10 @@ library(bayesplot)
 library(foreach)
 library(doParallel)
 registerDoParallel(cores = detectCores() - 1)
-source("R/Rfunction.R")
+
+setwd("/Users/yunj/Dropbox/research/lsjm-art/lsjm-code")
+
+source("R/art-functions.R")
 
 num_chain = 3
 #+END_SRC
@@ -2125,7 +2128,7 @@ cat output/mcmc_summary.txt
 
 ** latent space
   [[file:figure/star_latent.pdf]]
-  #+BEGIN_SRC R
+  #+BEGIN_SRC R :tangle R/visual-latent-star.R
    z0.star = Xstar[1:N,]
    z1.star = Xstar[(N+1):(2*N),]
    w.star = Xstar[(2*N + 1):nrow(Xstar),]
@@ -2144,7 +2147,7 @@ cat output/mcmc_summary.txt
   #+RESULTS:
 
   [[file:figure/star_latent.pdf]]
- #+BEGIN_SRC R
+ #+BEGIN_SRC R :tangle R/visual-latent-star.R
    z0.star = Xstar[1:N,]
    w.star = Xstar[(N + 1):nrow(Xstar),]
    xmin = min(z0.star[,1],w.star[,1])
@@ -2162,7 +2165,7 @@ cat output/mcmc_summary.txt
   : 2
 
   [[file:figure/latent_position_plot_vegan.pdf]]
-  #+begin_src R
+  #+begin_src R :tangle R/visual-latent-star.R
   pdf("figure/latent_position_plot_vegan.pdf")
 
   z0 = matched$z0
@@ -2182,7 +2185,7 @@ cat output/mcmc_summary.txt
   #+RESULTS:
 
   [[file:figure/latent_position_plot_vegan.pdf]]
-  #+begin_src R
+  #+begin_src R :tangle R/visual-latent-star.R
   pdf("figure/latent_position_plot_vegan.pdf")
 
   z0 = matched$z0
@@ -2200,222 +2203,222 @@ cat output/mcmc_summary.txt
   #+RESULTS:
   : 2
 
-** trace plots
-   [[file:figure/lambda_mcmc_interval_plot.pdf]]
-   #+BEGIN_SRC R
-   pdf("figure/lambda_mcmc_interval_plot.pdf")
-   mcmc_intervals(
-     mylist,
-     regex_pars = "^lambda\\.0\\.1\\.",
-     transformations = "log"
-   )
-   ##mcmc_areas(
-   ##  lambda0.sam,
-   ##  prob = 0.8, # 80% intervals
-   ##  prob_outer = 0.99, # 99%
-   ##  point_est = "mean"
-   ##)
+*** trace plots
+    [[file:figure/lambda_mcmc_interval_plot.pdf]]
+    #+BEGIN_SRC R :tangle R/visual-trace-plot.R
+    pdf("figure/lambda_mcmc_interval_plot.pdf")
+    mcmc_intervals(
+      mylist,
+      regex_pars = "^lambda\\.0\\.1\\.",
+      transformations = "log"
+    )
+    ##mcmc_areas(
+    ##  lambda0.sam,
+    ##  prob = 0.8, # 80% intervals
+    ##  prob_outer = 0.99, # 99%
+    ##  point_est = "mean"
+    ##)
 
-   mcmc_intervals(
-     mylist,
-     regex_pars = "^lambda\\.1\\.1\\.",
-     transformations = "log"
-   )
-   dev.off(which = dev.cur())
-   #+END_SRC
+    mcmc_intervals(
+      mylist,
+      regex_pars = "^lambda\\.1\\.1\\.",
+      transformations = "log"
+    )
+    dev.off(which = dev.cur())
+    #+END_SRC
 
-   #+RESULTS:
-   : 2
+    #+RESULTS:
+    : 2
 
-[[pdf:figure/z_pairs_plot.pdf]]
-#+BEGIN_SRC R
-pdf("figure/z_pairs_plot.pdf")
-mcmc_pairs(mylist,
-           regex_pars = "^z.[0-1]\\.1\\.",
-           off_diag_args = list(size = 0.75))
-dev.off(which = dev.cur())
-#+END_SRC
+ [[pdf:figure/z_pairs_plot.pdf]]
+ #+BEGIN_SRC R :tangle R/visual-trace-plot.R
+ pdf("figure/z_pairs_plot.pdf")
+ mcmc_pairs(mylist,
+            regex_pars = "^z.[0-1]\\.1\\.",
+            off_diag_args = list(size = 0.75))
+ dev.off(which = dev.cur())
+ #+END_SRC
 
-#+RESULTS:
-: 2
+ #+RESULTS:
+ : 2
 
-[[file:figure/beta_parcoord.pdf]]
-#+BEGIN_SRC R
-pdf("figure/beta_parcoord.pdf")
-bayesplot::mcmc_parcoord(mylist,
-           regex_pars = "^beta\\.[1-5]\\.",
-           off_diag_args = list(size = 0.75))
-dev.off(which = dev.cur())
-#+END_SRC
+ [[file:figure/beta_parcoord.pdf]]
+ #+BEGIN_SRC R :TANGLE R/visual-trace-plot.r
+ pdf("figure/beta_parcoord.pdf")
+ bayesplot::mcmc_parcoord(mylist,
+            regex_pars = "^beta\\.[1-5]\\.",
+            off_diag_args = list(size = 0.75))
+ dev.off(which = dev.cur())
+ #+END_SRC
 
-#+RESULTS:
-: 2
+ #+RESULTS:
+ : 2
 
-[[file:figure/theta_parcoord.pdf]]
-#+BEGIN_SRC R
-pdf("figure/theta_parcoord.pdf")
-bayesplot::mcmc_parcoord(mylist,
-           regex_pars = "^theta\\.[1-5]\\.",
-           off_diag_args = list(size = 0.75))
-dev.off(which = dev.cur())
-#+END_SRC
+ [[file:figure/theta_parcoord.pdf]]
+ #+BEGIN_SRC R :TANGLE R/visual-trace-plot.r
+ pdf("figure/theta_parcoord.pdf")
+ bayesplot::mcmc_parcoord(mylist,
+            regex_pars = "^theta\\.[1-5]\\.",
+            off_diag_args = list(size = 0.75))
+ dev.off(which = dev.cur())
+ #+END_SRC
 
-#+RESULTS:
-: 2
+ #+RESULTS:
+ : 2
 
-[[file:figure/lambda_parcoord.pdf]]
-#+BEGIN_SRC R
-pdf("figure/lambda_parcoord.pdf")
-bayesplot::mcmc_parcoord(mylist,
-           regex_pars = "^lambda\\.[0-1]\\.1\\.",
-           transfomrations = "log",
-           off_diag_args = list(size = 0.75))
-dev.off(which = dev.cur())
-#+END_SRC
+ [[file:figure/lambda_parcoord.pdf]]
+ #+BEGIN_SRC R :TANGLE R/visual-trace-plot.r
+ pdf("figure/lambda_parcoord.pdf")
+ bayesplot::mcmc_parcoord(mylist,
+            regex_pars = "^lambda\\.[0-1]\\.1\\.",
+            transfomrations = "log",
+            off_diag_args = list(size = 0.75))
+ dev.off(which = dev.cur())
+ #+END_SRC
 
-#+RESULTS:
-: 2
+ #+RESULTS:
+ : 2
 
-[[pdf:figure/w_parcoord_plot.pdf::1]]
-#+BEGIN_SRC R
-pdf("figure/w_parcoord_plot.pdf")
-mcmc_parcoord(mylist,
-           regex_pars = "^w.[1-5]\\.",
-           off_diag_args = list(size = 0.75))
-dev.off(which = dev.cur())
-#+END_SRC
+ [[pdf:figure/w_parcoord_plot.pdf::1]]
+ #+BEGIN_SRC R :TANGLE R/visual-trace-plot.r
+ pdf("figure/w_parcoord_plot.pdf")
+ mcmc_parcoord(mylist,
+            regex_pars = "^w.[1-5]\\.",
+            off_diag_args = list(size = 0.75))
+ dev.off(which = dev.cur())
+ #+END_SRC
 
-#+RESULTS:
-: 2
+ #+RESULTS:
+ : 2
 
-[[file:figure/dist_mcmc_trace_plot.pdf]]
-#+BEGIN_SRC R
-## mcmc_intervals(mylist, pars=c("lambda.0.1.1")
-pdf("figure/dist_mcmc_trace_plot.pdf")
-p <- mcmc_trace(mylist,
-                ##pars = c("lambda.0.1.1",  "lambda.0.1.2",  "lambda.0.1.3", "lambda.0.1.4"),
-           regex_pars = "^dist_z.[0-1]\\.[0-4]_w",
-                ##transformations = "log",
-                facet_args = list(nrow = 2, labeller = label_parsed))
-p + facet_text(size = 15)
-p <- mcmc_trace(mylist,
-                ##pars = c("lambda.0.1.1",  "lambda.0.1.2",  "lambda.0.1.3", "lambda.0.1.4"),
-           regex_pars = "^dist_z.[0-1]\\.[5-9]_w",
-                ##transformations = "log",
-                facet_args = list(nrow = 2, labeller = label_parsed))
-p + facet_text(size = 15)
-dev.off(which = dev.cur())
-#+END_SRC
+ [[file:figure/dist_mcmc_trace_plot.pdf]]
+ #+BEGIN_SRC R :TANGLE R/visual-trace-plot.r
+ ## mcmc_intervals(mylist, pars=c("lambda.0.1.1")
+ pdf("figure/dist_mcmc_trace_plot.pdf")
+ p <- mcmc_trace(mylist,
+                 ##pars = c("lambda.0.1.1",  "lambda.0.1.2",  "lambda.0.1.3", "lambda.0.1.4"),
+            regex_pars = "^dist_z.[0-1]\\.[0-4]_w",
+                 ##transformations = "log",
+                 facet_args = list(nrow = 2, labeller = label_parsed))
+ p + facet_text(size = 15)
+ p <- mcmc_trace(mylist,
+                 ##pars = c("lambda.0.1.1",  "lambda.0.1.2",  "lambda.0.1.3", "lambda.0.1.4"),
+            regex_pars = "^dist_z.[0-1]\\.[5-9]_w",
+                 ##transformations = "log",
+                 facet_args = list(nrow = 2, labeller = label_parsed))
+ p + facet_text(size = 15)
+ dev.off(which = dev.cur())
+ #+END_SRC
 
-#+RESULTS:
-: 2
+ #+RESULTS:
+ : 2
 
 
-  [[file:figure/z_mcmc_trace_plot.pdf]]
-   #+BEGIN_SRC R
-   ## mcmc_intervals(mylist, pars=c("lambda.0.1.1")
-   pdf("figure/z_mcmc_trace_plot.pdf")
-   p <- mcmc_trace(mylist,
-                   ##pars = c("lambda.0.1.1",  "lambda.0.1.2",  "lambda.0.1.3", "lambda.0.1.4"),
-                   regex_pars = "^z.[0-1]\\.[1-2]\\.",
-                   ##transformations = "log",
-                   facet_args = list(nrow = 2, labeller = label_parsed))
-   p + facet_text(size = 15)
-   dev.off(which = dev.cur())
-   #+END_SRC
+   [[file:figure/z_mcmc_trace_plot.pdf]]
+    #+BEGIN_SRC R :TANGLE R/visual-trace-plot.r
+    ## mcmc_intervals(mylist, pars=c("lambda.0.1.1")
+    pdf("figure/z_mcmc_trace_plot.pdf")
+    p <- mcmc_trace(mylist,
+                    ##pars = c("lambda.0.1.1",  "lambda.0.1.2",  "lambda.0.1.3", "lambda.0.1.4"),
+                    regex_pars = "^z.[0-1]\\.[1-2]\\.",
+                    ##transformations = "log",
+                    facet_args = list(nrow = 2, labeller = label_parsed))
+    p + facet_text(size = 15)
+    dev.off(which = dev.cur())
+    #+END_SRC
 
-   #+RESULTS:
-   : 2
+    #+RESULTS:
+    : 2
 
-  [[file:figure/w_mcmc_trace_plot.pdf]]
-   #+BEGIN_SRC R
-   ## mcmc_intervals(mylist, pars=c("lambda.0.1.1")
-   pdf("figure/w_mcmc_trace_plot.pdf")
-   p <- mcmc_trace(mylist,
-                   ##pars = c("lambda.0.1.1",  "lambda.0.1.2",  "lambda.0.1.3", "lambda.0.1.4"),
-                   regex_pars = "^w\\.[0-9]\\.",
-                   ##transformations = "log",
-                   facet_args = list(nrow = 2, labeller = label_parsed))
-   p + facet_text(size = 15)
-   dev.off(which = dev.cur())
-   #+END_SRC
+   [[file:figure/w_mcmc_trace_plot.pdf]]
+    #+BEGIN_SRC R :TANGLE R/visual-trace-plot.r
+    ## mcmc_intervals(mylist, pars=c("lambda.0.1.1")
+    pdf("figure/w_mcmc_trace_plot.pdf")
+    p <- mcmc_trace(mylist,
+                    ##pars = c("lambda.0.1.1",  "lambda.0.1.2",  "lambda.0.1.3", "lambda.0.1.4"),
+                    regex_pars = "^w\\.[0-9]\\.",
+                    ##transformations = "log",
+                    facet_args = list(nrow = 2, labeller = label_parsed))
+    p + facet_text(size = 15)
+    dev.off(which = dev.cur())
+    #+END_SRC
 
-   #+RESULTS:
-   : 2
+    #+RESULTS:
+    : 2
 
-   [[file:figure/lambda_mcmc_trace_plot.pdf]]
-   #+BEGIN_SRC R
-   pdf("figure/lambda_mcmc_trace_plot.pdf")
-   color_scheme_set("mix-blue-pink")
-   for (item in 1:I) {
-     p <- mcmc_trace(mylist,
-                     regex_pars = paste0("^lambda\\.0\\.",item,"\\."),
-                     transformations = "log",
-                     facet_args = list(nrow = 2, labeller = label_parsed))
-    print(p <- p + facet_text(size = 15) + ggtitle(paste0("lambda.1 trace for item ",item,".")))
-
-     p <- mcmc_trace(mylist,
-                     regex_pars = paste0("^lambda\\.1\\.",item,"\\."),
-                     transformations = "log",
-                     facet_args = list(nrow = 2, labeller = label_parsed))
-     print(p <- p + facet_text(size = 15) + ggtitle(paste0("lambda.1 trace for item ",item,".")))
-   }
-   dev.off(which = dev.cur())
-   #+END_SRC
-
-   #+RESULTS:
-   : 1
-
-   [[file:figure/beta_mcmc_trace_plot.pdf]]
-   #+BEGIN_SRC R
-      pdf("figure/beta_mcmc_trace_plot.pdf")
-            for (i in 1:I) {
-      color_scheme_set("mix-blue-pink")
+    [[file:figure/lambda_mcmc_trace_plot.pdf]]
+    #+BEGIN_SRC R :TANGLE R/visual-trace-plot.r
+    pdf("figure/lambda_mcmc_trace_plot.pdf")
+    color_scheme_set("mix-blue-pink")
+    for (item in 1:I) {
       p <- mcmc_trace(mylist,
-                      regex_pars = paste0("^beta\\.",i,"\\."),
+                      regex_pars = paste0("^lambda\\.0\\.",item,"\\."),
+                      transformations = "log",
                       facet_args = list(nrow = 2, labeller = label_parsed))
-      p + facet_text(size = 15)
-               print(p <- p + facet_text(size = 15))
-   }
-      dev.off(which = dev.cur())
-   #+END_SRC
+     print(p <- p + facet_text(size = 15) + ggtitle(paste0("lambda.1 trace for item ",item,".")))
 
-   #+RESULTS:
-   : 2
+      p <- mcmc_trace(mylist,
+                      regex_pars = paste0("^lambda\\.1\\.",item,"\\."),
+                      transformations = "log",
+                      facet_args = list(nrow = 2, labeller = label_parsed))
+      print(p <- p + facet_text(size = 15) + ggtitle(paste0("lambda.1 trace for item ",item,".")))
+    }
+    dev.off(which = dev.cur())
+    #+END_SRC
 
-   [[file:figure/theta_mcmc_trace_plot.pdf]]
-   #+BEGIN_SRC R
-   pdf("figure/theta_mcmc_trace_plot.pdf")
-   color_scheme_set("mix-blue-pink")
-   for (k in 1:10) {
-     p <- mcmc_trace(mylist,
-                     regex_pars = paste0("^theta\\.",k,"\\."),
-                     facet_args = list(nrow = 2, labeller = label_parsed))
-     print(p <- p + facet_text(size = 15))
-   }
-   dev.off(which = dev.cur())
-   #+END_SRC
+    #+RESULTS:
+    : 1
 
-   #+RESULTS:
-   : 2
+    [[file:figure/beta_mcmc_trace_plot.pdf]]
+    #+BEGIN_SRC R :TANGLE R/visual-trace-plot.r
+       pdf("figure/beta_mcmc_trace_plot.pdf")
+             for (i in 1:I) {
+       color_scheme_set("mix-blue-pink")
+       p <- mcmc_trace(mylist,
+                       regex_pars = paste0("^beta\\.",i,"\\."),
+                       facet_args = list(nrow = 2, labeller = label_parsed))
+       p + facet_text(size = 15)
+                print(p <- p + facet_text(size = 15))
+    }
+       dev.off(which = dev.cur())
+    #+END_SRC
 
-   [[pdf:figure/lp_sigma_mcmc_trace_plot.pdf]]
-   #+BEGIN_SRC R
-   pdf("figure/lp_sigma_mcmc_trace_plot.pdf")
-   color_scheme_set("mix-blue-pink")
-   p <- mcmc_trace(mylist,
-                   pars = c("sigma", "lp_"),
-                   facet_args = list(nrow = 2, labeller = label_parsed))
-   p + facet_text(size = 15)
-   dev.off(which = dev.cur())
-   #+END_SRC
+    #+RESULTS:
+    : 2
 
-   #+RESULTS:
-   : 2
+    [[file:figure/theta_mcmc_trace_plot.pdf]]
+    #+BEGIN_SRC R :TANGLE R/visual-trace-plot.r
+    pdf("figure/theta_mcmc_trace_plot.pdf")
+    color_scheme_set("mix-blue-pink")
+    for (k in 1:10) {
+      p <- mcmc_trace(mylist,
+                      regex_pars = paste0("^theta\\.",k,"\\."),
+                      facet_args = list(nrow = 2, labeller = label_parsed))
+      print(p <- p + facet_text(size = 15))
+    }
+    dev.off(which = dev.cur())
+    #+END_SRC
+
+    #+RESULTS:
+    : 2
+
+    [[pdf:figure/lp_sigma_mcmc_trace_plot.pdf]]
+    #+BEGIN_SRC R :TANGLE R/visual-trace-plot.r
+    pdf("figure/lp_sigma_mcmc_trace_plot.pdf")
+    color_scheme_set("mix-blue-pink")
+    p <- mcmc_trace(mylist,
+                    pars = c("sigma", "lp_"),
+                    facet_args = list(nrow = 2, labeller = label_parsed))
+    p + facet_text(size = 15)
+    dev.off(which = dev.cur())
+    #+END_SRC
+
+    #+RESULTS:
+    : 2
 
 ** output analysis
 
-#+BEGIN_SRC R
+#+BEGIN_SRC R :tangle R/CIF.R
 tmp = foreach(v=1:5, .combine='rbind') %dopar% apply(mydf[[1]], 2, mean)
 tmp = tmp[,1:( which( colnames(tmp) == "lp_") )]
 posm = apply(tmp, 2, mean)
@@ -2428,7 +2431,7 @@ param = getparam(posm,sj,i,k)
 #+RESULTS:
 
 [[file:figure/tradeoff.pdf]]
-#+BEGIN_SRC R
+#+BEGIN_SRC R :tangle R/CIF.R
 ## accuracy = foreach(k=1:N, .combine='rbind') %dopar% fun_accuracy_ick(t,i,k,posm,cname,sj)
 pdf(paste0("figure/tradeoff.pdf"))
 for (item in 1:I) {
@@ -2458,7 +2461,7 @@ dev.off(which = dev.cur())
 #+RESULTS:
 : 2
 
-#+BEGIN_SRC R :tangle R/Rfunction.R
+#+BEGIN_SRC R :tangle R/art-functions.R
 getparam = function(posm, sj, i, k) {
 cname = names(posm)
 z = posm[str_which(cname, paste0("z\\..\\.",k,"\\.[1-2]"))] %>% matrix(ncol = 2) %>% t()
@@ -2474,7 +2477,7 @@ return(list(lambda=lambda,beta=beta,theta=theta,gamma=gamma,z=z,w=w,sj=sj,H=H))
 
 #+RESULTS:
 
-#+BEGIN_SRC R
+#+BEGIN_SRC R :tangle R/CIF.R
 param = getparam(posm, sj, i, k)
 
 ll = 0;
@@ -2500,7 +2503,7 @@ cumcifun(param, 1, ll, uu);
 #+END_SRC
 
 [[pdf:figure/CIF.pdf::1]]
-#+BEGIN_SRC R :results none
+#+BEGIN_SRC R :tangle R/CIF.R
 myN = 100
 maxt = sj[G] + 250
 num_seg = 100
@@ -2633,7 +2636,7 @@ dev.off(which = dev.cur())
 : 1
 
 ** custom functions
-#+BEGIN_SRC R :tangle R/Rfunction.R
+#+BEGIN_SRC R :tangle R/art-functions.R
 fun_hazard_surv = function(t,i,k,posm,cname,sj) {
   z = posm[str_which(cname, paste0("z\\.[0-1]\\.",k,"\\.[1-2]"))] %>% matrix(ncol = 2)
   w = rep(posm[str_which(cname, paste0("w\\.",i,"\\."))], 2)  %>% matrix(ncol = 2)
@@ -2666,7 +2669,7 @@ fun_hazard_surv = function(t,i,k,posm,cname,sj) {
   }
 #+END_SRC
 
-#+BEGIN_SRC R :tangle R/Rfunction.R
+#+BEGIN_SRC R :tangle R/art-functions.R
 fun_hazard_ick = function(t,i,c,k,posm,cname,sj) {
 z = posm[str_which(cname, paste0("z\\.",c,"\\.",k,"\\.[1-2]"))]
 w = posm[str_which(cname, paste0("w\\.",i))]
@@ -2685,14 +2688,14 @@ return(hazard)
 }
 #+END_SRC
 
-#+BEGIN_SRC R :tangle R/Rfunction.R
+#+BEGIN_SRC R :tangle R/art-functions.R
 fun_accuracy_ick = function(t,i,k,posm,cname,sj) {
 fun_hazard_ick(t,i,1,k,posm,cname,sj) / (fun_hazard_ick(t,i,1,k,posm,cname,sj) + fun_hazard_ick(t,i,0,k,posm,cname,sj))
 }
 #+END_SRC
 
 #+NAME: mdsplot
-#+BEGIN_SRC R :tangle R/Rfunction.R
+#+BEGIN_SRC R :tangle R/art-functions.R
 library(ggplot2)
 library(ggrepel)
 
@@ -2750,7 +2753,7 @@ lsjmplot <- function( z, w, myname = NULL, xlim=NA, ylim=NA, lab = "Coordinate")
 }
 #+END_SRC
 
-#+BEGIN_SRC R :tangle R/Rfunction.R
+#+BEGIN_SRC R :tangle R/art-functions.R
 find_xstar = function(df) {
 num_samples = nrow(df)
 
@@ -2766,7 +2769,7 @@ Xstar = matrix(unlist(lpos[star,]), ncol = 2)
 return(list(lp_ = mlp_, Xstar=Xstar))}
 #+END_SRC
 
-#+BEGIN_SRC R :tangle R/Rfunction.R
+#+BEGIN_SRC R :tangle R/art-functions.R
 find_xstar_inlist = function(mydf) {
 num_chain = length(mydf)
 mlp = -Inf
@@ -2777,7 +2780,7 @@ mlp = -Inf
 return(Xstar)}
 #+END_SRC
 
-#+BEGIN_SRC R :tangle R/Rfunction.R
+#+BEGIN_SRC R :tangle R/art-functions.R
 do_procrustes = function(Xstar, mydf, is_list = FALSE, translation = TRUE, dilation = FALSE, scale = FALSE, reflect = TRUE) {
   posm = 0
   if (is_list == TRUE) {
@@ -2846,7 +2849,7 @@ setwd("~/Dropbox/research/lsjm-art/lsjm-code")
 
 library(dplyr)
 
-source("R/Rfunction.R")
+source("R/art-functions.R")
 source("R/opusIII-preprocess.R")
 #+END_SRC
 
