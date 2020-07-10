@@ -1,5 +1,5 @@
 #include <stan/math.hpp>
-#include "tbb/blocked_range2d.h"
+#include "tbb/blocked_range3d.h"
 #include "par_fun_lp.h"
 
 double par_fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lambda,
@@ -34,22 +34,12 @@ double par_fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lamb
     // Eigen::MatrixXd z(N,2);
     // double log_prop_hazard; // to avoid double evaluation
 
-    for (int c = 0; c < 2; c++) {
-
-        // cum_lambda.setZero();
-        // if (c == 0) {
-        //     lambda = lambda0;
-        //     z = z0;
-        // }
-        // else {
-        //     lambda = lambda1;
-        //     z = z1;
-        // }
-
-        lp_ += tbb::parallel_reduce(
-            tbb::blocked_range2d<int>(0, I, 0, N),
-            0.0,
-            [&](tbb::blocked_range2d<int> r, double running_total)
+    lp_ += tbb::parallel_reduce(
+        tbb::blocked_range3d<int>(0, 2, 0, I, 0, N),
+        0.0,
+        [&](tbb::blocked_range3d<int> r, double running_total)
+        {
+            for (int c = r.pages().begin(); c < r.pages().end(); ++c)
             {
                 for(int i=r.rows().begin(); i<r.rows().end(); ++i)
                 {
@@ -78,11 +68,9 @@ double par_fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lamb
 
                     }
                 }
-                return running_total;
-            }, std::plus<double>() );
-
-        // std::cout << "Calculating the log-acceptance ratio...\n";
-    }
+            }
+            return running_total;
+        }, std::plus<double>() );
 
     // priors...
     lp_ += inv_gamma_lpdf(square(sigma), a_sigma, b_sigma) +
@@ -95,7 +83,7 @@ double par_fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lamb
     if (SINGLE_Z) {
         lp_ += normal_lpdf(to_vector(z.block(0,0,N,2)), to_vector(mu_z), to_vector(sigma_z));
         if (UPDATE_GAMMA) {
-            lp_ += lognormal_lpdf(-1.0*gamma(0), mu_gamma, sigma_gamma) + lognormal_lpdf(gamma(1), mu_gamma, sigma_gamma);
+            lp_ += lognormal_lpdf(gamma(1), mu_gamma(1), sigma_gamma(1));
         }
     }
     else {

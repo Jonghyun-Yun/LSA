@@ -77,7 +77,7 @@ double fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lambda,
     if (SINGLE_Z) {
         lp_ += normal_lpdf(to_vector(z.block(0,0,N,2)), to_vector(mu_z), to_vector(sigma_z));
         if (UPDATE_GAMMA) {
-            lp_ += lognormal_lpdf(-1.0*gamma(0), mu_gamma, sigma_gamma) + lognormal_lpdf(gamma(1), mu_gamma, sigma_gamma);
+            lp_ += lognormal_lpdf(gamma(1), mu_gamma(1), sigma_gamma(1));
         }
     }
     else {

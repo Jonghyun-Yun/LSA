@@ -162,7 +162,7 @@ mlp = -Inf
   }
 return(Xstar)}
 
-do_procrustes = function(Xstar, mydf, is_list = FALSE, translation = TRUE, dilation = FALSE, scale = FALSE, reflect = TRUE) {
+do_procrustes = function(Xstar, mydf, is_list = FALSE, translation = TRUE, scale = FALSE, reflect = TRUE) {
   posm = 0
   if (is_list == TRUE) {
     num_chain = length(mydf)
@@ -194,7 +194,7 @@ do_procrustes = function(Xstar, mydf, is_list = FALSE, translation = TRUE, dilat
 
     mm = foreach (k = 1:num_samples) %dopar% {
       ## X = matrix(unlist(lpos[k,]), nrow = 2) %>% t()
-      ## mm[[k]] = MCMCpack::procrustes(X, Xstar, translation, dilation)$X.new #MCMCpack
+      ## mm[[k]] = MCMCpack::procrustes(X, Xstar, translation, dilation = scale)$X.new #MCMCpack
       ## vegan::procrustes(Xstar, t( matrix(unlist(lpos[k,]), nrow = 2) ), scale = scale)$Yrot #vegan
       shapes::procOPA(Xstar, t( matrix(unlist(lpos[k,]), nrow = 2)) , scale = scale, reflect = reflect)$Bhat #shapes
     }
@@ -211,8 +211,8 @@ do_procrustes = function(Xstar, mydf, is_list = FALSE, translation = TRUE, dilat
     w = posm[-(1:N),]
     z1 = NULL
   } else {
-  w = posm[-(1:(2*N)),]
   z1 = posm[(N + 1):(2*N),]
+  w = posm[-(1:(2*N)),]
   }
-  return(list(mydf = mydf,  z0=z0, z1=z1, w=w))
+  return(list(mydf = mydf, z0=z0, z1=z1, w=w))
 }

@@ -13,9 +13,9 @@ ymax = max(z0.star[,2],z1.star[,2],w.star[,2])
 
 myname = c(1:N,paste0("I.",1:I))
 pdf("figure/star_latent.pdf")
-lsjmplot(z0.star,w.star,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname)
+print(lsjmplot(z0.star,w.star,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
 if (!single_z) {
-  lsjmplot(z1.star,w.star,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname)
+  print(lsjmplot(z1.star,w.star,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
 }
 dev.off(which = dev.cur())
 
@@ -30,8 +30,8 @@ xmax = max(z0[,1],z1[,1],w[,1])
 ymax = max(z0[,2],z1[,2],w[,2])
 
 myname = c(1:N,paste0("I.",1:I))
-lsjmplot(z0,w,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname)
+print(lsjmplot(z0,w,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
 if (!single_z) {
-  lsjmplot(z1,w,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname)
+  print(lsjmplot(z1,w,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
 }
 dev.off(which = dev.cur())

@@ -6,11 +6,11 @@ setwd("~/Dropbox/research/lsjm-art/lsjm-code")
 library(dplyr)
 
 source("R/art-functions.R")
-source("R/opusIII-preprocess.R")
 
 opusIII = readr::read_delim("data/opusIII-matrices-data.dat"," ")
 df = as_tibble(opusIII[,-1])[,1:4] ## drop row names
 name_item = unique(df$item)
+name_person = unique(df$person)
 pick_item = df$item %in% name_item[1:num_item]
 
 df = df[pick_item, ]
@@ -101,7 +101,7 @@ jump_z = matrix(1.0,N,2)
 
 mu_w = matrix(0.0,I,2)
 sigma_w = matrix(1.0,I,2)
-jump_w = matrix(0.1,I,2)
+jump_w = matrix(0.25,I,2)
 
 readr::write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"pj_lambda.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"pj_beta.csv", col_names = FALSE)
@@ -110,3 +110,14 @@ readr::write_csv(as.data.frame(rbind(a_sigma,b_sigma)),"pj_sigma.csv", col_names
 readr::write_csv(as.data.frame(rbind(mu_gamma,sigma_gamma,jump_gamma)),"pj_gamma.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(rbind(mu_z,sigma_z,jump_z)),"pj_z.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(rbind(mu_w,sigma_w,jump_w)),"pj_w.csv", col_names = FALSE)
+
+df %>% group_by(item) %>% summarise(F = sum(resp == 0), T = sum(resp == 1)) %>% mutate(id_ = 1:num_item)
+
+pdf("figure/boxplot_ART.pdf")
+rt_boxp <- ggplot(df, aes(x=factor(resp),y=RT,fill=factor(resp)))+
+  geom_boxplot() + labs(title="RT by accuracy") + facet_wrap(~item)
+logrt_boxp <- ggplot(df, aes(x=factor(resp),y=log(RT),fill=factor(resp)))+
+  geom_boxplot() + labs(title="log RT by accuracy") + facet_wrap(~item)
+rt_boxp
+logrt_boxp
+dev.off(which = dev.cur())

@@ -30,14 +30,6 @@ dev.off(which = dev.cur())
 
 ## system(paste0("open figure/tradeoff_", item, ".pdf")
 
-param = getparam(posm, sj, i, k)
-
-ll = 0;
-uu = 50
-
-cumcicurve(param, 1, ll, uu, 50);
-cumcifun(param, 1, ll, uu);
-
 myN = 100
 maxt = sj[G] + 250
 num_seg = 100

@@ -12,6 +12,7 @@ verbal = readr::read_delim("data/verbalIntelligence.dat"," ")
 df = as_tibble(verbal[,-1])[,1:4] ## drop row names
 names(df) = c("person", "item", "resp", "RT" )
 name_item = unique(df$item)
+name_person = unique(df$person)
 pick_item = df$item %in% name_item[1:num_item]
 
 df = df[pick_item, ]
@@ -102,7 +103,7 @@ jump_z = matrix(1.0,N,2)
 
 mu_w = matrix(0.0,I,2)
 sigma_w = matrix(1.0,I,2)
-jump_w = matrix(0.1,I,2)
+jump_w = matrix(0.25,I,2)
 
 readr::write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"pj_lambda.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"pj_beta.csv", col_names = FALSE)

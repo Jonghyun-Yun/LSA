@@ -1,5 +1,5 @@
 pdf("figure/lambda_mcmc_interval_plot.pdf")
-mcmc_intervals(
+p0 = mcmc_intervals(
   mylist,
   regex_pars = "^lambda\\.0\\.1\\.",
   transformations = "log"
@@ -11,15 +11,18 @@ mcmc_intervals(
 ##  point_est = "mean"
 ##)
 
-mcmc_intervals(
+p1 = mcmc_intervals(
   mylist,
   regex_pars = "^lambda\\.1\\.1\\.",
   transformations = "log"
 )
+print(p0)
+print(p1)
 dev.off(which = dev.cur())
 
 pdf("figure/z_pairs_plot.pdf")
-mcmc_pairs(mylist,
-           regex_pars = "^z.[0-1]\\.1\\.",
-           off_diag_args = list(size = 0.75))
+p = mcmc_pairs(mylist,
+               regex_pars = "^z.[0-1]\\.1\\.",
+               off_diag_args = list(size = 0.75))
+print(p)
 dev.off(which = dev.cur())

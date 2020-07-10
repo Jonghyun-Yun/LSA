@@ -21,6 +21,7 @@
 #include "update_single_z.h"
 #include "update_w.h"
 #include "update_gamma.h"
+#include "update_single_gamma.h"
 #include "fun_lp.h"
 #include "par_fun_lp.h"
 
@@ -313,7 +314,12 @@ int main(int argc, const char *argv[]) {
   // Eigen::VectorXd acc_z0 = Eigen::VectorXd::Zero(N);
   // Eigen::VectorXd acc_z1 = Eigen::VectorXd::Zero(N);
   Eigen::VectorXd acc_w = Eigen::VectorXd::Zero(I);
-  Eigen::VectorXd acc_gamma = Eigen::VectorXd::Zero(2);
+  Eigen::VectorXd acc_gamma;
+  if (SINGLE_Z) {
+    acc_gamma = Eigen::VectorXd::Zero(1);
+  } else {
+    acc_gamma = Eigen::VectorXd::Zero(2);
+  }
   // Eigen::MatrixXd acc_lambda0 = Eigen::MatrixXd::Zero(I, G);
   // Eigen::MatrixXd acc_lambda1 = Eigen::MatrixXd::Zero(I, G);
   Eigen::MatrixXd acc_lambda = Eigen::MatrixXd::Zero(2*I, G);
@@ -421,10 +427,20 @@ int main(int argc, const char *argv[]) {
       if (UPDATE_LATENT) {
 
         if (UPDATE_GAMMA) {
-        // updating gamma...
-        update_gamma(gamma, acc_gamma, mu_gamma, sigma_gamma, jump_gamma,
-                     cum_lambda, beta, theta, z, w, I, N,
-                     G, mNA, mlen, mseg, mH, mY, rng);
+          // updating gamma...
+
+          if (SINGLE_Z) {
+            update_single_gamma(gamma, acc_gamma, mu_gamma, sigma_gamma, jump_gamma,
+                                cum_lambda, beta, theta, z, w, I, N,
+                                G, mNA, mlen, mseg, mH, mY, RUN_PAR, rng);
+
+          }
+          else {
+            update_gamma(gamma, acc_gamma, mu_gamma, sigma_gamma, jump_gamma,
+                         cum_lambda, beta, theta, z, w, I, N,
+                         G, mNA, mlen, mseg, mH, mY, rng);
+          }
+
         }
        
         // updating z...
@@ -435,8 +451,7 @@ int main(int argc, const char *argv[]) {
           [&](tbb::blocked_range<int> r) {
               for (int k = r.begin(); k < r.end(); ++k) {
                   z.row(k) = update_single_z(
-                    z.row(k), acc_z(k), mu_z(k), sigma_z(k),
-                    jump_z(k),
+                    z.row(k), acc_z(k), mu_z(k), sigma_z(k), jump_z(k),
                     cum_lambda.col(k), beta, theta.row(k), gamma,
                     w, I, mNA.col(k), mlen, mseg.col(k), mH.col(k),
                     mY.col(k), rng);
@@ -526,9 +541,19 @@ int main(int argc, const char *argv[]) {
 
         if (UPDATE_GAMMA) {
           // updating gamma...
-          update_gamma(gamma, acc_gamma, mu_gamma, sigma_gamma, jump_gamma,
-                       cum_lambda, beta, theta, z, w, I, N,
-                       G, mNA, mlen, mseg, mH, mY, rng);
+
+          if (SINGLE_Z) {
+            update_single_gamma(gamma, acc_gamma, mu_gamma, sigma_gamma, jump_gamma,
+                                cum_lambda, beta, theta, z, w, I, N,
+                                G, mNA, mlen, mseg, mH, mY, RUN_PAR, rng);
+
+          }
+          else {
+            update_gamma(gamma, acc_gamma, mu_gamma, sigma_gamma, jump_gamma,
+                         cum_lambda, beta, theta, z, w, I, N,
+                         G, mNA, mlen, mseg, mH, mY, rng);
+          }
+
         }
 
       // updating z...
