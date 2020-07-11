@@ -1,8 +1,17 @@
+## pick_person = 1:592
+pick_person = 1:592
+## pick_item = 1:21 # (first 3 is not item-related)
+pick_item = 1:21
+
+ncut = 5 # segment # in piecewise approximation
+
 setwd("~/Dropbox/research/lsjm-art/lsjm-code")
 
 source("R/art-functions.R")
 
-library(tidyverse)
+library(dplyr)
+library(magrittr)
+
 load("data/pisa2015/US_PISA2015.rdata")
 df = as_tibble(US_2015)
 info = readr::read_csv("data/pisa2015/ItemTimeInfo.csv")
@@ -92,14 +101,14 @@ I = nrow(mt)
 N = ncol(mt)
 C = 2
 G = ncut # 
-write_csv(data.frame(I=I, N=N, C=C, G=G), "mvar.csv", col_names = FALSE)
-write_csv(as.data.frame(mlen),"mlen.csv", col_names = FALSE)
-write_csv(as.data.frame(mseg),"mseg.csv", col_names = FALSE)
-write_csv(as.data.frame(mh),"mh.csv", col_names = FALSE)
-write_csv(as.data.frame(mt),"mt.csv", col_names = FALSE)
-write_csv(as.data.frame(mi),"mi.csv", col_names = FALSE)
+readr::write_csv(data.frame(I=I, N=N, C=C, G=G), "input/mvar.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mlen),"input/mlen.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mseg),"input/mseg.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mh),"input/mh.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mt),"input/mt.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mi),"input/mi.csv", col_names = FALSE)
 
-mvar = readr::read_csv("mvar.csv", col_names=FALSE) %>% as.matrix()
+mvar = readr::read_csv("input/mvar.csv", col_names=FALSE) %>% as.matrix()
 I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
 
 ## lambda
@@ -109,7 +118,7 @@ jump_lambda = matrix(1.0,I,G)
 
 mu_beta = matrix(0.0,I,2)
 sigma_beta = matrix(1.0,I,2)
-jump_beta = matrix(0.25,I,2)
+jump_beta = matrix(0.1,I,2)
 
 mu_theta = matrix(0.0,N,2)
 sigma_theta = matrix(1.0,N,2)
@@ -130,10 +139,10 @@ mu_w = matrix(0.0,I,2)
 sigma_w = matrix(1.0,I,2)
 jump_w = matrix(0.1,I,2)
 
-write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"pj_lambda.csv", col_names = FALSE)
-write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"pj_beta.csv", col_names = FALSE)
-write_csv(as.data.frame(rbind(mu_theta,sigma_theta,jump_theta)),"pj_theta.csv", col_names = FALSE)
-write_csv(as.data.frame(rbind(a_sigma,b_sigma)),"pj_sigma.csv", col_names = FALSE)
-write_csv(as.data.frame(rbind(mu_gamma,sigma_gamma,jump_gamma)),"pj_gamma.csv", col_names = FALSE)
-write_csv(as.data.frame(rbind(mu_z,sigma_z,jump_z)),"pj_z.csv", col_names = FALSE)
-write_csv(as.data.frame(rbind(mu_w,sigma_w,jump_w)),"pj_w.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"input/pj_lambda.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"input/pj_beta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_theta,sigma_theta,jump_theta)),"input/pj_theta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(a_sigma,b_sigma)),"input/pj_sigma.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_gamma,sigma_gamma,jump_gamma)),"input/pj_gamma.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_z,sigma_z,jump_z)),"input/pj_z.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_w,sigma_w,jump_w)),"input/pj_w.csv", col_names = FALSE)

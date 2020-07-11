@@ -1,9 +1,9 @@
-mvar = readr::read_csv("mvar.csv", col_names=F) %>% as.matrix()
+mvar = readr::read_csv("input/mvar.csv", col_names=F) %>% as.matrix()
 I = mvar[1]
 N = mvar[2]
 G = mvar[4]
 
-sj = readr::read_csv("mlen.csv",col_names=F) %>% as.matrix()
+sj = readr::read_csv("input/mlen.csv",col_names=F) %>% as.matrix()
 sj = c(0, cumsum(sj))
 H = sj[2:(G+1)] - sj[1:G]
 

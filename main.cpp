@@ -155,7 +155,7 @@ int main(int argc, const char *argv[]) {
 
   std::cout << "Reading data sets...\n";
   Eigen::MatrixXd mvar(1, 4);
-  mvar = readCSV("mvar.csv", 1, 4);
+  mvar = readCSV("input/mvar.csv", 1, 4);
   const int I = mvar(0, 0);
   const int N = mvar(0, 1);
   const int C = mvar(0, 2);
@@ -170,11 +170,11 @@ int main(int argc, const char *argv[]) {
   Eigen::MatrixXi mY(I, N);
   Eigen::MatrixXi mNA(I, N);
 
-  mlen = readCSV("mlen.csv", G, 1);
-  tmp_mseg = readCSV("mseg.csv", I, N);
-  mH = readCSV("mh.csv", I, N);
-  // mt = readCSV("mt.csv", I, N);
-  tmp_mY = readCSV("mi.csv", I, N);
+  mlen = readCSV("input/mlen.csv", G, 1);
+  tmp_mseg = readCSV("input/mseg.csv", I, N);
+  mH = readCSV("input/mh.csv", I, N);
+  // mt = readCSV("input/mt.csv", I, N);
+  tmp_mY = readCSV("input/mi.csv", I, N);
 
   mseg = tmp_mseg.cast<int>();
   mY = tmp_mY.cast<int>();
@@ -184,7 +184,7 @@ int main(int argc, const char *argv[]) {
   }
   else {
   Eigen::MatrixXd tmp_mNA(I, N);
-  tmp_mNA = readCSV("mNA.csv", I, N);
+  tmp_mNA = readCSV("input/mNA.csv", I, N);
   mNA = tmp_mNA.cast<int>();
   }
 
@@ -210,19 +210,19 @@ int main(int argc, const char *argv[]) {
   Eigen::MatrixXd tmp_w(3*I, 2);
 
   // std::cout << "Reading hyperparameters for lambda...\n";
-  tmp_lambda = readCSV("pj_lambda.csv", 3*I, G);
+  tmp_lambda = readCSV("input/pj_lambda.csv", 3*I, G);
   // std::cout << "Reading hyperparameters for beta...\n";
-  tmp_beta = readCSV("pj_beta.csv", 3*I, 2);
+  tmp_beta = readCSV("input/pj_beta.csv", 3*I, 2);
   // std::cout << "Reading hyperparameters for theta...\n";
-  tmp_theta = readCSV("pj_theta.csv", 3*N, 2);
+  tmp_theta = readCSV("input/pj_theta.csv", 3*N, 2);
   // std::cout << "Reading hyperparameters for sigma...\n";
-  tmp_sigma = readCSV("pj_sigma.csv", 2, 1);
+  tmp_sigma = readCSV("input/pj_sigma.csv", 2, 1);
   // std::cout << "Reading hyperparameters for gamma...\n";
-  tmp_gamma = readCSV("pj_gamma.csv", 3, 2);
+  tmp_gamma = readCSV("input/pj_gamma.csv", 3, 2);
   // std::cout << "Reading hyperparameters for z...\n";
-  tmp_z = readCSV("pj_z.csv", 3*N, 2);
+  tmp_z = readCSV("input/pj_z.csv", 3*N, 2);
   // std::cout << "Reading hyperparameters for w...\n";
-  tmp_w = readCSV("pj_w.csv", 3*I, 2);
+  tmp_w = readCSV("input/pj_w.csv", 3*I, 2);
 
   // std::cout << "Reading hyperparameters for lambda...\n";
   Eigen::MatrixXd a_lambda(I,G);
@@ -296,17 +296,6 @@ int main(int argc, const char *argv[]) {
   Eigen::MatrixXd lambda(2 * I, G);
   Eigen::MatrixXd cum_lambda(2 * I, N);
 
-  // Initialization
-  theta.setZero();
-  beta.setZero();
-  sigma = 1.0;
-  // z0.setZero();
-  // z1.setZero();
-  w.setZero();
-  // lambda0.setOnes();
-  // lambda1.setOnes();
-  lambda.setOnes();
-
   // accept_stat
   Eigen::MatrixXd acc_theta = Eigen::MatrixXd::Zero(N, 2);
   Eigen::MatrixXd acc_beta = Eigen::MatrixXd::Zero(I, 2);
@@ -338,15 +327,41 @@ int main(int argc, const char *argv[]) {
   // acc_lambda1.setZero();
   // acc_lambda.setZero();
 
-  Eigen::MatrixXd z = Eigen::MatrixXd::Zero(2*N, 2);
+  // Initialization
+  // theta.setZero();
+  // beta.setZero();
+  // sigma = 1.0;
+  // w.setZero();
+  // lambda.setOnes();
+
+  lambda = readCSV("input/init_lambda.csv", 2*I, G);
+  beta = readCSV("input/init_beta.csv", I, 2);
+  theta = readCSV("input/init_theta.csv", N, 2);
+  // gamma = readCSV("input/init_gamma.csv", 2, 1);
+  w = readCSV("input/init_w.csv", I, 2);
+
+  gamma(0) = -1;
+  gamma(1) = 1;
+
+  Eigen::MatrixXd z(2*N, 2);
+  z = readCSV("input/init_z.csv", 2*N, 2);
+
+  // z.setZero();
+
   Eigen::VectorXd acc_z;
   if (SINGLE_Z) {
+    z.block(N,0,N,2) = z.block(0,0,N,2);
     acc_z = Eigen::VectorXd::Zero(N);
-    gamma(0) = -1.0;
-    gamma(1) = 1.0;
+    if (gamma(0) != -1.0 * gamma(1)) {
+      std::cout << "gamma(0) is not -1.0 * gamma(1).\n";
+      return 0;
+    }
   }
   else {
-    gamma.setOnes();
+    if (gamma(0) < 0 || gamma(1) <0) {
+      std::cout << "gamma should be positive!\n";
+      return 0;
+    }
   }
 
   std::cout << std::fixed << std::setprecision(1);

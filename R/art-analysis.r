@@ -1,4 +1,4 @@
-num_chain = 3
+num_chain = 5
 single_z = 1
 
 library(art)

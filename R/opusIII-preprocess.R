@@ -4,6 +4,7 @@ num_item =35 ## max 35
 setwd("~/Dropbox/research/lsjm-art/lsjm-code")
 
 library(dplyr)
+library(magrittr)
 
 source("R/art-functions.R")
 
@@ -64,15 +65,15 @@ I = nrow(mt)
 N = ncol(mt)
 C = 2
 G = ncut #
-readr::write_csv(data.frame(I=I, N=N, C=C, G=G), "mvar.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mlen),"mlen.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mseg),"mseg.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mh),"mh.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mt),"mt.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mi),"mi.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mNA),"mNA.csv", col_names = FALSE)
+readr::write_csv(data.frame(I=I, N=N, C=C, G=G), "input/mvar.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mlen),"input/mlen.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mseg),"input/mseg.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mh),"input/mh.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mt),"input/mt.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mi),"input/mi.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mNA),"input/mNA.csv", col_names = FALSE)
 
-mvar = readr::read_csv("mvar.csv", col_names=FALSE) %>% as.matrix()
+mvar = readr::read_csv("input/mvar.csv", col_names=FALSE) %>% as.matrix()
 I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
 
 ## lambda
@@ -103,13 +104,13 @@ mu_w = matrix(0.0,I,2)
 sigma_w = matrix(1.0,I,2)
 jump_w = matrix(0.25,I,2)
 
-readr::write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"pj_lambda.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"pj_beta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_theta,sigma_theta,jump_theta)),"pj_theta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(a_sigma,b_sigma)),"pj_sigma.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_gamma,sigma_gamma,jump_gamma)),"pj_gamma.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_z,sigma_z,jump_z)),"pj_z.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_w,sigma_w,jump_w)),"pj_w.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"input/pj_lambda.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"input/pj_beta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_theta,sigma_theta,jump_theta)),"input/pj_theta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(a_sigma,b_sigma)),"input/pj_sigma.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_gamma,sigma_gamma,jump_gamma)),"input/pj_gamma.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_z,sigma_z,jump_z)),"input/pj_z.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_w,sigma_w,jump_w)),"input/pj_w.csv", col_names = FALSE)
 
 df %>% group_by(item) %>% summarise(F = sum(resp == 0), T = sum(resp == 1)) %>% mutate(id_ = 1:num_item)
 

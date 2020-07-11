@@ -340,23 +340,26 @@ cat ../pisa2015/README.txt
 
 ** notebook
 #+BEGIN_SRC R :results silent
+source('R/pisa-preprocess.R')
+source('R/pisa-init.R')
+#+END_SRC
 
+
+#+BEGIN_SRC R :results none :tangle R/pisa-preprocess.R
 ## pick_person = 1:592
 pick_person = 1:592
 ## pick_item = 1:21 # (first 3 is not item-related)
 pick_item = 1:21
 
 ncut = 5 # segment # in piecewise approximation
-source('R/pisa-preprocess.R')
-#+END_SRC
 
-
-#+BEGIN_SRC R :results none :tangle R/pisa-preprocess.R
 setwd("~/Dropbox/research/lsjm-art/lsjm-code")
 
 source("R/art-functions.R")
 
-library(tidyverse)
+library(dplyr)
+library(magrittr)
+
 load("data/pisa2015/US_PISA2015.rdata")
 df = as_tibble(US_2015)
 info = readr::read_csv("data/pisa2015/ItemTimeInfo.csv")
@@ -560,6 +563,8 @@ for (i in 1:N) {
 
    #+end_src
 
+   #+RESULTS:
+
 *** to export short format data for C++
 #+BEGIN_SRC R :tangle R/pisa-preprocess.R
    library(survival)
@@ -588,17 +593,17 @@ for (i in 1:N) {
    N = ncol(mt)
    C = 2
    G = ncut # 
-   write_csv(data.frame(I=I, N=N, C=C, G=G), "mvar.csv", col_names = FALSE)
-   write_csv(as.data.frame(mlen),"mlen.csv", col_names = FALSE)
-   write_csv(as.data.frame(mseg),"mseg.csv", col_names = FALSE)
-   write_csv(as.data.frame(mh),"mh.csv", col_names = FALSE)
-   write_csv(as.data.frame(mt),"mt.csv", col_names = FALSE)
-   write_csv(as.data.frame(mi),"mi.csv", col_names = FALSE)
+   readr::write_csv(data.frame(I=I, N=N, C=C, G=G), "input/mvar.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(mlen),"input/mlen.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(mseg),"input/mseg.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(mh),"input/mh.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(mt),"input/mt.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(mi),"input/mi.csv", col_names = FALSE)
    #+end_src
 
    This is to export hyper-parameters and jumping rule
 #+BEGIN_SRC R :tangle R/pisa-preprocess.R
-   mvar = readr::read_csv("mvar.csv", col_names=FALSE) %>% as.matrix()
+   mvar = readr::read_csv("input/mvar.csv", col_names=FALSE) %>% as.matrix()
    I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
 
    ## lambda
@@ -608,7 +613,7 @@ for (i in 1:N) {
 
    mu_beta = matrix(0.0,I,2)
    sigma_beta = matrix(1.0,I,2)
-   jump_beta = matrix(0.25,I,2)
+   jump_beta = matrix(0.1,I,2)
 
    mu_theta = matrix(0.0,N,2)
    sigma_theta = matrix(1.0,N,2)
@@ -631,13 +636,13 @@ for (i in 1:N) {
    #+END_SRC
 
 #+BEGIN_SRC R :tangle R/pisa-preprocess.R
-write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"pj_lambda.csv", col_names = FALSE)
-write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"pj_beta.csv", col_names = FALSE)
-write_csv(as.data.frame(rbind(mu_theta,sigma_theta,jump_theta)),"pj_theta.csv", col_names = FALSE)
-write_csv(as.data.frame(rbind(a_sigma,b_sigma)),"pj_sigma.csv", col_names = FALSE)
-write_csv(as.data.frame(rbind(mu_gamma,sigma_gamma,jump_gamma)),"pj_gamma.csv", col_names = FALSE)
-write_csv(as.data.frame(rbind(mu_z,sigma_z,jump_z)),"pj_z.csv", col_names = FALSE)
-write_csv(as.data.frame(rbind(mu_w,sigma_w,jump_w)),"pj_w.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"input/pj_lambda.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"input/pj_beta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_theta,sigma_theta,jump_theta)),"input/pj_theta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(a_sigma,b_sigma)),"input/pj_sigma.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_gamma,sigma_gamma,jump_gamma)),"input/pj_gamma.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_z,sigma_z,jump_z)),"input/pj_z.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_w,sigma_w,jump_w)),"input/pj_w.csv", col_names = FALSE)
    #+END_SRC
 
 ** not used
@@ -665,9 +670,38 @@ yi[yi == 2] = 1
 boxplot(yt)
 #+END_SRC
 
+** init
+   #+BEGIN_SRC R :results none :tangle R/pisa-init.R
+   mvar = as.matrix(readr::read_csv("input/mvar.csv", col_names=F))
+   I = mvar[1]
+   N = mvar[2]
+   G = mvar[4]
+
+   set.seed(as.numeric(Sys.time()))
+
+   init_lambda = matrix(1, nrow = 2*I, ncol = G);
+   init_beta = matrix(rnorm(2*I), ncol = 2);
+   init_theta = matrix(rnorm(2*N), ncol = 2);
+   init_gamma = matrix(c(-1, 1), nrow = 1);
+   init_w = matrix(rnorm(2*I), ncol = 2);
+   init_z = matrix(rnorm(2*2*N), ncol = 2);
+   #+END_SRC
+
+   #+BEGIN_SRC R :results none :tangle R/pisa-init.R
+   readr::write_csv(as.data.frame(init_lambda), "input/init_lambda.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(init_beta), "input/init_beta.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(init_theta), "input/init_theta.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(init_gamma), "input/init_gamma.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
+   #+END_SRC
+
+
 * opusIII-matrices-data.dat
 #+BEGIN_SRC R
 source("R/opusIII-preprocess.R")
+source("R/opusIII-init.R")
+
 #+END_SRC
 
 #+RESULTS:
@@ -680,6 +714,7 @@ num_item =35 ## max 35
 setwd("~/Dropbox/research/lsjm-art/lsjm-code")
 
 library(dplyr)
+library(magrittr)
 
 source("R/art-functions.R")
 #+END_SRC
@@ -751,27 +786,24 @@ mseg[is.na(mseg)] = -99
 mh[is.na(mh)] = -99
 #+END_SRC
 
-#+RESULTS:
-: -99
-
 #+begin_src R :results none :tangle R/opusIII-preprocess.R
 ## data and fixed parameters
 I = nrow(mt)
 N = ncol(mt)
 C = 2
 G = ncut #
-readr::write_csv(data.frame(I=I, N=N, C=C, G=G), "mvar.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mlen),"mlen.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mseg),"mseg.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mh),"mh.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mt),"mt.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mi),"mi.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mNA),"mNA.csv", col_names = FALSE)
+readr::write_csv(data.frame(I=I, N=N, C=C, G=G), "input/mvar.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mlen),"input/mlen.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mseg),"input/mseg.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mh),"input/mh.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mt),"input/mt.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mi),"input/mi.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mNA),"input/mNA.csv", col_names = FALSE)
 #+end_src
 ** prior & jump
    This is to export hyper-parameters and jumping rule
    #+BEGIN_SRC R :results none :tangle R/opusIII-preprocess.R
-   mvar = readr::read_csv("mvar.csv", col_names=FALSE) %>% as.matrix()
+   mvar = readr::read_csv("input/mvar.csv", col_names=FALSE) %>% as.matrix()
    I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
 
    ## lambda
@@ -804,13 +836,39 @@ readr::write_csv(as.data.frame(mNA),"mNA.csv", col_names = FALSE)
    #+END_SRC
 
    #+BEGIN_SRC R :results none :tangle R/opusIII-preprocess.R
-   readr::write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"pj_lambda.csv", col_names = FALSE)
-   readr::write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"pj_beta.csv", col_names = FALSE)
-   readr::write_csv(as.data.frame(rbind(mu_theta,sigma_theta,jump_theta)),"pj_theta.csv", col_names = FALSE)
-   readr::write_csv(as.data.frame(rbind(a_sigma,b_sigma)),"pj_sigma.csv", col_names = FALSE)
-   readr::write_csv(as.data.frame(rbind(mu_gamma,sigma_gamma,jump_gamma)),"pj_gamma.csv", col_names = FALSE)
-   readr::write_csv(as.data.frame(rbind(mu_z,sigma_z,jump_z)),"pj_z.csv", col_names = FALSE)
-   readr::write_csv(as.data.frame(rbind(mu_w,sigma_w,jump_w)),"pj_w.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"input/pj_lambda.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"input/pj_beta.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(rbind(mu_theta,sigma_theta,jump_theta)),"input/pj_theta.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(rbind(a_sigma,b_sigma)),"input/pj_sigma.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(rbind(mu_gamma,sigma_gamma,jump_gamma)),"input/pj_gamma.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(rbind(mu_z,sigma_z,jump_z)),"input/pj_z.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(rbind(mu_w,sigma_w,jump_w)),"input/pj_w.csv", col_names = FALSE)
+   #+END_SRC
+
+** init
+   #+BEGIN_SRC R :results none :tangle R/opusIII-init.R
+   mvar = as.matrix( readr::read_csv("input/mvar.csv", col_names=F) )
+   I = mvar[1]
+   N = mvar[2]
+   G = mvar[4]
+
+   set.seed(as.numeric(Sys.time()))
+
+   init_lambda = matrix(1, nrow = 2*I, ncol = G);
+   init_beta = matrix(rnorm(2*I), ncol = 2);
+   init_theta = matrix(rnorm(2*N), ncol = 2);
+   init_gamma = matrix(c(-1, 1), nrow = 1);
+   init_w = matrix(rnorm(2*I), ncol = 2);
+   init_z = matrix(rnorm(2*2*N), ncol = 2);
+   #+END_SRC
+
+   #+BEGIN_SRC R :results none :tangle R/opusIII-init.R
+   readr::write_csv(as.data.frame(init_lambda), "input/init_lambda.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(init_beta), "input/init_beta.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(init_theta), "input/init_theta.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(init_gamma), "input/init_gamma.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
    #+END_SRC
 
 ** boxplot
@@ -869,44 +927,10 @@ readr::write_csv(as.data.frame(mNA),"mNA.csv", col_names = FALSE)
 
 * verbalIntelligence.dat
 
-#+BEGIN_SRC R :tangle no :results output :session
+#+BEGIN_SRC R :results none :tangle no :results output :session
 source("R/verbal-preprocess.R")
+source("R/verbal-init.R")
 #+END_SRC
-
-#+RESULTS:
-#+begin_example
-
-Attaching package: 'dplyr'
-
-The following objects are masked from 'package:stats':
-
-    filter, lag
-
-The following objects are masked from 'package:base':
-
-    intersect, setdiff, setequal, union
-
-Parsed with column specification:
-cols(
-  id = [32mcol_double()[39m,
-  PROBAND = [32mcol_double()[39m,
-  variable = [31mcol_character()[39m,
-  resp = [32mcol_double()[39m,
-  time = [32mcol_double()[39m
-)
-Using response as value column: use value.var to override.
-Using time as value column: use value.var to override.
-Using seg_g as value column: use value.var to override.
-Using len as value column: use value.var to override.
-Parsed with column specification:
-cols(
-  X1 = [32mcol_double()[39m,
-  X2 = [32mcol_double()[39m,
-  X3 = [32mcol_double()[39m,
-  X4 = [32mcol_double()[39m
-)
-`summarise()` ungrouping output (override with `.groups` argument)
-#+end_example
 
 #+BEGIN_SRC R :tangle R/verbal-preprocess.R
 num_person = 726 ## max 726: do not change
@@ -996,6 +1020,9 @@ sj = quantile(time, probs = pseq) %>% round()
 sj[1] = 0; sj[length(sj)] = sj[length(sj)] + 1
 #+end_src
 
+#+RESULTS:
+: 289
+
 ** survSplit
 #+BEGIN_SRC R :results none :tangle R/verbal-preprocess.R
 library(survival)
@@ -1031,24 +1058,27 @@ mseg[is.na(mseg)] = -99
 mh[is.na(mh)] = -99
 #+END_SRC
 
+#+RESULTS:
+: -99
+
 #+begin_src R :results none :tangle R/verbal-preprocess.R
 ## data and fixed parameters
 I = nrow(mt)
 N = ncol(mt)
 C = 2
 G = ncut #
-readr::write_csv(data.frame(I=I, N=N, C=C, G=G), "mvar.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mlen),"mlen.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mseg),"mseg.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mh),"mh.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mt),"mt.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mi),"mi.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mNA),"mNA.csv", col_names = FALSE)
+readr::write_csv(data.frame(I=I, N=N, C=C, G=G), "input/mvar.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mlen),"input/mlen.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mseg),"input/mseg.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mh),"input/mh.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mt),"input/mt.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mi),"input/mi.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mNA),"input/mNA.csv", col_names = FALSE)
 #+end_src
 ** prior & jump
    This is to export hyper-parameters and jumping rule
    #+BEGIN_SRC R :results none :tangle R/verbal-preprocess.R
-   mvar = readr::read_csv("mvar.csv", col_names=FALSE) %>% as.matrix()
+   mvar = readr::read_csv("input/mvar.csv", col_names=FALSE) %>% as.matrix()
    I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
 
    ## lambda
@@ -1081,15 +1111,40 @@ readr::write_csv(as.data.frame(mNA),"mNA.csv", col_names = FALSE)
    #+END_SRC
 
    #+BEGIN_SRC R :results none :tangle R/verbal-preprocess.R
-   readr::write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"pj_lambda.csv", col_names = FALSE)
-   readr::write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"pj_beta.csv", col_names = FALSE)
-   readr::write_csv(as.data.frame(rbind(mu_theta,sigma_theta,jump_theta)),"pj_theta.csv", col_names = FALSE)
-   readr::write_csv(as.data.frame(rbind(a_sigma,b_sigma)),"pj_sigma.csv", col_names = FALSE)
-   readr::write_csv(as.data.frame(rbind(mu_gamma,sigma_gamma,jump_gamma)),"pj_gamma.csv", col_names = FALSE)
-   readr::write_csv(as.data.frame(rbind(mu_z,sigma_z,jump_z)),"pj_z.csv", col_names = FALSE)
-   readr::write_csv(as.data.frame(rbind(mu_w,sigma_w,jump_w)),"pj_w.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"input/pj_lambda.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"input/pj_beta.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(rbind(mu_theta,sigma_theta,jump_theta)),"input/pj_theta.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(rbind(a_sigma,b_sigma)),"input/pj_sigma.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(rbind(mu_gamma,sigma_gamma,jump_gamma)),"input/pj_gamma.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(rbind(mu_z,sigma_z,jump_z)),"input/pj_z.csv", col_names = FALSE)
+   readr::write_csv(as.data.frame(rbind(mu_w,sigma_w,jump_w)),"input/pj_w.csv", col_names = FALSE)
    #+END_SRC
 
+** init
+  #+BEGIN_SRC R :results none :tangle R/verbal-init.R
+  mvar = as.matrix( readr::read_csv("input/mvar.csv", col_names=F) )
+  I = mvar[1]
+  N = mvar[2]
+  G = mvar[4]
+
+  set.seed(as.numeric(Sys.time()))
+
+  init_lambda = matrix(1, nrow = 2*I, ncol = G);
+  init_beta = matrix(rnorm(2*I), ncol = 2);
+  init_theta = matrix(rnorm(2*N), ncol = 2);
+  init_gamma = matrix(c(-1, 1), nrow = 1);
+  init_w = matrix(rnorm(2*I), ncol = 2);
+  init_z = matrix(rnorm(2*2*N), ncol = 2);
+ #+END_SRC
+
+ #+BEGIN_SRC R :results none :tangle R/verbal-init.R
+ readr::write_csv(as.data.frame(init_lambda), "input/init_lambda.csv", col_names = FALSE)
+ readr::write_csv(as.data.frame(init_beta), "input/init_beta.csv", col_names = FALSE)
+ readr::write_csv(as.data.frame(init_theta), "input/init_theta.csv", col_names = FALSE)
+ readr::write_csv(as.data.frame(init_gamma), "input/init_gamma.csv", col_names = FALSE)
+ readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
+ readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
+ #+END_SRC
 ** boxplot
 
   #+BEGIN_SRC R :results value :tangle R/verbal-preprocess.R
@@ -1108,20 +1163,36 @@ readr::write_csv(as.data.frame(mNA),"mNA.csv", col_names = FALSE)
    dev.off(which = dev.cur())
   #+END_SRC
 
+
 * C++ MCMC output
 #+begin_src sh :tangle run.sh
 #!/usr/bin/env bash
 export STAN_NUM_THREADS=11
 mkdir -p output
 rm output/*
+Rscript "R/verbal-preprocess.R"
 for v in {1..5}
 do
-./main parallel single_z sparse latent gamma $v 10000 5000 5
+Rscript "R/verbal-init.R"
+./main parallel single_z sparse latent no_gamma $v 10000 10000 10
 done
+Rscript "R/art-analysis.R"
+mv output verbal-nothetabeta
+mkdir -p figure/verbal-nothetabeta
+mv figure/*.pdf figure/verbal-nothetabeta/
+
+mkdir -p output
+Rscript "R/opusIII-preprocess.R"
+for v in {1..5}
+do
+Rscript "R/opusIII-init.R"
+./main parallel single_z sparse latent no_gamma $v 10000 10000 10
+done
+Rscript "R/art-analysis.R"
 #+end_src
 
 #+BEGIN_SRC R 
-source("art-analysis.r")
+source("art-analysis.R")
 #+END_SRC
 
 #+BEGIN_SRC R :results none
@@ -1130,8 +1201,8 @@ source("art-analysis.r")
 ## library(art)
 #+END_SRC
 
-#+BEGIN_SRC R :results none :tangle r/art-analysis.r
-num_chain = 3
+#+BEGIN_SRC R :results none :tangle r/art-analysis.R
+num_chain = 5
 single_z = 1
 
 library(art)
@@ -1148,7 +1219,7 @@ setwd("/Users/yunj/Dropbox/research/lsjm-art/lsjm-code")
 source("R/art-functions.R")
 #+END_SRC
 
-#+BEGIN_SRC R :results none :tangle r/art-analysis.r
+#+BEGIN_SRC R :results none :tangle r/art-analysis.R
 source('R/load-outputs.R')
 source('R/visual-latent-space-plot.R')
 source('R/visual-trace-plot.R')
@@ -1161,18 +1232,15 @@ cat output/summary.csv
 #+END_SRC
 
 #+RESULTS:
-| 1 | 0.352155 | 0.377857 | 0.341619 | 0.551367 | 0.871429 | 0.41875 | 1 |
-| 2 | 0.353519 | 0.378393 | 0.341646 | 0.550375 | 0.872071 | 0.41825 | 1 |
-| 3 | 0.352915 | 0.379886 | 0.340982 | 0.551335 | 0.873207 | 0.41575 | 1 |
 
 ** load outputs
 #+begin_src R :results silent :tangle R/load-outputs.R
-mvar = readr::read_csv("mvar.csv", col_names=F) %>% as.matrix()
+mvar = readr::read_csv("input/mvar.csv", col_names=F) %>% as.matrix()
 I = mvar[1]
 N = mvar[2]
 G = mvar[4]
 
-sj = readr::read_csv("mlen.csv",col_names=F) %>% as.matrix()
+sj = readr::read_csv("input/mlen.csv",col_names=F) %>% as.matrix()
 sj = c(0, cumsum(sj))
 H = sj[2:(G+1)] - sj[1:G]
 
@@ -1286,9 +1354,6 @@ cat output/mcmc_summary.txt
    dev.off(which = dev.cur())
    #+END_SRC
 
-   #+RESULTS:
-   : 1
-
    [[file:figure/latent_position_plot_vegan.pdf]]
    #+begin_src R :tangle R/visual-latent-space-plot.R
    pdf("figure/latent_position_plot_vegan.pdf")
@@ -1344,22 +1409,38 @@ cat output/mcmc_summary.txt
    [[pdf:figure/z_pairs_plot.pdf]]
    #+BEGIN_SRC R :tangle R/visual-trace-plot.R
    pdf("figure/z_pairs_plot.pdf")
-   p = mcmc_pairs(mylist,
-                  regex_pars = "^z.[0-1]\\.1\\.",
-                  off_diag_args = list(size = 0.75))
-   print(p)
+   for (k in 1:10) {
+     p = mcmc_pairs(mylist,
+                    regex_pars = paste0("^z.[0-1]\\.",k,"\\."),
+                    off_diag_args = list(size = 0.05))
+     print(p)
+   }
    dev.off(which = dev.cur())
    #+END_SRC
 
    #+RESULTS:
-   : 1
+   : 2
+
+   [[pdf:figure/w_pairs_plot.pdf]]
+   #+BEGIN_SRC R :tangle R/visual-trace-plot.R
+   pdf("figure/w_pairs_plot.pdf")
+   for (i in 1:10) {
+     p = mcmc_pairs(mylist,
+                    regex_pars = paste0("^w\\.",i,"\\."),
+                    off_diag_args = list(size = 0.05))
+     print(p)
+   }
+   dev.off(which = dev.cur())
+   #+END_SRC
+
+   #+RESULTS:
+   : 2
 
    [[file:figure/beta_parcoord.pdf]]
-   #+BEGIN_SRC R :TANGLE R/visual-trace-plot.r
+   #+BEGIN_SRC R :tangle R/visual-trace-plot.R
    pdf("figure/beta_parcoord.pdf")
    p = bayesplot::mcmc_parcoord(mylist,
-                                regex_pars = "^beta\\.[1-5]\\.",
-                                off_diag_args = list(size = 0.75))
+                                regex_pars = "^beta\\.[1-5]\\.")
    print(p)
    dev.off(which = dev.cur())
    #+END_SRC
@@ -1368,11 +1449,10 @@ cat output/mcmc_summary.txt
    : 1
 
    [[file:figure/theta_parcoord.pdf]]
-   #+BEGIN_SRC R :TANGLE R/visual-trace-plot.r
+   #+BEGIN_SRC R :tangle R/visual-trace-plot.R
    pdf("figure/theta_parcoord.pdf")
    p = bayesplot::mcmc_parcoord(mylist,
-                                regex_pars = "^theta\\.[1-5]\\.",
-                                off_diag_args = list(size = 0.75))
+                                regex_pars = "^theta\\.[1-5]\\.")
    print(p)
    dev.off(which = dev.cur())
    #+END_SRC
@@ -1381,7 +1461,7 @@ cat output/mcmc_summary.txt
    : 1
 
    [[file:figure/lambda_parcoord.pdf]]
-   #+BEGIN_SRC R :TANGLE R/visual-trace-plot.r
+   #+BEGIN_SRC R :tangle R/visual-trace-plot.R
    pdf("figure/lambda_parcoord.pdf")
    p = bayesplot::mcmc_parcoord(mylist,
                                 regex_pars = "^lambda\\.[0-1]\\.1\\.",
@@ -1394,7 +1474,7 @@ cat output/mcmc_summary.txt
    : 1
 
    [[pdf:figure/w_parcoord_plot.pdf::1]]
-   #+BEGIN_SRC R :TANGLE R/visual-trace-plot.r
+   #+BEGIN_SRC R :tangle R/visual-trace-plot.R
    pdf("figure/w_parcoord_plot.pdf")
    p = mcmc_parcoord(mylist,
                      regex_pars = "^w.[1-5]\\.")
@@ -1406,17 +1486,15 @@ cat output/mcmc_summary.txt
    : 1
 
    [[file:figure/dist_mcmc_trace_plot.pdf]]
-   #+BEGIN_SRC R :TANGLE R/visual-trace-plot.r
+   #+BEGIN_SRC R :tangle R/visual-trace-plot.R
    ## mcmc_intervals(mylist, pars=c("lambda.0.1.1")
    pdf("figure/dist_mcmc_trace_plot.pdf")
    p0 <- mcmc_trace(mylist,
-                    ##pars = c("lambda.0.1.1",  "lambda.0.1.2",  "lambda.0.1.3", "lambda.0.1.4"),
                     regex_pars = "^dist_z.[0-1]\\.[0-4]_w",
                     ##transformations = "log",
                     facet_args = list(nrow = 2, labeller = label_parsed))
    print(p0 <- p0 + facet_text(size = 15))
    p1 <- mcmc_trace(mylist,
-                    ##pars = c("lambda.0.1.1",  "lambda.0.1.2",  "lambda.0.1.3", "lambda.0.1.4"),
                     regex_pars = "^dist_z.[0-1]\\.[5-9]_w",
                     ##transformations = "log",
                     facet_args = list(nrow = 2, labeller = label_parsed))
@@ -1429,11 +1507,9 @@ cat output/mcmc_summary.txt
 
 
    [[file:figure/z_mcmc_trace_plot.pdf]]
-   #+BEGIN_SRC R :TANGLE R/visual-trace-plot.r
-   ## mcmc_intervals(mylist, pars=c("lambda.0.1.1")
+   #+BEGIN_SRC R :tangle R/visual-trace-plot.R
    pdf("figure/z_mcmc_trace_plot.pdf")
    p <- mcmc_trace(mylist,
-                   ##pars = c("lambda.0.1.1",  "lambda.0.1.2",  "lambda.0.1.3", "lambda.0.1.4"),
                    regex_pars = "^z.[0-1]\\.[1-2]\\.",
                    ##transformations = "log",
                    facet_args = list(nrow = 2, labeller = label_parsed))
@@ -1443,20 +1519,18 @@ cat output/mcmc_summary.txt
    #+END_SRC
 
    #+RESULTS:
-   : 1
+   : 2
 
    [[file:figure/w_mcmc_trace_plot.pdf]]
-   #+BEGIN_SRC R :TANGLE R/visual-trace-plot.r
+   #+BEGIN_SRC R :tangle R/visual-trace-plot.R
    ## mcmc_intervals(mylist, pars=c("lambda.0.1.1")
    pdf("figure/w_mcmc_trace_plot.pdf")
    p0 <- mcmc_trace(mylist,
-                    ##pars = c("lambda.0.1.1",  "lambda.0.1.2",  "lambda.0.1.3", "lambda.0.1.4"),
                     regex_pars = "^w\\.[0-4]\\.",
                     ##transformations = "log",
                     facet_args = list(nrow = 2, labeller = label_parsed))
    print(p0 <- p0 + facet_text(size = 15))
    p1 <- mcmc_trace(mylist,
-                    ##pars = c("lambda.0.1.1",  "lambda.0.1.2",  "lambda.0.1.3", "lambda.0.1.4"),
                     regex_pars = "^w\\.[5-9]\\.",
                     ##transformations = "log",
                     facet_args = list(nrow = 2, labeller = label_parsed))
@@ -1468,7 +1542,7 @@ cat output/mcmc_summary.txt
    : 1
 
    [[file:figure/lambda_mcmc_trace_plot.pdf]]
-   #+BEGIN_SRC R :TANGLE R/visual-trace-plot.r
+   #+BEGIN_SRC R :tangle R/visual-trace-plot.R
    pdf("figure/lambda_mcmc_trace_plot.pdf")
    color_scheme_set("mix-blue-pink")
    for (item in 1:I) {
@@ -1488,7 +1562,7 @@ cat output/mcmc_summary.txt
    #+END_SRC
 
    [[file:figure/beta_mcmc_trace_plot.pdf]]
-   #+BEGIN_SRC R :TANGLE R/visual-trace-plot.r
+   #+BEGIN_SRC R :tangle R/visual-trace-plot.R
    pdf("figure/beta_mcmc_trace_plot.pdf")
    for (i in 1:I) {
      color_scheme_set("mix-blue-pink")
@@ -1505,7 +1579,7 @@ cat output/mcmc_summary.txt
    : 1
 
    [[file:figure/theta_mcmc_trace_plot.pdf]]
-   #+BEGIN_SRC R :TANGLE R/visual-trace-plot.r
+   #+BEGIN_SRC R :tangle R/visual-trace-plot.R
    pdf("figure/theta_mcmc_trace_plot.pdf")
    color_scheme_set("mix-blue-pink")
    for (k in 1:10) {
@@ -1521,7 +1595,7 @@ cat output/mcmc_summary.txt
    : 1
 
    [[file:figure/gamma_mcmc_trace_plot.pdf]]
-   #+BEGIN_SRC R :TANGLE R/visual-trace-plot.r
+   #+BEGIN_SRC R :tangle R/visual-trace-plot.R
    pdf("figure/gamma_mcmc_trace_plot.pdf")
    color_scheme_set("mix-blue-pink")
      p <- mcmc_trace(mylist,
@@ -1535,7 +1609,7 @@ cat output/mcmc_summary.txt
    : 1
 
    [[pdf:figure/lp_sigma_mcmc_trace_plot.pdf]]
-   #+BEGIN_SRC R :TANGLE R/visual-trace-plot.r
+   #+BEGIN_SRC R :tangle R/visual-trace-plot.R
    pdf("figure/lp_sigma_mcmc_trace_plot.pdf")
    color_scheme_set("mix-blue-pink")
    p <- mcmc_trace(mylist,
