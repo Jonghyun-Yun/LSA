@@ -1,5 +1,5 @@
-num_chain = 5
-single_z = 1
+num_chain = 3
+single_z = 0
 
 library(art)
 library(coda)

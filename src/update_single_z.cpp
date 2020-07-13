@@ -2,7 +2,9 @@
 #include "update_single_z.h"
 
 Eigen::VectorXd update_single_z(const Eigen::MatrixXd::RowXpr &z, double &acc_z,
-                                const double &mu_z, const double &sigma_z, const double &jump_z,
+                                const Eigen::MatrixXd::RowXpr &mu_z,
+                                const Eigen::MatrixXd::RowXpr &sigma_z,
+                                const Eigen::MatrixXd::RowXpr &jump_z,
                                 const Eigen::MatrixXd::ColXpr &cum_lambda,
                                 const Eigen::MatrixXd &beta,
                                 const Eigen::MatrixXd::RowXpr &theta,
@@ -21,10 +23,10 @@ Eigen::VectorXd update_single_z(const Eigen::MatrixXd::RowXpr &z, double &acc_z,
 
   // std::cout << "Drawing...\n";
   for (int d = 0; d < 2; d++) {
-    z_s(d) = stan::math::normal_rng(z(d), jump_z, rng);
+    z_s(d) = stan::math::normal_rng(z(d), jump_z(d), rng);
     logr_z +=
-      stan::math::normal_lpdf(z_s(d), mu_z, sigma_z) -
-      stan::math::normal_lpdf(z(d), mu_z, sigma_z);
+      stan::math::normal_lpdf(z_s(d), mu_z(d), sigma_z(d)) -
+      stan::math::normal_lpdf(z(d), mu_z(d), sigma_z(d));
   }
 
   // std::cout << "Calculating the log-acceptance ratio of lambda...\n";

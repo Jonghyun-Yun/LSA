@@ -2,7 +2,9 @@
 #define __UPDATE_W_H_
 
 Eigen::VectorXd update_w(const Eigen::MatrixXd::RowXpr &w, double &acc_w,
-                         const double &mu_w, const double &sigma_w, const double &jump_w,
+                         const Eigen::MatrixXd::RowXpr &mu_w,
+                         const Eigen::MatrixXd::RowXpr &sigma_w,
+                         const Eigen::MatrixXd::RowXpr &jump_w,
                          const Eigen::MatrixXd::RowXpr &cum_lambda0,
                          const Eigen::MatrixXd::RowXpr &cum_lambda1,
                          const Eigen::MatrixXd::RowXpr &beta,

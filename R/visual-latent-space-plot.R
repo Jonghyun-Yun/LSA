@@ -23,7 +23,7 @@ pdf("figure/latent_position_plot_vegan.pdf")
 
 z0 = matched$z0
 z1 = matched$z1
-w = matched$w %>% as.matrix()
+w = matched$w
 xmin = min(z0[,1],z1[,1],w[,1])
 ymin = min(z0[,2],z1[,2],w[,2])
 xmax = max(z0[,1],z1[,1],w[,1])

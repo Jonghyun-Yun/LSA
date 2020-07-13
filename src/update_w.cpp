@@ -2,7 +2,9 @@
 #include "update_w.h"
 
 Eigen::VectorXd update_w(const Eigen::MatrixXd::RowXpr &w, double &acc_w,
-                         const double &mu_w, const double &sigma_w, const double &jump_w,
+                         const Eigen::MatrixXd::RowXpr &mu_w,
+                         const Eigen::MatrixXd::RowXpr &sigma_w,
+                         const Eigen::MatrixXd::RowXpr &jump_w,
                          const Eigen::MatrixXd::RowXpr &cum_lambda0,
                          const Eigen::MatrixXd::RowXpr &cum_lambda1,
                          const Eigen::MatrixXd::RowXpr &beta,
@@ -27,11 +29,16 @@ Eigen::VectorXd update_w(const Eigen::MatrixXd::RowXpr &w, double &acc_w,
 
   // std::cout << "Drawing...\n";
   for (int d = 0; d < 2; d++) {
-      w_s(d) = stan::math::normal_rng(w(d), jump_w, rng);
+      w_s(d) = stan::math::normal_rng(w(d), jump_w(d), rng);
   logr_w +=
-      stan::math::normal_lpdf(w_s(d), mu_w, sigma_w) -
-      stan::math::normal_lpdf(w(d), mu_w, sigma_w);
+      stan::math::normal_lpdf(w_s(d), mu_w(d), sigma_w(d)) -
+      stan::math::normal_lpdf(w(d), mu_w(d), sigma_w(d));
   }
+
+    // w_s = stan::math::normal_rng(w, jump_w, rng);
+    // logr_w +=
+    //   stan::math::normal_lpdf(w_s, mu_w, sigma_w) -
+    //   stan::math::normal_lpdf(w, mu_w, sigma_w);
 
   // std::cout << "Calculating the log-acceptance ratio of lambda...\n";
   for (int k = 0; k < N; k++) {
@@ -68,7 +75,7 @@ Eigen::VectorXd update_w(const Eigen::MatrixXd::RowXpr &w, double &acc_w,
       (logr_w > stan::math::log(stan::math::uniform_rng(0.0, 1.0, rng)))) {
     acc_w += 1.0;
   } else {
-    w_s = w;
+    w_s = w; // do NOT aceept w_s, use the current w instead
   }
   return w_s;
 }

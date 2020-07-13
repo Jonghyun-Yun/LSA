@@ -19,6 +19,103 @@ to_chrID = function(x, tab) {
     sapply(x, function(x) tab$chr[which(tab$num == x)])
 }
 
+my_procrustes = function(Xstar, dlist, is_list = FALSE, translation = TRUE, scale = FALSE, reflect = TRUE) {
+  posm = 0
+  if (is_list == TRUE) {
+    num_chain = length(dlist)
+  } else { num_chain = 1 }
+  for (i in 1:num_chain) {
+    if (is_list == TRUE) { df = dlist[[i]]
+    } else { df = dlist }
+
+    num_samples = nrow(df)
+
+    z0dx = grepl("^z\\.0\\.", colnames(df))
+    z1dx = grepl("^z\\.1\\.", colnames(df))
+    wdx = grepl("^w\\.", colnames(df))
+
+    num_w = sum(wdx) / 2;
+    num_z = sum(z0dx) / 2;
+    w = aperm( array(unlist( t(df[,wdx])), dim = c(2, num_w, num_samples)), c(2,1,3))
+    z0 = aperm( array(unlist( t(df[,z0dx])), dim = c(2, num_z, num_samples)), c(2,1,3))
+    z1 = aperm( array(unlist( t(df[,z1dx])), dim = c(2, num_z, num_samples)), c(2,1,3))
+
+    adx = z0dx | z1dx | wdx
+    N = sum(z0dx) / 2
+    nall = sum(adx)/2
+
+    if (sum(z1dx) == 0) {
+        wstar = Xstar[-(1:N),]
+        } else {
+          wstar = Xstar[-(1:(2*N)),]
+        z0wstar = Xstar[-((N + 1):(2*N)),]
+        z1wstar = Xstar[-(1:N),]
+}
+
+    #mlp_ = max(df$lp_)
+    #star = min(which.max(df$lp_))
+    ## lpos = df[,adx]
+    #wstar = w[,,star]
+
+
+    ## mm = list()
+    ## for (k in 1:num_samples) {
+    ##   X = matrix(unlist(lpos[k,]), nrow = 2) %>% t()
+    ##   ## mm[[k]] = MCMCpack::procrustes(X, Xstar, translation, dilation)$X.new #MCMCpack
+    ##   mm[[k]] = vegan::procrustes(X, Xstar, scale = scale)$Yrot #vegan
+    ##   df[k,adx] = mm[[k]] %>% t() %>% c()
+    ## }
+
+    ## wstar = scale(wstar, scale=F)
+    mm = foreach (k = 1:num_samples) %dopar% {
+      ##wmean = colMeans(w[,,k])
+      ## X = matrix(unlist(lpos[k,]), nrow = 2) %>% t()
+      ## mm[[k]] = MCMCpack::procrustes(X, Xstar, translation, dilation = scale)$X.new #MCMCpack
+      ## pout = MCMCpack::procrustes(sweep(w[,,k], 2, wmean), wstar, translation = F, dilation = F) #MCMCpack
+      ## w[,,k] = pout$X.new #vegan
+      ## R = pout$R
+
+      pout = MCMCpack::procrustes(w[,,k], wstar)
+      ##pout = MCMCpack::procrustes(rbind(z1[,,k],w[,,k]), z0wstar)
+
+      ##pout = vegan::procrustes(wstar, w[,,k], scale = scale)
+      ## R = pout$rotation
+      ##w[,,k] = pout$Yrot #vegan
+      ##R = pout$rotation ## vegan
+      w[,,k] = pout$X.new
+      R = pout$R
+
+      ##z0[,,k] = sweep(z0[,,k], 2, wmean) %*% R
+      ##z1[,,k] = sweep(z1[,,k], 2, wmean) %*% R
+      ## z0[,,k] = sweep(z0[,,k], 2, wmean) %*% pout$rotation
+      ## z1[,,k] = sweep(z1[,,k], 2, wmean) %*% pout$rotation
+      ## w[,,k] = w[,,k] %*% R
+      z0[,,k] = z0[,,k] %*% R
+      z1[,,k] = z1[,,k] %*% R
+      rbind(z0[,,k], z1[,,k], w[,,k])
+      ## shapes::procOPA(Xstar, t( matrix(unlist(lpos[k,]), nrow = 2)) , scale = scale, reflect = reflect)$Bhat #shapes
+    }
+    tmm = lapply(mm,t)
+    df[,adx] = t( matrix(unlist(tmm), nrow = sum(adx)) )
+
+    #posm = posm + colMeans(df[,adx])
+    posm = posm + Reduce("+",mm) / num_samples
+    if (is_list == TRUE) { dlist[[i]] = df
+    } else { dlist = df }
+  }
+
+  posm = posm / num_chain
+  z0= posm[1:N,]
+  if (sum(z1dx) == 0) {
+    w = posm[-(1:N),]
+    z1 = NULL
+  } else {
+  z1 = posm[(N + 1):(2*N),]
+  w = posm[-(1:(2*N)),]
+  }
+  return(list(dlist = dlist, z0=z0, z1=z1, w=w))
+}
+
 getparam = function(posm, sj, i, k) {
 cname = names(posm)
 z = posm[str_which(cname, paste0("z\\..\\.",k,"\\.[1-2]"))] %>% matrix(ncol = 2) %>% t()
@@ -142,9 +239,9 @@ lsjmplot <- function( z, w, myname = NULL, xlim=NA, ylim=NA, lab = "Coordinate")
 find_xstar = function(df) {
 num_samples = nrow(df)
 
-z0dx = grepl("^z.0", colnames(df))
-z1dx = grepl("^z.1", colnames(df))
-wdx = grepl("^w", colnames(df))
+z0dx = grepl("^z\\.0\\.", colnames(df))
+z1dx = grepl("^z\\.1\\.", colnames(df))
+wdx = grepl("^w\\.", colnames(df))
 adx = z0dx | z1dx | wdx
 
 mlp_ = max(df$lp_)
@@ -198,7 +295,9 @@ do_procrustes = function(Xstar, mydf, is_list = FALSE, translation = TRUE, scale
       ## vegan::procrustes(Xstar, t( matrix(unlist(lpos[k,]), nrow = 2) ), scale = scale)$Yrot #vegan
       shapes::procOPA(Xstar, t( matrix(unlist(lpos[k,]), nrow = 2)) , scale = scale, reflect = reflect)$Bhat #shapes
     }
-    df[,adx] = t( matrix(unlist(mm), nrow = sum(adx)) )
+    tmm = lapply(mm,t)
+    df[,adx] = t( matrix(unlist(tmm), nrow = sum(adx)) )
+
 
     posm = posm + Reduce("+",mm) / num_samples
     if (is_list == TRUE) { mydf[[i]] = df

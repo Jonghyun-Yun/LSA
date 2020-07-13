@@ -229,25 +229,26 @@ r =&
 ** Update z
 1. initialize $z_{kc}$: N x 2
 2. for each k,c
-3. Draw $z_{ic}^{* } \sim N(\z_{kc}^{(t)}, jump_{z_{kc}})$
+3. Draw $z_{ic}^{* } \sim N(z_{kc}^{(t)}, J_{z_{kc}})$
 4. accept if $\log r < \log U(0,1)$
 \begin{align*}
 r =& \prod_{i=1}^{I} \frac{
    \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc}^{* } - w_{i}||)
-   \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc}^{* } - w_{i}||)\Lambda_{ic}(t)]
+   \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc}^{* } - w_{i}||)\Lambda_{ic}(t_{ik})]
 }{
-   \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc}^{t} - w_{i}||)
-   \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc}^{t} - w_{i}||)\Lambda_{ic}(t) ]
-}
-\frac{\pi(z_{kc}^{* })}{\pi(z_{kc}^{t})}
-   \frac{J(z_{kc}^{t} -> z_{kc}^{* })}{J(z_{kc}^{* } -> z_{kc}^{t})} \\
+   \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc}^{(t)} - w_{i}||)
+   \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc}^{(t)} - w_{i}||)\Lambda_{ic}(t_{ik}) ]
+} \\
+& \times
+\frac{\pi(z_{kc}^{* })}{\pi(z_{kc}^{(t)})}
+   \frac{J(z_{kc}^{(t)} -> z_{kc}^{* })}{J(z_{kc}^{* } -> z_{kc}^{(t)})} \\
 =&
-\frac{\pi(z_{kc}^{* })}{\pi(z_{kc}^{t})}
+\frac{\pi(z_{kc}^{* })}{\pi(z_{kc}^{(t)})}
 # \frac{J(z_{kc}^{t} -> z_{kc}^{* })}{J(z_{kc}^{* } -> z_{kc}^{t})}
 \exp[-\gamma_{c}\sum_{i=1}^{I}
-(||z_{kc}^{* } - w_{i}||-||z_{kc}^{t} - w_{i}||)]\\
+(||z_{kc}^{* } - w_{i}||-||z_{kc}^{(t)} - w_{i}||)]\\
 &\times
-   \exp[-\exp(\theta_{kc}) \sum_{i=1}^{I}\Lambda_{ic}(t)\exp(\beta_{ic}) \{\exp( - \gamma_{c}||z_{kc}^{* } - w_{i}||) - \exp(-\gamma_c||z_{kc}^{t} - w_{i}||)\}]
+   \exp[-\exp(\theta_{kc}) \sum_{i=1}^{I}\Lambda_{ic}(t_ik)\exp(\beta_{ic}) \{\exp( - \gamma_{c}||z_{kc}^{* } - w_{i}||) - \exp(-\gamma_c||z_{kc}^{(t)} - w_{i}||)\}]
 \end{align*}
 if $Y_{ikc} = 1$; otherwise
 
@@ -256,7 +257,7 @@ r =&
 \frac{\pi(z_{kc}^{* })}{\pi(z_{kc}^{t})}
 \frac{J(z_{kc}^{t} -> z_{kc}^{* })}{J(z_{kc}^{* } -> z_{kc}^{t})}\\
 & \times
-   \exp[-\exp(\theta_{kc}) \sum_{i=1}^{I}\Lambda_{ic}(t)\exp(\beta_{ic}) \{\exp( - \gamma_{c}||z_{kc}^{* } - w_{i}||) - \exp(-\gamma_c||z_{kc}^{t} - w_{i}||)\}]
+   \exp[-\exp(\theta_{kc}) \sum_{i=1}^{I}\Lambda_{ic}(t_{ik})\exp(\beta_{ic}) \{\exp( - \gamma_{c}||z_{kc}^{* } - w_{i}||) - \exp(-\gamma_c||z_{kc}^{(t)} - w_{i}||)\}]
 \end{align*}
 ** Update w
 1. initialize $w_{i}$: I
@@ -326,7 +327,7 @@ prior: $\sigma^{2} \sim inv-gamma(a,b)$
 target: $\prod_{k,c} N(\theta_{kc}|0,\sigma^{2}) inv-gamma(\sigma^{2}|a,b)$ -> normal-(inv-gamma) model
 
 1. initialize $\sigma^{2}$
-2. Draw $\sigma^{2} \sim inv-Gamma(a + N, b + \sum_{k,c} \theta_{kc} / 2)$
+2. Draw $\sigma^{2} \sim inv-Gamma(a + N, b + \sum_{k,c} \theta_{kc}^{2} / 2)$
 * LSJM prior
 \begin{aligned} \pi\left(\beta_{i}\right) & \sim \mathrm{N}\left(0, \tau_{\beta}^{2}\right) \\ \pi\left(\theta_{j} | \sigma^{2}\right) & \sim \mathrm{N}\left(0, \sigma^{2}\right) \\ \pi\left(\sigma^{2}\right) & \sim \operatorname{lnv}-\operatorname{Gamma}\left(a_{\sigma}, b_{\sigma}\right) \\ \pi\left(\mathbf{z}_{j}\right) & \sim \mathrm{MVN}_{d}\left(0, I_{d}\right) \\ \pi\left(\mathbf{w}_{i}\right) & \sim \mathrm{MVN}_{d}\left(0, I_{d}\right) \\ \log \pi(\gamma) & \sim \mathrm{N}\left(\mu_{\gamma}, \tau_{\gamma}^{2}\right) \end{aligned}
 
@@ -607,8 +608,8 @@ for (i in 1:N) {
    I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
 
    ## lambda
-   a_lambda = matrix(0.001,I,G)
-   b_lambda = matrix(0.001,I,G)
+   a_lambda = matrix(0.01,I,G)
+   b_lambda = matrix(0.01,I,G)
    jump_lambda = matrix(1.0,I,G)
 
    mu_beta = matrix(0.0,I,2)
@@ -680,11 +681,11 @@ boxplot(yt)
    set.seed(as.numeric(Sys.time()))
 
    init_lambda = matrix(1, nrow = 2*I, ncol = G);
-   init_beta = matrix(rnorm(2*I), ncol = 2);
-   init_theta = matrix(rnorm(2*N), ncol = 2);
-   init_gamma = matrix(c(-1, 1), nrow = 1);
-   init_w = matrix(rnorm(2*I), ncol = 2);
-   init_z = matrix(rnorm(2*2*N), ncol = 2);
+   init_beta = 0*matrix(rnorm(2*I), ncol = 2);
+   init_theta = 0*matrix(rnorm(2*N), ncol = 2);
+   init_gamma = 1*matrix(c(1, 1), nrow = 1);
+   init_w = 0*matrix(rnorm(2*I), ncol = 2);
+   init_z = 0*matrix(rnorm(2*2*N), ncol = 2);
    #+END_SRC
 
    #+BEGIN_SRC R :results none :tangle R/pisa-init.R
@@ -705,7 +706,6 @@ source("R/opusIII-init.R")
 #+END_SRC
 
 #+RESULTS:
-| 1 | TRUE |
 
 #+BEGIN_SRC R :results none :tangle R/opusIII-preprocess.R
 num_person = 504 ## max 504: do not change
@@ -784,6 +784,12 @@ mi[is.na(mi)] = -99
 mt[is.na(mt)] = -99
 mseg[is.na(mseg)] = -99
 mh[is.na(mh)] = -99
+
+# g = 1
+# mseg %>% rowwise() %>% mutate(g0 = sum(c_across(where(is.numeric)) == 0))
+
+
+#   mutate(paste0("g",g) = sum(group_by(item) %>% summarise(g0 = sum(resp == 0), T = sum(resp == 1))
 #+END_SRC
 
 #+begin_src R :results none :tangle R/opusIII-preprocess.R
@@ -807,31 +813,31 @@ readr::write_csv(as.data.frame(mNA),"input/mNA.csv", col_names = FALSE)
    I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
 
    ## lambda
-   a_lambda = matrix(0.001,I,G)
-   b_lambda = matrix(0.001,I,G)
+   a_lambda = matrix(0.01,I,G)
+   b_lambda = matrix(0.01,I,G)
    jump_lambda = matrix(1.0,I,G)
 
    mu_beta = matrix(0.0,I,2)
-   sigma_beta = matrix(1.0,I,2)
+   sigma_beta = matrix(sqrt(1.0),I,2)
    jump_beta = matrix(0.25,I,2)
 
    mu_theta = matrix(0.0,N,2)
-   sigma_theta = matrix(1.0,N,2)
+   sigma_theta = matrix(sqrt(1.0),N,2)
    jump_theta = matrix(1.0,N,2)
 
    a_sigma = 1.0
    b_sigma = 1.0
 
    mu_gamma = matrix(0.0,1,2)
-   sigma_gamma = matrix(1.0,1,2)
+   sigma_gamma = matrix(sqrt(1.0),1,2)
    jump_gamma = matrix(1.0,1,2)
 
    mu_z = matrix(0.0,N,2)
-   sigma_z = matrix(1.0,N,2)
+   sigma_z = matrix(sqrt(1.0),N,2)
    jump_z = matrix(1.0,N,2)
 
    mu_w = matrix(0.0,I,2)
-   sigma_w = matrix(1.0,I,2)
+   sigma_w = matrix(sqrt(1.0),I,2)
    jump_w = matrix(0.25,I,2)
    #+END_SRC
 
@@ -855,11 +861,11 @@ readr::write_csv(as.data.frame(mNA),"input/mNA.csv", col_names = FALSE)
    set.seed(as.numeric(Sys.time()))
 
    init_lambda = matrix(1, nrow = 2*I, ncol = G);
-   init_beta = matrix(rnorm(2*I), ncol = 2);
-   init_theta = matrix(rnorm(2*N), ncol = 2);
-   init_gamma = matrix(c(-1, 1), nrow = 1);
-   init_w = matrix(rnorm(2*I), ncol = 2);
-   init_z = matrix(rnorm(2*2*N), ncol = 2);
+   init_beta = 0*matrix(rnorm(2*I), ncol = 2);
+   init_theta = 0*matrix(rnorm(2*N), ncol = 2);
+   init_gamma = 1*matrix(c(1, 1), nrow = 1);
+   init_w = 0*matrix(rnorm(2*I), ncol = 2);
+   init_z = 0*matrix(rnorm(2*2*N), ncol = 2);
    #+END_SRC
 
    #+BEGIN_SRC R :results none :tangle R/opusIII-init.R
@@ -1082,31 +1088,31 @@ readr::write_csv(as.data.frame(mNA),"input/mNA.csv", col_names = FALSE)
    I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
 
    ## lambda
-   a_lambda = matrix(0.001,I,G)
-   b_lambda = matrix(0.001,I,G)
+   a_lambda = matrix(0.01,I,G)
+   b_lambda = matrix(0.01,I,G)
    jump_lambda = matrix(1.0,I,G)
 
    mu_beta = matrix(0.0,I,2)
-   sigma_beta = matrix(1.0,I,2)
+   sigma_beta = matrix(sqrt(1.0),I,2)
    jump_beta = matrix(0.25,I,2)
 
    mu_theta = matrix(0.0,N,2)
-   sigma_theta = matrix(1.0,N,2)
+   sigma_theta = matrix(sqrt(1.0),N,2)
    jump_theta = matrix(1.0,N,2)
 
    a_sigma = 1.0
    b_sigma = 1.0
 
    mu_gamma = matrix(0.0,1,2)
-   sigma_gamma = matrix(1.0,1,2)
+   sigma_gamma = matrix(sqrt(1.0),1,2)
    jump_gamma = matrix(1.0,1,2)
 
    mu_z = matrix(0.0,N,2)
-   sigma_z = matrix(1.0,N,2)
+   sigma_z = matrix(sqrt(1.0),N,2)
    jump_z = matrix(1.0,N,2)
 
    mu_w = matrix(0.0,I,2)
-   sigma_w = matrix(1.0,I,2)
+   sigma_w = matrix(sqrt(1.0),I,2)
    jump_w = matrix(0.25,I,2)
    #+END_SRC
 
@@ -1129,12 +1135,12 @@ readr::write_csv(as.data.frame(mNA),"input/mNA.csv", col_names = FALSE)
 
   set.seed(as.numeric(Sys.time()))
 
-  init_lambda = matrix(1, nrow = 2*I, ncol = G);
-  init_beta = matrix(rnorm(2*I), ncol = 2);
-  init_theta = matrix(rnorm(2*N), ncol = 2);
-  init_gamma = matrix(c(-1, 1), nrow = 1);
-  init_w = matrix(rnorm(2*I), ncol = 2);
-  init_z = matrix(rnorm(2*2*N), ncol = 2);
+   init_lambda = matrix(1, nrow = 2*I, ncol = G);
+   init_beta = matrix(0*rnorm(2*I), ncol = 2);
+   init_theta = matrix(0*rnorm(2*N), ncol = 2);
+   init_gamma = matrix(c(-1, 1), nrow = 1);
+   init_w = matrix(rnorm(2*I), ncol = 2);
+   init_z = matrix(rnorm(2*2*N), ncol = 2);
  #+END_SRC
 
  #+BEGIN_SRC R :results none :tangle R/verbal-init.R
@@ -1170,28 +1176,65 @@ readr::write_csv(as.data.frame(mNA),"input/mNA.csv", col_names = FALSE)
 export STAN_NUM_THREADS=11
 mkdir -p output
 rm output/*
+Rscript "R/pisa-preprocess.R"
+for v in {1..3}
+do
+Rscript "R/pisa-init.R"
+./main parallel double_z full latent no_gamma $v 10000 10000 10
+done
+mv output pisa-new
+
+rm output/*
+mkdir -p output
 Rscript "R/verbal-preprocess.R"
-for v in {1..5}
+for v in {1..3}
 do
 Rscript "R/verbal-init.R"
-./main parallel single_z sparse latent no_gamma $v 10000 10000 10
+./main parallel double_z sparse latent no_gamma $v 10000 10000 10
+done
+mv output verbal-new
+
+rm output/*
+mkdir -p output
+Rscript "R/opusIII-preprocess.R"
+for v in {1..3}
+do
+Rscript "R/opusIII-init.R"
+./main parallel double_z sparse latent no_gamma $v 10000 10000 10
+done
+mv output opusIII-new
+#+end_src
+
+#+begin_src sh
+#!/usr/bin/env bash
+export STAN_NUM_THREADS=11
+mkdir -p output
+rm output/*
+Rscript "R/verbal-preprocess.R"
+for v in {1..3}
+do
+Rscript "R/verbal-init.R"
+./main parallel single_z sparse latent no_gamma $v 10000 10000 5
 done
 Rscript "R/art-analysis.R"
-mv output verbal-nothetabeta
-mkdir -p figure/verbal-nothetabeta
-mv figure/*.pdf figure/verbal-nothetabeta/
+mv output verbal-nothetabeta-ab0001
+mkdir -p figure/verbal-nothetabeta-ab0001
+mv figure/*.pdf figure/verbal-nothetabeta-ab0001/
 
 mkdir -p output
 Rscript "R/opusIII-preprocess.R"
-for v in {1..5}
+for v in {1..3}
 do
 Rscript "R/opusIII-init.R"
-./main parallel single_z sparse latent no_gamma $v 10000 10000 10
+./main parallel single_z sparse latent no_gamma $v 10000 10000 5
 done
 Rscript "R/art-analysis.R"
+mv output opusIII-nothetabeta-ab0001
+mkdir -p figure/opusIII-nothetabeta-ab0001
+mv figure/*.pdf figure/opusIII-nothetabeta-ab0001/
 #+end_src
 
-#+BEGIN_SRC R 
+#+BEGIN_SRC R
 source("art-analysis.R")
 #+END_SRC
 
@@ -1202,8 +1245,8 @@ source("art-analysis.R")
 #+END_SRC
 
 #+BEGIN_SRC R :results none :tangle r/art-analysis.R
-num_chain = 5
-single_z = 1
+num_chain = 3
+single_z = 0
 
 library(art)
 library(coda)
@@ -1232,6 +1275,9 @@ cat output/summary.csv
 #+END_SRC
 
 #+RESULTS:
+| 1 | 0.352454 | 0.378823 | 0.343254 | 0.345049 |  0.27071 | 0 | 1 |
+| 2 | 0.352259 | 0.378374 | 0.343307 | 0.344499 | 0.271951 | 0 | 1 |
+| 3 | 0.352425 | 0.378701 | 0.343551 | 0.344774 | 0.272416 | 0 | 1 |
 
 ** load outputs
 #+begin_src R :results silent :tangle R/load-outputs.R
@@ -1283,26 +1329,129 @@ cnames = c(cnames, "sigma", "lp_")
 ## mythin = 10
 ## mystart = 5001
 ## myend = 25000
-mydf = list()
-mylist = mcmc.list()
+dlist = list()
 for (cid in 1:num_chain) {
-mydf[[cid]] = readr::read_csv(paste0("output/sample_chain",cid,".csv"), col_names=F) %>% as.data.frame()
-colnames(mydf[[cid]]) = cnames
+dlist[[cid]] = readr::read_csv(paste0("output/sample_chain",cid,".csv"), col_names=F, skip = 800) %>% as.data.frame()
+colnames(dlist[[cid]]) = cnames
 if (single_z) {
-  mydf[[cid]] = mydf[[cid]][,!grepl("^z\\.1\\.", cnames)] ## remove duplicates when single_z
+  dlist[[cid]] = dlist[[cid]][,!grepl("^z\\.1\\.", cnames)] ## remove duplicates when single_z
 }
 }
 
 ## mylist[[cid]] = mcmc(df, start = mystart, end = myend, thin = mythin)
 #+END_SRC
 
+
+#+BEGIN_SRC R :tangle R/art-functions.R
+my_procrustes = function(Xstar, dlist, is_list = FALSE, translation = TRUE, scale = FALSE, reflect = TRUE) {
+  posm = 0
+  if (is_list == TRUE) {
+    num_chain = length(dlist)
+  } else { num_chain = 1 }
+  for (i in 1:num_chain) {
+    if (is_list == TRUE) { df = dlist[[i]]
+    } else { df = dlist }
+
+    num_samples = nrow(df)
+
+    z0dx = grepl("^z\\.0\\.", colnames(df))
+    z1dx = grepl("^z\\.1\\.", colnames(df))
+    wdx = grepl("^w\\.", colnames(df))
+
+    num_w = sum(wdx) / 2;
+    num_z = sum(z0dx) / 2;
+    w = aperm( array(unlist( t(df[,wdx])), dim = c(2, num_w, num_samples)), c(2,1,3))
+    z0 = aperm( array(unlist( t(df[,z0dx])), dim = c(2, num_z, num_samples)), c(2,1,3))
+    z1 = aperm( array(unlist( t(df[,z1dx])), dim = c(2, num_z, num_samples)), c(2,1,3))
+
+    adx = z0dx | z1dx | wdx
+    N = sum(z0dx) / 2
+    nall = sum(adx)/2
+
+    if (sum(z1dx) == 0) {
+        wstar = Xstar[-(1:N),]
+        } else {
+          wstar = Xstar[-(1:(2*N)),]
+        z0wstar = Xstar[-((N + 1):(2*N)),]
+        z1wstar = Xstar[-(1:N),]
+}
+
+    #mlp_ = max(df$lp_)
+    #star = min(which.max(df$lp_))
+    ## lpos = df[,adx]
+    #wstar = w[,,star]
+
+
+    ## mm = list()
+    ## for (k in 1:num_samples) {
+    ##   X = matrix(unlist(lpos[k,]), nrow = 2) %>% t()
+    ##   ## mm[[k]] = MCMCpack::procrustes(X, Xstar, translation, dilation)$X.new #MCMCpack
+    ##   mm[[k]] = vegan::procrustes(X, Xstar, scale = scale)$Yrot #vegan
+    ##   df[k,adx] = mm[[k]] %>% t() %>% c()
+    ## }
+
+    ## wstar = scale(wstar, scale=F)
+    mm = foreach (k = 1:num_samples) %dopar% {
+      ##wmean = colMeans(w[,,k])
+      ## X = matrix(unlist(lpos[k,]), nrow = 2) %>% t()
+      ## mm[[k]] = MCMCpack::procrustes(X, Xstar, translation, dilation = scale)$X.new #MCMCpack
+      ## pout = MCMCpack::procrustes(sweep(w[,,k], 2, wmean), wstar, translation = F, dilation = F) #MCMCpack
+      ## w[,,k] = pout$X.new #vegan
+      ## R = pout$R
+
+      pout = MCMCpack::procrustes(w[,,k], wstar)
+      ##pout = MCMCpack::procrustes(rbind(z1[,,k],w[,,k]), z0wstar)
+
+      ##pout = vegan::procrustes(wstar, w[,,k], scale = scale)
+      ## R = pout$rotation
+      ##w[,,k] = pout$Yrot #vegan
+      ##R = pout$rotation ## vegan
+      w[,,k] = pout$X.new
+      R = pout$R
+
+      ##z0[,,k] = sweep(z0[,,k], 2, wmean) %*% R
+      ##z1[,,k] = sweep(z1[,,k], 2, wmean) %*% R
+      ## z0[,,k] = sweep(z0[,,k], 2, wmean) %*% pout$rotation
+      ## z1[,,k] = sweep(z1[,,k], 2, wmean) %*% pout$rotation
+      ## w[,,k] = w[,,k] %*% R
+      z0[,,k] = z0[,,k] %*% R
+      z1[,,k] = z1[,,k] %*% R
+      rbind(z0[,,k], z1[,,k], w[,,k])
+      ## shapes::procOPA(Xstar, t( matrix(unlist(lpos[k,]), nrow = 2)) , scale = scale, reflect = reflect)$Bhat #shapes
+    }
+    tmm = lapply(mm,t)
+    df[,adx] = t( matrix(unlist(tmm), nrow = sum(adx)) )
+
+    #posm = posm + colMeans(df[,adx])
+    posm = posm + Reduce("+",mm) / num_samples
+    if (is_list == TRUE) { dlist[[i]] = df
+    } else { dlist = df }
+  }
+
+  posm = posm / num_chain
+  z0= posm[1:N,]
+  if (sum(z1dx) == 0) {
+    w = posm[-(1:N),]
+    z1 = NULL
+  } else {
+  z1 = posm[(N + 1):(2*N),]
+  w = posm[-(1:(2*N)),]
+  }
+  return(list(dlist = dlist, z0=z0, z1=z1, w=w))
+}
+#+END_SRC
+
+#+RESULTS:
+
+
  #+begin_src R :results none :tangle R/load-outputs.R
- Xstar = find_xstar_inlist(mydf)
- matched = do_procrustes(Xstar, mydf, is_list = TRUE)
- mydf = matched$mydf
+ Xstar = find_xstar_inlist(dlist)
+ matched = my_procrustes(Xstar, dlist, is_list = T)
+ mydf = matched$dlist
  #+end_src
 
  #+BEGIN_SRC R :tangle R/load-outputs.R
+mylist = mcmc.list()
   item = 1
   c = 0
   cname = names(mydf[[1]])
@@ -1319,15 +1468,24 @@ if (single_z) {
 
  #+RESULTS:
 
-#+BEGIN_SRC R
-sink("output/mcmc_summary.txt")
+#+BEGIN_SRC R :results none
+## sink("output/mcmc_summary.txt")
+cat("==================================")
+cat("Rejection Rate")
+cat("==================================")
+rejectionRate(mylist)
+cat("==================================")
+cat("Effective Size")
+cat("==================================")
+effectiveSize(mylist)
+cat("==================================")
+cat("Summary")
+cat("==================================")
 summary(mylist)
-sink()
+## sink()
 #+END_SRC
 
-#+BEGIN_SRC sh
-cat output/mcmc_summary.txt
-#+END_SRC
+#+RESULTS:
 
 ** latent space
    [[file:figure/star_latent.pdf]]
@@ -1354,13 +1512,31 @@ cat output/mcmc_summary.txt
    dev.off(which = dev.cur())
    #+END_SRC
 
-   [[file:figure/latent_position_plot_vegan.pdf]]
-   #+begin_src R :tangle R/visual-latent-space-plot.R
-   pdf("figure/latent_position_plot_vegan.pdf")
+   #+RESULTS:
+   : 2
 
-   z0 = matched$z0
-   z1 = matched$z1
-   w = matched$w %>% as.matrix()
+
+   [[file:figure/latent_position_plot_temp.pdf]]
+   #+begin_src R
+   pdf("figure/latent_position_plot_temp.pdf")
+
+   k = 10
+   ##df = mydf[[1]]
+df = mydf[[1]]
+   num_samples = nrow(df)
+   z0dx = grepl("^z\\.0\\.", colnames(df))
+   z1dx = grepl("^z\\.1\\.", colnames(df))
+   wdx = grepl("^w", colnames(df))
+
+   num_w = sum(wdx) / 2;
+   num_z = sum(z0dx) / 2;
+   aw = aperm( array(unlist( t(df[,wdx])), dim = c(2, num_w, num_samples)), c(2,1,3))
+   az0 = aperm( array(unlist( t(df[,z0dx])), dim = c(2, num_z, num_samples)), c(2,1,3))
+   az1 = aperm( array(unlist( t(df[,z1dx])), dim = c(2, num_z, num_samples)), c(2,1,3))
+
+   z0 = az0[,,k]
+   z1 = az1[,,k]
+   w = aw[,,k]
    xmin = min(z0[,1],z1[,1],w[,1])
    ymin = min(z0[,2],z1[,2],w[,2])
    xmax = max(z0[,1],z1[,1],w[,1])
@@ -1375,7 +1551,33 @@ cat output/mcmc_summary.txt
    #+end_src
 
    #+RESULTS:
-   : 1
+   : 2
+
+
+
+
+   [[file:figure/latent_position_plot_vegan.pdf]]
+   #+begin_src R :tangle R/visual-latent-space-plot.R
+   pdf("figure/latent_position_plot_vegan.pdf")
+
+   z0 = matched$z0
+   z1 = matched$z1
+   w = matched$w
+   xmin = min(z0[,1],z1[,1],w[,1])
+   ymin = min(z0[,2],z1[,2],w[,2])
+   xmax = max(z0[,1],z1[,1],w[,1])
+   ymax = max(z0[,2],z1[,2],w[,2])
+
+   myname = c(1:N,paste0("I.",1:I))
+   print(lsjmplot(z0,w,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+   if (!single_z) {
+     print(lsjmplot(z1,w,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+   }
+   dev.off(which = dev.cur())
+   #+end_src
+
+   #+RESULTS:
+   : 2
 
 ** trace plots
    [[file:figure/lambda_mcmc_interval_plot.pdf]]
@@ -1402,9 +1604,6 @@ cat output/mcmc_summary.txt
    print(p1)
    dev.off(which = dev.cur())
    #+END_SRC
-
-   #+RESULTS:
-   : 1
 
    [[pdf:figure/z_pairs_plot.pdf]]
    #+BEGIN_SRC R :tangle R/visual-trace-plot.R
@@ -1458,7 +1657,7 @@ cat output/mcmc_summary.txt
    #+END_SRC
 
    #+RESULTS:
-   : 1
+   : 2
 
    [[file:figure/lambda_parcoord.pdf]]
    #+BEGIN_SRC R :tangle R/visual-trace-plot.R
@@ -1503,7 +1702,7 @@ cat output/mcmc_summary.txt
    #+END_SRC
 
    #+RESULTS:
-   : 1
+   : 2
 
 
    [[file:figure/z_mcmc_trace_plot.pdf]]
@@ -1539,7 +1738,7 @@ cat output/mcmc_summary.txt
    #+END_SRC
 
    #+RESULTS:
-   : 1
+   : 2
 
    [[file:figure/lambda_mcmc_trace_plot.pdf]]
    #+BEGIN_SRC R :tangle R/visual-trace-plot.R
@@ -1576,7 +1775,7 @@ cat output/mcmc_summary.txt
    #+END_SRC
 
    #+RESULTS:
-   : 1
+   : 2
 
    [[file:figure/theta_mcmc_trace_plot.pdf]]
    #+BEGIN_SRC R :tangle R/visual-trace-plot.R
@@ -1592,7 +1791,7 @@ cat output/mcmc_summary.txt
    #+END_SRC
 
    #+RESULTS:
-   : 1
+   : 2
 
    [[file:figure/gamma_mcmc_trace_plot.pdf]]
    #+BEGIN_SRC R :tangle R/visual-trace-plot.R
@@ -1606,7 +1805,7 @@ cat output/mcmc_summary.txt
    #+END_SRC
 
    #+RESULTS:
-   : 1
+   : 2
 
    [[pdf:figure/lp_sigma_mcmc_trace_plot.pdf]]
    #+BEGIN_SRC R :tangle R/visual-trace-plot.R
@@ -1620,7 +1819,7 @@ cat output/mcmc_summary.txt
    #+END_SRC
 
    #+RESULTS:
-   : 1
+   : 2
 
 ** output analysis
 
@@ -1910,9 +2109,9 @@ lsjmplot <- function( z, w, myname = NULL, xlim=NA, ylim=NA, lab = "Coordinate")
 find_xstar = function(df) {
 num_samples = nrow(df)
 
-z0dx = grepl("^z.0", colnames(df))
-z1dx = grepl("^z.1", colnames(df))
-wdx = grepl("^w", colnames(df))
+z0dx = grepl("^z\\.0\\.", colnames(df))
+z1dx = grepl("^z\\.1\\.", colnames(df))
+wdx = grepl("^w\\.", colnames(df))
 adx = z0dx | z1dx | wdx
 
 mlp_ = max(df$lp_)
@@ -1921,6 +2120,8 @@ lpos = df[,adx]
 Xstar = matrix(unlist(lpos[star,]), ncol = 2)
 return(list(lp_ = mlp_, Xstar=Xstar))}
 #+END_SRC
+
+#+RESULTS:
 
 #+BEGIN_SRC R :tangle R/art-functions.R
 find_xstar_inlist = function(mydf) {
@@ -1932,6 +2133,8 @@ mlp = -Inf
   }
 return(Xstar)}
 #+END_SRC
+
+#+RESULTS:
 
 #+BEGIN_SRC R :tangle R/art-functions.R
 do_procrustes = function(Xstar, mydf, is_list = FALSE, translation = TRUE, scale = FALSE, reflect = TRUE) {
@@ -1970,7 +2173,9 @@ do_procrustes = function(Xstar, mydf, is_list = FALSE, translation = TRUE, scale
       ## vegan::procrustes(Xstar, t( matrix(unlist(lpos[k,]), nrow = 2) ), scale = scale)$Yrot #vegan
       shapes::procOPA(Xstar, t( matrix(unlist(lpos[k,]), nrow = 2)) , scale = scale, reflect = reflect)$Bhat #shapes
     }
-    df[,adx] = t( matrix(unlist(mm), nrow = sum(adx)) )
+    tmm = lapply(mm,t)
+    df[,adx] = t( matrix(unlist(tmm), nrow = sum(adx)) )
+
 
     posm = posm + Reduce("+",mm) / num_samples
     if (is_list == TRUE) { mydf[[i]] = df

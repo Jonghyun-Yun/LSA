@@ -112,8 +112,8 @@ mvar = readr::read_csv("input/mvar.csv", col_names=FALSE) %>% as.matrix()
 I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
 
 ## lambda
-a_lambda = matrix(0.001,I,G)
-b_lambda = matrix(0.001,I,G)
+a_lambda = matrix(0.01,I,G)
+b_lambda = matrix(0.01,I,G)
 jump_lambda = matrix(1.0,I,G)
 
 mu_beta = matrix(0.0,I,2)

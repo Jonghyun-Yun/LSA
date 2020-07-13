@@ -340,7 +340,7 @@ int main(int argc, const char *argv[]) {
   // gamma = readCSV("input/init_gamma.csv", 2, 1);
   w = readCSV("input/init_w.csv", I, 2);
 
-  gamma(0) = -1;
+  gamma(0) = 1;
   gamma(1) = 1;
 
   Eigen::MatrixXd z(2*N, 2);
@@ -358,6 +358,7 @@ int main(int argc, const char *argv[]) {
     }
   }
   else {
+    acc_z = Eigen::VectorXd::Zero(2*N);
     if (gamma(0) < 0 || gamma(1) <0) {
       std::cout << "gamma should be positive!\n";
       return 0;
@@ -378,6 +379,7 @@ int main(int argc, const char *argv[]) {
 
     if (RUN_PAR) {
 
+  // std::cout << "updating lambda...\n";
       // updating lambda...
       tbb::parallel_for(
         tbb::blocked_range3d<int>(0, 2, 0, I, 0, G),
@@ -401,6 +403,7 @@ int main(int argc, const char *argv[]) {
         });
 
 
+  // std::cout << "updating beta...\n";
       // updating beta...
       tbb::parallel_for(
         tbb::blocked_range2d<int>(0,I,0,2),
@@ -420,6 +423,7 @@ int main(int argc, const char *argv[]) {
           }
         });
 
+  // std::cout << "updating theta...\n";
       // updating theta...
       tbb::parallel_for(
         tbb::blocked_range2d<int>(0,N,0,2),
@@ -442,6 +446,8 @@ int main(int argc, const char *argv[]) {
       if (UPDATE_LATENT) {
 
         if (UPDATE_GAMMA) {
+
+            // std::cout << "updating gamma...\n";
           // updating gamma...
 
           if (SINGLE_Z) {
@@ -457,7 +463,8 @@ int main(int argc, const char *argv[]) {
           }
 
         }
-       
+
+        // std::cout << "updating z...\n";
         // updating z...
         if (SINGLE_Z) {
 
@@ -466,7 +473,7 @@ int main(int argc, const char *argv[]) {
           [&](tbb::blocked_range<int> r) {
               for (int k = r.begin(); k < r.end(); ++k) {
                   z.row(k) = update_single_z(
-                    z.row(k), acc_z(k), mu_z(k), sigma_z(k), jump_z(k),
+                    z.row(k), acc_z(k), mu_z.row(k), sigma_z.row(k), jump_z.row(k),
                     cum_lambda.col(k), beta, theta.row(k), gamma,
                     w, I, mNA.col(k), mlen, mseg.col(k), mH.col(k),
                     mY.col(k), rng);
@@ -485,8 +492,8 @@ int main(int argc, const char *argv[]) {
                 for (int c = r.cols().begin(); c < r.cols().end(); ++c) {
 
                   z.row(c * N + k) = update_z(
-                    z.row(c * N + k), acc_z(c * N + k), mu_z(k), sigma_z(k),
-                    jump_z(k), cum_lambda.block(c * I, k, I, 1), beta.col(c),
+                    z.row(c * N + k), acc_z(c * N + k), mu_z.row(k), sigma_z.row(k),
+                    jump_z.row(k), cum_lambda.block(c * I, k, I, 1), beta.col(c),
                     theta(k, c), gamma(c), w, I, mNA.col(k), mlen, mseg.col(k), mH.col(k),
                     mY.col(k), c, rng);
                 }
@@ -495,13 +502,14 @@ int main(int argc, const char *argv[]) {
             });
         }
 
+        // std::cout << "updating w...\n";
         // updating w...
         tbb::parallel_for(
             tbb::blocked_range<int>(0, I), [&](tbb::blocked_range<int> r) {
               for (int i = r.begin(); i < r.end(); ++i) {
 
                 w.row(i) = update_w(
-                    w.row(i), acc_w(i), mu_w(i), sigma_w(i), jump_w(i),
+                    w.row(i), acc_w(i), mu_w.row(i), sigma_w.row(i), jump_w.row(i),
                     cum_lambda.row(i), cum_lambda.row(I + i), beta.row(i), theta, gamma,
                     z, N, G, mNA.row(i), mlen,
                     mseg.row(i), mH.row(i), mY.row(i), rng);
@@ -577,8 +585,8 @@ int main(int argc, const char *argv[]) {
           for (int k = 0; k < N; k++) {
             for (int c = 0; c < 2; c++) {
               z.row(k) = update_single_z(
-                z.row(k), acc_z(k), mu_z(k), sigma_z(k),
-                jump_z(k),
+                z.row(k), acc_z(k), mu_z.row(k), sigma_z.row(k),
+                jump_z.row(k),
                 cum_lambda.col(k), beta, theta.row(k), gamma,
                 w, I, mNA.col(k), mlen, mseg.col(k), mH.col(k),
                 mY.col(k), rng);
@@ -593,8 +601,8 @@ int main(int argc, const char *argv[]) {
             for (int c = 0; c < 2; c++) {
 
               z.row(c * N + k) = update_z(
-                z.row(c * N + k), acc_z(c * N + k), mu_z(k), sigma_z(k),
-                jump_z(k), cum_lambda.block(c * I, k, I, 1), beta.col(c),
+                z.row(c * N + k), acc_z(c * N + k), mu_z.row(k), sigma_z.row(k),
+                jump_z.row(k), cum_lambda.block(c * I, k, I, 1), beta.col(c),
                 theta(k, c), gamma(c), w, I, mNA.col(k), mlen, mseg.col(k), mH.col(k),
                 mY.col(k), c, rng);
 
@@ -607,7 +615,7 @@ int main(int argc, const char *argv[]) {
       for (int i = 0; i < I; i++) {
 
                 w.row(i) = update_w(
-                    w.row(i), acc_w(i), mu_w(i), sigma_w(i), jump_w(i),
+                    w.row(i), acc_w(i), mu_w.row(i), sigma_w.row(i), jump_w.row(i),
                     cum_lambda.row(i), cum_lambda.row(I + i), beta.row(i), theta, gamma,
                     z, N, G, mNA.row(i), mlen,
                     mseg.row(i), mH.row(i), mY.row(i), rng);
@@ -618,6 +626,7 @@ int main(int argc, const char *argv[]) {
 
     }
 
+    // std::cout << "updating sigma...\n";
     // updating sigma
     sigma = update_sigma(a_sigma, b_sigma, theta, N, rng);
 
@@ -636,7 +645,10 @@ int main(int argc, const char *argv[]) {
                 << (ii<=num_warmup?"  (Warmup)":"  (Sampling)") << std::endl;
 
     if ((ii % thin == 0) && (ii > num_warmup)) {
+
+          // std::cout << "calculating log-posterior...\n";
 // eval log_prob
+
       if (RUN_PAR) {
         lp_ = par_fun_lp(a_lambda, b_lambda, mu_beta, sigma_beta, mu_theta, sigma_theta,
                          a_sigma, b_sigma, mu_gamma, sigma_gamma, mu_z, sigma_z, mu_w, sigma_w,

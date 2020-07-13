@@ -2,7 +2,9 @@
 #include "update_z.h"
 
 Eigen::VectorXd update_z(const Eigen::MatrixXd::RowXpr &z, double &acc_z,
-                         const double &mu_z, const double &sigma_z, const double &jump_z,
+                         const Eigen::MatrixXd::RowXpr &mu_z,
+                         const Eigen::MatrixXd::RowXpr &sigma_z,
+                         const Eigen::MatrixXd::RowXpr &jump_z,
                          const Eigen::VectorXd &cum_lambda,
                          const Eigen::MatrixXd::ColXpr &beta,
                          const double &theta, const double &gamma,
@@ -21,11 +23,16 @@ Eigen::VectorXd update_z(const Eigen::MatrixXd::RowXpr &z, double &acc_z,
 
   // std::cout << "Drawing...\n";
   for (int d = 0; d < 2; d++) {
-      z_s(d) = stan::math::normal_rng(z(d), jump_z, rng);
+      z_s(d) = stan::math::normal_rng(z(d), jump_z(d), rng);
   logr_z +=
-      stan::math::normal_lpdf(z_s(d), mu_z, sigma_z) -
-      stan::math::normal_lpdf(z(d), mu_z, sigma_z);
+      stan::math::normal_lpdf(z_s(d), mu_z(d), sigma_z(d)) -
+      stan::math::normal_lpdf(z(d), mu_z(d), sigma_z(d));
   }
+
+  // z_s = stan::math::normal_rng(z, jump_z, rng);
+  // logr_z +=
+  //   stan::math::normal_lpdf(z_s, mu_z, sigma_z) -
+  //   stan::math::normal_lpdf(z, mu_z, sigma_z);
 
   // std::cout << "Calculating the log-acceptance ratio of lambda...\n";
   for (int i = 0; i < I; i++) {
@@ -53,7 +60,7 @@ Eigen::VectorXd update_z(const Eigen::MatrixXd::RowXpr &z, double &acc_z,
       acc_z += 1.0;
   }
   else {
-      z_s = z;
+      z_s = z; // do NOT aceept z_s, use the current z instead
   }
   return z_s; // cannot assign values to z
 }

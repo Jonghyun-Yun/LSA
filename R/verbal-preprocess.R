@@ -78,31 +78,31 @@ mvar = readr::read_csv("input/mvar.csv", col_names=FALSE) %>% as.matrix()
 I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
 
 ## lambda
-a_lambda = matrix(0.001,I,G)
-b_lambda = matrix(0.001,I,G)
+a_lambda = matrix(0.01,I,G)
+b_lambda = matrix(0.01,I,G)
 jump_lambda = matrix(1.0,I,G)
 
 mu_beta = matrix(0.0,I,2)
-sigma_beta = matrix(1.0,I,2)
+sigma_beta = matrix(sqrt(1.0),I,2)
 jump_beta = matrix(0.25,I,2)
 
 mu_theta = matrix(0.0,N,2)
-sigma_theta = matrix(1.0,N,2)
+sigma_theta = matrix(sqrt(1.0),N,2)
 jump_theta = matrix(1.0,N,2)
 
 a_sigma = 1.0
 b_sigma = 1.0
 
 mu_gamma = matrix(0.0,1,2)
-sigma_gamma = matrix(1.0,1,2)
+sigma_gamma = matrix(sqrt(1.0),1,2)
 jump_gamma = matrix(1.0,1,2)
 
 mu_z = matrix(0.0,N,2)
-sigma_z = matrix(1.0,N,2)
+sigma_z = matrix(sqrt(1.0),N,2)
 jump_z = matrix(1.0,N,2)
 
 mu_w = matrix(0.0,I,2)
-sigma_w = matrix(1.0,I,2)
+sigma_w = matrix(sqrt(1.0),I,2)
 jump_w = matrix(0.25,I,2)
 
 readr::write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"input/pj_lambda.csv", col_names = FALSE)

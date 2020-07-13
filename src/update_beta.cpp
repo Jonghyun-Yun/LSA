@@ -19,7 +19,7 @@ Eigen::VectorXd update_beta(double &beta, double &acc_beta,
   double beta_s;
   Eigen::VectorXd cum_lambda = Eigen::VectorXd::Zero(N);
 
-  // std::cout << "Drawing...\n";
+  // // std::cout << "Drawing...\n";
   beta_s = stan::math::normal_rng(beta, jump_beta, rng);
 
   // prior and jump rule
@@ -43,6 +43,7 @@ Eigen::VectorXd update_beta(double &beta, double &acc_beta,
       if (Y_i(k) == cause) {
         logr_beta += stan::math::log(beta_s) - stan::math::log(beta);
       }
+
     }
   }
  
@@ -52,6 +53,7 @@ Eigen::VectorXd update_beta(double &beta, double &acc_beta,
     beta = beta_s;
     acc_beta += 1.0;
   }
+
   return cum_lambda;
 }
 

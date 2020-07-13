@@ -1,9 +1,7 @@
 // [[Rcpp::depends(RcppEigen)]]
-// [[Rcpp::depends(RcppNumerical)]]
 
-#include <RcppNumerical.h>
-
-using namespace Numer;
+#include <RcppParallel.h>
+#include <RcppEigen.h>
 
 typedef Eigen::Map<Eigen::MatrixXd> MapMatd;
 typedef Eigen::Map<Eigen::VectorXd> MapVecd;
@@ -41,12 +39,12 @@ class comprisk: public Func
 
             double res = 1.0;
 
-            size_t g = 0;
+            int g = 0;
             while (t > sj(g+1) && g < (G - 1) )  {
                 cum_lambda += H(g) * lambda.col(g);
                 g++;
             }
-            for (size_t c=0; c<2; c++) {
+            for (int c=0; c<2; c++) {
                 res *= std::exp( -1.0 * ( cum_lambda(c) + ( t - sj(g) ) * lambda(c,g) ) * std::exp( beta(c) + theta(c) - gamma(c) * (z.row(c)-w).norm() ));
             }
             if (T_F) {
@@ -60,7 +58,7 @@ class comprisk: public Func
 
         double hazard(const double &t, const bool cause) {
             double res;
-            size_t g = 0;
+            int g = 0;
             while (t > sj(g) && g < (G - 1) ) {
                 g++;
             }
@@ -100,7 +98,7 @@ Eigen::VectorXd cumcicurve(Rcpp::List &param, bool T_F, double lower, double upp
     comprisk f(param, T_F);
     double err_est;
     int err_code;
-    for (size_t n=0; n<npar; n++) {
+    for (int n=0; n<npar; n++) {
         res(n) = integrate(f, lower, lower + (n + 1) * delta, err_est, err_code);
     }
     return res;
@@ -111,7 +109,7 @@ Eigen::VectorXd eval_incirate(Rcpp::List &param, bool T_F, Eigen::VectorXd t)
 {
     comprisk f(param, T_F);
     Eigen::VectorXd res(t.size());
-    for (size_t i=0; i<t.size(); i++) {
+    for (int i=0; i<t.size(); i++) {
         res(i) = f(t(i));
     }
     return res;
@@ -122,7 +120,7 @@ Eigen::VectorXd eval_accuracy(Rcpp::List &param, Eigen::VectorXd t)
 {
     comprisk f(param, 1);
     Eigen::VectorXd res(t.size());
-    for (size_t i=0; i<t.size(); i++) {
+    for (int i=0; i<t.size(); i++) {
         res(i) = f.accuracy(t(i));
     }
     return res;

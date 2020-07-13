@@ -84,7 +84,7 @@ double fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lambda,
         lp_ += normal_lpdf(to_vector(z.block(0,0,N,2)), to_vector(mu_z), to_vector(sigma_z)) +
         normal_lpdf(to_vector(z.block(N,0,N,2)), to_vector(mu_z), to_vector(sigma_z));
         if (UPDATE_GAMMA) {
-            lp_ += lognormal_lpdf(gamma, mu_gamma, sigma_gamma);
+            lp_ += lognormal_lpdf(gamma, mu_gamma, sigma_gamma); // they are vectors!
         }
     }
     return lp_;
