@@ -32,31 +32,25 @@ my_procrustes = function(Xstar, dlist, is_list = FALSE, translation = TRUE, scal
 
     z0dx = grepl("^z\\.0\\.", colnames(df))
     z1dx = grepl("^z\\.1\\.", colnames(df))
-    wdx = grepl("^w\\.", colnames(df))
+    w0dx = grepl("^w\\.0\\.", colnames(df))
+    w1dx = grepl("^w\\.1\\.", colnames(df))
 
-    num_w = sum(wdx) / 2;
+    num_w = sum(w0dx) / 2;
     num_z = sum(z0dx) / 2;
-    w = aperm( array(unlist( t(df[,wdx])), dim = c(2, num_w, num_samples)), c(2,1,3))
+    w0 = aperm( array(unlist( t(df[,w0dx])), dim = c(2, num_w, num_samples)), c(2,1,3))
+    w1 = aperm( array(unlist( t(df[,w1dx])), dim = c(2, num_w, num_samples)), c(2,1,3))
     z0 = aperm( array(unlist( t(df[,z0dx])), dim = c(2, num_z, num_samples)), c(2,1,3))
     z1 = aperm( array(unlist( t(df[,z1dx])), dim = c(2, num_z, num_samples)), c(2,1,3))
 
-    adx = z0dx | z1dx | wdx
-    N = sum(z0dx) / 2
-    nall = sum(adx)/2
+    adx = z0dx | z1dx | w0dx | w1dx
 
-    if (sum(z1dx) == 0) {
-        wstar = Xstar[-(1:N),]
-        } else {
-          wstar = Xstar[-(1:(2*N)),]
-        z0wstar = Xstar[-((N + 1):(2*N)),]
-        z1wstar = Xstar[-(1:N),]
-}
+    w0star = Xstar$w.0
+    w1star = MCMCpack::procrustes(Xstar$w.1, w0star)$X.new
 
     #mlp_ = max(df$lp_)
     #star = min(which.max(df$lp_))
     ## lpos = df[,adx]
     #wstar = w[,,star]
-
 
     ## mm = list()
     ## for (k in 1:num_samples) {
@@ -75,24 +69,29 @@ my_procrustes = function(Xstar, dlist, is_list = FALSE, translation = TRUE, scal
       ## w[,,k] = pout$X.new #vegan
       ## R = pout$R
 
-      pout = MCMCpack::procrustes(w[,,k], wstar)
+      pout = MCMCpack::procrustes(w0[,,k], w0star)
+      w0[,,k] = pout$X.new
+      z0[,,k] = z0[,,k] %*% pout$R
+
+      pout = MCMCpack::procrustes(w1[,,k], w1star)
+      w1[,,k] = pout$X.new
+      z1[,,k] = z1[,,k] %*% pout$R
       ##pout = MCMCpack::procrustes(rbind(z1[,,k],w[,,k]), z0wstar)
 
       ##pout = vegan::procrustes(wstar, w[,,k], scale = scale)
       ## R = pout$rotation
       ##w[,,k] = pout$Yrot #vegan
       ##R = pout$rotation ## vegan
-      w[,,k] = pout$X.new
-      R = pout$R
+      ## w[,,k] = pout$X.new
+      ## R = pout$R
 
       ##z0[,,k] = sweep(z0[,,k], 2, wmean) %*% R
       ##z1[,,k] = sweep(z1[,,k], 2, wmean) %*% R
       ## z0[,,k] = sweep(z0[,,k], 2, wmean) %*% pout$rotation
       ## z1[,,k] = sweep(z1[,,k], 2, wmean) %*% pout$rotation
       ## w[,,k] = w[,,k] %*% R
-      z0[,,k] = z0[,,k] %*% R
-      z1[,,k] = z1[,,k] %*% R
-      rbind(z0[,,k], z1[,,k], w[,,k])
+      # z1[,,k] = z1[,,k] %*% R
+      rbind(z0[,,k], z1[,,k], w0[,,k], w1[,,k])
       ## shapes::procOPA(Xstar, t( matrix(unlist(lpos[k,]), nrow = 2)) , scale = scale, reflect = reflect)$Bhat #shapes
     }
     tmm = lapply(mm,t)
@@ -105,15 +104,27 @@ my_procrustes = function(Xstar, dlist, is_list = FALSE, translation = TRUE, scal
   }
 
   posm = posm / num_chain
-  z0= posm[1:N,]
-  if (sum(z1dx) == 0) {
-    w = posm[-(1:N),]
+  z0 = posm[1:num_z,]
+  if (sum(z1dx) == 0 && sum(w1dx) == 0) {
+    w0 = posm[num_z + (1:num_w),]
     z1 = NULL
-  } else {
-  z1 = posm[(N + 1):(2*N),]
-  w = posm[-(1:(2*N)),]
-  }
-  return(list(dlist = dlist, z0=z0, z1=z1, w=w))
+    w1 = NULL }
+  else if (sum(z1dx) == 0 && sum(w1dx) > 0) {
+    w0 = posm[num_z + (1:num_w),]
+    z1 = NULL
+    w1 = posm[num_z + num_w + (1:num_w),]
+    }
+
+  if (sum(z1dx) > 0 && sum(w1dx) == 0) {
+    z1 = posm[num_z + (1:num_z),]
+    w0 = posm[2*num_z + (1:num_w),]
+    w1 = NULL }
+  else if (sum(z1dx) > 0 && sum(w1dx) > 0) {
+    z1 = posm[num_z + (1:num_z),]
+    w0 = posm[2*num_z + (1:num_w),]
+    w1 = posm[2*num_z + num_w + (1:num_w),]
+    }
+  return(list(dlist = dlist, z0=z0, z1=z1, w0=w0, w1=w1))
 }
 
 getparam = function(posm, sj, i, k) {
@@ -241,13 +252,18 @@ num_samples = nrow(df)
 
 z0dx = grepl("^z\\.0\\.", colnames(df))
 z1dx = grepl("^z\\.1\\.", colnames(df))
-wdx = grepl("^w\\.", colnames(df))
-adx = z0dx | z1dx | wdx
+w0dx = grepl("^w\\.0\\.", colnames(df))
+w1dx = grepl("^w\\.1\\.", colnames(df))
+adx = z0dx | z1dx | w0dx | w1dx
 
 mlp_ = max(df$lp_)
 star = min(which.max(df$lp_))
 lpos = df[,adx]
-Xstar = matrix(unlist(lpos[star,]), ncol = 2)
+Xstar = list()
+Xstar$z.0 = matrix(unlist(df[star,z0dx]), byrow = T, ncol = 2)
+Xstar$z.1 = matrix(unlist(df[star,z1dx]), byrow = T, ncol = 2)
+Xstar$w.0 = matrix(unlist(df[star,w0dx]), byrow = T, ncol = 2)
+Xstar$w.1 = matrix(unlist(df[star,w1dx]), byrow = T, ncol = 2)
 return(list(lp_ = mlp_, Xstar=Xstar))}
 
 find_xstar_inlist = function(mydf) {

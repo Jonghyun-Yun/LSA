@@ -15,7 +15,8 @@ double fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lambda,
               const int &I, const int &N, const int &G,
               const Eigen::MatrixXi &NA,
               const Eigen::VectorXd &len, const Eigen::MatrixXi &seg,
-              const Eigen::MatrixXd &H, const Eigen::MatrixXi &Y, bool SINGLE_Z, bool UPDATE_GAMMA){
+              const Eigen::MatrixXd &H, const Eigen::MatrixXi &Y,
+              bool SINGLE_Z, bool SINGLE_W, bool UPDATE_GAMMA) {
 
     using stan::math::to_vector;
     using stan::math::distance;
@@ -70,9 +71,7 @@ double fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lambda,
         gamma_lpdf(to_vector(lambda.block(0,0,I,G)), to_vector(a_lambda), to_vector(b_lambda)) +
         gamma_lpdf(to_vector(lambda.block(I,0,I,G)), to_vector(a_lambda), to_vector(b_lambda)) +
         normal_lpdf(to_vector(beta), to_vector(mu_beta), to_vector(sigma_beta)) +
-        normal_lpdf(to_vector(theta), to_vector(mu_theta), to_vector(sigma_theta)) +
-        normal_lpdf(to_vector(w), to_vector(mu_w), to_vector(sigma_w));
-
+        normal_lpdf(to_vector(theta), to_vector(mu_theta), to_vector(sigma_theta));
 
     if (SINGLE_Z) {
         lp_ += normal_lpdf(to_vector(z.block(0,0,N,2)), to_vector(mu_z), to_vector(sigma_z));
@@ -87,6 +86,15 @@ double fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lambda,
             lp_ += lognormal_lpdf(gamma, mu_gamma, sigma_gamma); // they are vectors!
         }
     }
+
+    if (SINGLE_W) {
+       lp_ += normal_lpdf(to_vector(w.block(0,0,I,2)), to_vector(mu_w), to_vector(sigma_w));
+    }
+    else {
+        lp_ += normal_lpdf(to_vector(w.block(0,0,I,2)), to_vector(mu_w), to_vector(sigma_w)) +
+            normal_lpdf(to_vector(w.block(I,0,I,2)), to_vector(mu_w), to_vector(sigma_w));
+    }
+
     return lp_;
 }
 

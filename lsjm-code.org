@@ -147,21 +147,32 @@
 1. initialize $\log \lambda_{ic,g}$: I x N x 2
 2. for each i,k,c
 3. for each j
-4. Draw $\lambda_{ic,g}^{* } \sim N(\log \lambda_{ic,j}^{(t)}, jump_{\lambda_{ic,j}})$
+4. the full conditional:
+\begin{align*}
+p(\lambda_{ic,j}| \cdot ) \propto & \lambda_{ic,j}^{\sum_{k=1}^{N} Y_{ik,j} = c} \exp[- \lambda_{ic,j} \sum_{k=1}^{N} I(T_{ik} > s_{j-1}) H_{ik,j} \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)]
+\pi(\lambda_{ic,j})
+\end{align*}
+where $H_{ik,j} = \min(T_{ik}, s_{j}) - s_{j-1}$.
+
+*** MH move (direct sampling is doable, dont do this)
+1. initialize $\log \lambda_{ic,g}$: I x N x 2
+2. for each i,k,c
+3. for each j
+4. Draw $\lambda_{ic,j}^{* } \sim N(\log \lambda_{ic,j}^{(t)}, jump_{\lambda_{ic,j}})$
 5. accept if $r > \log U(0,1)$
 \begin{align*}
 r = & \prod_{k=1}^{N}
 \frac{
-   (\lambda_{ic,g}^{* })^{I(Y_{ikc,g} = 1)} \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)\Lambda_{ic}(t)^{* }]}
-   {(\lambda_{ic,g}^{t})^{I(Y_{ikc,g} = 1)} \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{1}||z_{kc} - w_{i}||)\Lambda_{ic}(t)^{t}]} \\
+   (\lambda_{ic,j}^{* })^{I(Y_{ikc,g} = 1)} \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)\Lambda_{ic}(t)^{* }]}
+   {(\lambda_{ic,j}^{t})^{I(Y_{ikc,g} = 1)} \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{1}||z_{kc} - w_{i}||)\Lambda_{ic}(t)^{t}]} \\
 & \times
-  \frac{J(\lambda_{ic,g}^{(t)} -> \lambda_{ic,g}^{* })}{J(\lambda_{ic,g}^{* } -> \lambda_{ic,g}^{t})}
-\frac{\pi(\lambda_{ic,g}^{* })}{\pi(\lambda_{ic,g}^{(t)})} \\
+  \frac{J(\lambda_{ic,j}^{(t)} -> \lambda_{ic,g}^{* })}{J(\lambda_{ic,g}^{* } -> \lambda_{ic,g}^{t})}
+\frac{\pi(\lambda_{ic,j}^{* })}{\pi(\lambda_{ic,g}^{(t)})} \\
 = & \prod_{k=1}^{N}
-  \frac{(\lambda_{ic,g}^{* })^{I(Y_{ikc,j} = 1)}}{(\lambda_{ic,j}^{t})^{I(Y_{ikc,j} = 1)}} \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)(\sum_{m=1}^{j} H_{ic,m}(\lambda_{ic,m}^{* } - \lambda_{ic,m}^{t}))] \\
+  \frac{(\lambda_{ic,j}^{* })^{I(Y_{ikc,j} = 1)}}{(\lambda_{ic,j}^{t})^{I(Y_{ikc,j} = 1)}} \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)(\sum_{m=1}^{j} H_{ic,m}(\lambda_{ic,m}^{* } - \lambda_{ic,m}^{t}))] \\
 & \times
-\frac{\pi(\lambda_{ic,g}^{* })}{\pi(\lambda_{ic,g}^{(t)})}
- \frac{J(\lambda_{ic,g}^{(t)} -> \lambda_{ic,g}^{* })}{J(\lambda_{ic,g}^{* } -> \lambda_{ic,g}^{t})};
+\frac{\pi(\lambda_{ic,j}^{* })}{\pi(\lambda_{ic,j}^{(t)})}
+ \frac{J(\lambda_{ic,j}^{(t)} -> \lambda_{ic,j}^{* })}{J(\lambda_{ic,j}^{* } -> \lambda_{ic,j}^{t})};
 \end{align*}
 
 if the event occurs before the $j$-th segment (g > j), then $\lambda_{ic,m}^{* } - \lambda_{ic,m}^{t} = 0$ for all $m=1,..,j$, so no contribution in the likelihood part.
@@ -608,9 +619,9 @@ for (i in 1:N) {
    I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
 
    ## lambda
-   a_lambda = matrix(0.01,I,G)
-   b_lambda = matrix(0.01,I,G)
-   jump_lambda = matrix(1.0,I,G)
+   a_lambda = matrix(0.1,I,G)
+   b_lambda = matrix(0.1,I,G)
+   jump_lambda = matrix(0.5,I,G)
 
    mu_beta = matrix(0.0,I,2)
    sigma_beta = matrix(1.0,I,2)
@@ -633,7 +644,7 @@ for (i in 1:N) {
 
    mu_w = matrix(0.0,I,2)
    sigma_w = matrix(1.0,I,2)
-   jump_w = matrix(0.1,I,2)
+   jump_w = matrix(0.5,I,2)
    #+END_SRC
 
 #+BEGIN_SRC R :tangle R/pisa-preprocess.R
@@ -644,7 +655,21 @@ readr::write_csv(as.data.frame(rbind(a_sigma,b_sigma)),"input/pj_sigma.csv", col
 readr::write_csv(as.data.frame(rbind(mu_gamma,sigma_gamma,jump_gamma)),"input/pj_gamma.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(rbind(mu_z,sigma_z,jump_z)),"input/pj_z.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(rbind(mu_w,sigma_w,jump_w)),"input/pj_w.csv", col_names = FALSE)
-   #+END_SRC
+#+END_SRC
+
+#+BEGIN_SRC R :tangle R/pisa-preprocess.R
+mtab_sj = t( apply(mseg, 1, function(x) tab_sj(x,G)) )
+
+tmp_0 = mseg; tmp_0[mi==1] = -99;
+tmp_1 = mseg; tmp_1[mi==0] = -99;
+
+mIY_0 = t( apply(tmp_0, 1, function(x) tab_IY(x,G)) )
+mIY_1 = t( apply(tmp_1, 1, function(x) tab_IY(x,G)) )
+
+readr::write_csv(as.data.frame(mtab_sj),"input/mtab_sj.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mIY_0),"input/mIY_0.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mIY_1),"input/mIY_1.csv", col_names = FALSE)
+#+END_SRC
 
 ** not used
 #+BEGIN_SRC R
@@ -684,7 +709,7 @@ boxplot(yt)
    init_beta = 0*matrix(rnorm(2*I), ncol = 2);
    init_theta = 0*matrix(rnorm(2*N), ncol = 2);
    init_gamma = 1*matrix(c(1, 1), nrow = 1);
-   init_w = 0*matrix(rnorm(2*I), ncol = 2);
+   init_w = 0*matrix(rnorm(2*2*I), ncol = 2);
    init_z = 0*matrix(rnorm(2*2*N), ncol = 2);
    #+END_SRC
 
@@ -806,6 +831,20 @@ readr::write_csv(as.data.frame(mt),"input/mt.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(mi),"input/mi.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(mNA),"input/mNA.csv", col_names = FALSE)
 #+end_src
+
+#+begin_src R :results none :tangle R/opusIII-preprocess.R
+mtab_sj = t( apply(mseg, 1, function(x) tab_sj(x,G)) )
+
+tmp_0 = mseg; tmp_0[mi==1] = -99;
+tmp_1 = mseg; tmp_1[mi==0] = -99;
+
+mIY_0 = t( apply(tmp_0, 1, function(x) tab_IY(x,G)) )
+mIY_1 = t( apply(tmp_1, 1, function(x) tab_IY(x,G)) )
+
+readr::write_csv(as.data.frame(mtab_sj),"input/mtab_sj.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mIY_0),"input/mIY_0.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mIY_1),"input/mIY_1.csv", col_names = FALSE)
+#+end_src
 ** prior & jump
    This is to export hyper-parameters and jumping rule
    #+BEGIN_SRC R :results none :tangle R/opusIII-preprocess.R
@@ -813,9 +852,9 @@ readr::write_csv(as.data.frame(mNA),"input/mNA.csv", col_names = FALSE)
    I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
 
    ## lambda
-   a_lambda = matrix(0.01,I,G)
-   b_lambda = matrix(0.01,I,G)
-   jump_lambda = matrix(1.0,I,G)
+   a_lambda = matrix(0.1,I,G)
+   b_lambda = matrix(0.1,I,G)
+   jump_lambda = matrix(0.5,I,G)
 
    mu_beta = matrix(0.0,I,2)
    sigma_beta = matrix(sqrt(1.0),I,2)
@@ -838,7 +877,7 @@ readr::write_csv(as.data.frame(mNA),"input/mNA.csv", col_names = FALSE)
 
    mu_w = matrix(0.0,I,2)
    sigma_w = matrix(sqrt(1.0),I,2)
-   jump_w = matrix(0.25,I,2)
+   jump_w = matrix(0.5,I,2)
    #+END_SRC
 
    #+BEGIN_SRC R :results none :tangle R/opusIII-preprocess.R
@@ -864,7 +903,7 @@ readr::write_csv(as.data.frame(mNA),"input/mNA.csv", col_names = FALSE)
    init_beta = 0*matrix(rnorm(2*I), ncol = 2);
    init_theta = 0*matrix(rnorm(2*N), ncol = 2);
    init_gamma = 1*matrix(c(1, 1), nrow = 1);
-   init_w = 0*matrix(rnorm(2*I), ncol = 2);
+   init_w = 0*matrix(rnorm(2*2*I), ncol = 2);
    init_z = 0*matrix(rnorm(2*2*N), ncol = 2);
    #+END_SRC
 
@@ -1043,6 +1082,24 @@ tmp <- survSplit(formula = Surv(time, status) ~ ., data = tdf, cut = sj, episode
   as_tibble
 #+END_SRC
 
+#+BEGIN_SRC R :results none :tangle R/art-functions.R
+tab_sj = function(seg_g, G) {
+res = NULL
+for (m in 0:(G-1)) {
+res = c(res, sum(seg_g >= m))
+}
+return(res)
+}
+
+tab_IY = function(seg_g, G) {
+res = NULL
+for (m in 0:(G-1)) {
+res = c(res, sum(seg_g == m))
+}
+return(res)
+}
+#+END_SRC
+
 #+BEGIN_SRC R :results none :tangle R/verbal-preprocess.R
 item = pull(tmp, item)
 person = pull(tmp, person)
@@ -1073,6 +1130,9 @@ I = nrow(mt)
 N = ncol(mt)
 C = 2
 G = ncut #
+#+end_src
+
+#+begin_src R :results none :tangle R/verbal-preprocess.R
 readr::write_csv(data.frame(I=I, N=N, C=C, G=G), "input/mvar.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(mlen),"input/mlen.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(mseg),"input/mseg.csv", col_names = FALSE)
@@ -1081,6 +1141,22 @@ readr::write_csv(as.data.frame(mt),"input/mt.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(mi),"input/mi.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(mNA),"input/mNA.csv", col_names = FALSE)
 #+end_src
+
+#+begin_src R :results none :tangle R/verbal-preprocess.R
+mtab_sj = t( apply(mseg, 1, function(x) tab_sj(x,G)) )
+
+tmp_0 = mseg; tmp_0[mi==1] = -99;
+tmp_1 = mseg; tmp_1[mi==0] = -99;
+
+mIY_0 = t( apply(tmp_0, 1, function(x) tab_IY(x,G)) )
+mIY_1 = t( apply(tmp_1, 1, function(x) tab_IY(x,G)) )
+
+readr::write_csv(as.data.frame(mtab_sj),"input/mtab_sj.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mIY_0),"input/mIY_0.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mIY_1),"input/mIY_1.csv", col_names = FALSE)
+#+end_src
+
+
 ** prior & jump
    This is to export hyper-parameters and jumping rule
    #+BEGIN_SRC R :results none :tangle R/verbal-preprocess.R
@@ -1088,9 +1164,9 @@ readr::write_csv(as.data.frame(mNA),"input/mNA.csv", col_names = FALSE)
    I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
 
    ## lambda
-   a_lambda = matrix(0.01,I,G)
-   b_lambda = matrix(0.01,I,G)
-   jump_lambda = matrix(1.0,I,G)
+   a_lambda = matrix(0.1,I,G)
+   b_lambda = matrix(0.1,I,G)
+   jump_lambda = matrix(0.5,I,G)
 
    mu_beta = matrix(0.0,I,2)
    sigma_beta = matrix(sqrt(1.0),I,2)
@@ -1113,7 +1189,7 @@ readr::write_csv(as.data.frame(mNA),"input/mNA.csv", col_names = FALSE)
 
    mu_w = matrix(0.0,I,2)
    sigma_w = matrix(sqrt(1.0),I,2)
-   jump_w = matrix(0.25,I,2)
+   jump_w = matrix(0.5,I,2)
    #+END_SRC
 
    #+BEGIN_SRC R :results none :tangle R/verbal-preprocess.R
@@ -1139,7 +1215,7 @@ readr::write_csv(as.data.frame(mNA),"input/mNA.csv", col_names = FALSE)
    init_beta = matrix(0*rnorm(2*I), ncol = 2);
    init_theta = matrix(0*rnorm(2*N), ncol = 2);
    init_gamma = matrix(c(-1, 1), nrow = 1);
-   init_w = matrix(rnorm(2*I), ncol = 2);
+   init_w = matrix(rnorm(2*2*I), ncol = 2);
    init_z = matrix(rnorm(2*2*N), ncol = 2);
  #+END_SRC
 
@@ -1177,32 +1253,38 @@ export STAN_NUM_THREADS=11
 mkdir -p output
 rm output/*
 Rscript "R/pisa-preprocess.R"
+cp input/{mvar,mlen}.csv output/
+echo "./main parallel double_w double_z full latent no_gamma $v 5000 5000 10" >> output/PISA
 for v in {1..3}
 do
 Rscript "R/pisa-init.R"
-./main parallel double_z full latent no_gamma $v 10000 10000 10
+./main parallel double_w double_z full latent no_gamma $v 5000 5000 10
 done
-mv output pisa-new
+mv output pisa-double
 
 rm output/*
 mkdir -p output
 Rscript "R/verbal-preprocess.R"
+cp input/{mvar,mlen}.csv output/
+echo "./main parallel double_w double_z sparse latent no_gamma $v 5000 5000 10" >> output/verbal
 for v in {1..3}
 do
 Rscript "R/verbal-init.R"
-./main parallel double_z sparse latent no_gamma $v 10000 10000 10
+./main parallel double_w double_z sparse latent no_gamma $v 5000 5000 10
 done
-mv output verbal-new
+mv output verbal-double
 
 rm output/*
 mkdir -p output
 Rscript "R/opusIII-preprocess.R"
+cp input/{mvar,mlen}.csv output/
+echo "./main parallel double_w double_z sparse latent no_gamma $v 5000 5000 10" >> output/opusIII
 for v in {1..3}
 do
 Rscript "R/opusIII-init.R"
-./main parallel double_z sparse latent no_gamma $v 10000 10000 10
+./main parallel double_w double_z sparse latent no_gamma $v 5000 5000 10
 done
-mv output opusIII-new
+mv output opusIII-double
 #+end_src
 
 #+begin_src sh
@@ -1247,6 +1329,7 @@ source("art-analysis.R")
 #+BEGIN_SRC R :results none :tangle r/art-analysis.R
 num_chain = 3
 single_z = 0
+single_w = 0
 
 library(art)
 library(coda)
@@ -1275,9 +1358,9 @@ cat output/summary.csv
 #+END_SRC
 
 #+RESULTS:
-| 1 | 0.352454 | 0.378823 | 0.343254 | 0.345049 |  0.27071 | 0 | 1 |
-| 2 | 0.352259 | 0.378374 | 0.343307 | 0.344499 | 0.271951 | 0 | 1 |
-| 3 | 0.352425 | 0.378701 | 0.343551 | 0.344774 | 0.272416 | 0 | 1 |
+| 1 | 0.361708 | 0.384572 | 0.363847 | 0.363926 | 0.492849 | 0 | 1 |
+| 2 | 0.361272 | 0.384541 | 0.364089 | 0.365188 | 0.491604 | 0 | 1 |
+| 3 | 0.360889 | 0.383368 | 0.364006 | 0.366613 | 0.491962 | 0 | 1 |
 
 ** load outputs
 #+begin_src R :results silent :tangle R/load-outputs.R
@@ -1313,10 +1396,11 @@ for(c in 0:1) {
       cnames = c(cnames, paste0("z.",c,".",k,".",d))
     }}
   }
+for (c in 0:1) {
 for (i in 1:I) {
   for (d in 1:2) {
-    cnames = c(cnames, paste0("w.",i,".",d))
-  }}
+    cnames = c(cnames, paste0("w.",c,".",i,".",d))
+  }}}
 
 for (c in 0:1) {
   cnames = c(cnames, paste0("gamma.",c))
@@ -1331,10 +1415,13 @@ cnames = c(cnames, "sigma", "lp_")
 ## myend = 25000
 dlist = list()
 for (cid in 1:num_chain) {
-dlist[[cid]] = readr::read_csv(paste0("output/sample_chain",cid,".csv"), col_names=F, skip = 800) %>% as.data.frame()
+dlist[[cid]] = readr::read_csv(paste0("output/sample_chain",cid,".csv"), col_names=F, skip=400) %>% as.data.frame()
 colnames(dlist[[cid]]) = cnames
 if (single_z) {
   dlist[[cid]] = dlist[[cid]][,!grepl("^z\\.1\\.", cnames)] ## remove duplicates when single_z
+}
+if (single_w) {
+  dlist[[cid]] = dlist[[cid]][,!grepl("^w\\.1\\.", cnames)] ## remove duplicates when single_z
 }
 }
 
@@ -1356,31 +1443,25 @@ my_procrustes = function(Xstar, dlist, is_list = FALSE, translation = TRUE, scal
 
     z0dx = grepl("^z\\.0\\.", colnames(df))
     z1dx = grepl("^z\\.1\\.", colnames(df))
-    wdx = grepl("^w\\.", colnames(df))
+    w0dx = grepl("^w\\.0\\.", colnames(df))
+    w1dx = grepl("^w\\.1\\.", colnames(df))
 
-    num_w = sum(wdx) / 2;
+    num_w = sum(w0dx) / 2;
     num_z = sum(z0dx) / 2;
-    w = aperm( array(unlist( t(df[,wdx])), dim = c(2, num_w, num_samples)), c(2,1,3))
+    w0 = aperm( array(unlist( t(df[,w0dx])), dim = c(2, num_w, num_samples)), c(2,1,3))
+    w1 = aperm( array(unlist( t(df[,w1dx])), dim = c(2, num_w, num_samples)), c(2,1,3))
     z0 = aperm( array(unlist( t(df[,z0dx])), dim = c(2, num_z, num_samples)), c(2,1,3))
     z1 = aperm( array(unlist( t(df[,z1dx])), dim = c(2, num_z, num_samples)), c(2,1,3))
 
-    adx = z0dx | z1dx | wdx
-    N = sum(z0dx) / 2
-    nall = sum(adx)/2
+    adx = z0dx | z1dx | w0dx | w1dx
 
-    if (sum(z1dx) == 0) {
-        wstar = Xstar[-(1:N),]
-        } else {
-          wstar = Xstar[-(1:(2*N)),]
-        z0wstar = Xstar[-((N + 1):(2*N)),]
-        z1wstar = Xstar[-(1:N),]
-}
+    w0star = Xstar$w.0
+    w1star = MCMCpack::procrustes(Xstar$w.1, w0star)$X.new
 
     #mlp_ = max(df$lp_)
     #star = min(which.max(df$lp_))
     ## lpos = df[,adx]
     #wstar = w[,,star]
-
 
     ## mm = list()
     ## for (k in 1:num_samples) {
@@ -1399,24 +1480,29 @@ my_procrustes = function(Xstar, dlist, is_list = FALSE, translation = TRUE, scal
       ## w[,,k] = pout$X.new #vegan
       ## R = pout$R
 
-      pout = MCMCpack::procrustes(w[,,k], wstar)
+      pout = MCMCpack::procrustes(w0[,,k], w0star)
+      w0[,,k] = pout$X.new
+      z0[,,k] = z0[,,k] %*% pout$R
+
+      pout = MCMCpack::procrustes(w1[,,k], w1star)
+      w1[,,k] = pout$X.new
+      z1[,,k] = z1[,,k] %*% pout$R
       ##pout = MCMCpack::procrustes(rbind(z1[,,k],w[,,k]), z0wstar)
 
       ##pout = vegan::procrustes(wstar, w[,,k], scale = scale)
       ## R = pout$rotation
       ##w[,,k] = pout$Yrot #vegan
       ##R = pout$rotation ## vegan
-      w[,,k] = pout$X.new
-      R = pout$R
+      ## w[,,k] = pout$X.new
+      ## R = pout$R
 
       ##z0[,,k] = sweep(z0[,,k], 2, wmean) %*% R
       ##z1[,,k] = sweep(z1[,,k], 2, wmean) %*% R
       ## z0[,,k] = sweep(z0[,,k], 2, wmean) %*% pout$rotation
       ## z1[,,k] = sweep(z1[,,k], 2, wmean) %*% pout$rotation
       ## w[,,k] = w[,,k] %*% R
-      z0[,,k] = z0[,,k] %*% R
-      z1[,,k] = z1[,,k] %*% R
-      rbind(z0[,,k], z1[,,k], w[,,k])
+      # z1[,,k] = z1[,,k] %*% R
+      rbind(z0[,,k], z1[,,k], w0[,,k], w1[,,k])
       ## shapes::procOPA(Xstar, t( matrix(unlist(lpos[k,]), nrow = 2)) , scale = scale, reflect = reflect)$Bhat #shapes
     }
     tmm = lapply(mm,t)
@@ -1429,15 +1515,27 @@ my_procrustes = function(Xstar, dlist, is_list = FALSE, translation = TRUE, scal
   }
 
   posm = posm / num_chain
-  z0= posm[1:N,]
-  if (sum(z1dx) == 0) {
-    w = posm[-(1:N),]
+  z0 = posm[1:num_z,]
+  if (sum(z1dx) == 0 && sum(w1dx) == 0) {
+    w0 = posm[num_z + (1:num_w),]
     z1 = NULL
-  } else {
-  z1 = posm[(N + 1):(2*N),]
-  w = posm[-(1:(2*N)),]
-  }
-  return(list(dlist = dlist, z0=z0, z1=z1, w=w))
+    w1 = NULL }
+  else if (sum(z1dx) == 0 && sum(w1dx) > 0) {
+    w0 = posm[num_z + (1:num_w),]
+    z1 = NULL
+    w1 = posm[num_z + num_w + (1:num_w),]
+    }
+
+  if (sum(z1dx) > 0 && sum(w1dx) == 0) {
+    z1 = posm[num_z + (1:num_z),]
+    w0 = posm[2*num_z + (1:num_w),]
+    w1 = NULL }
+  else if (sum(z1dx) > 0 && sum(w1dx) > 0) {
+    z1 = posm[num_z + (1:num_z),]
+    w0 = posm[2*num_z + (1:num_w),]
+    w1 = posm[2*num_z + num_w + (1:num_w),]
+    }
+  return(list(dlist = dlist, z0=z0, z1=z1, w0=w0, w1=w1))
 }
 #+END_SRC
 
@@ -1451,19 +1549,19 @@ my_procrustes = function(Xstar, dlist, is_list = FALSE, translation = TRUE, scal
  #+end_src
 
  #+BEGIN_SRC R :tangle R/load-outputs.R
-mylist = mcmc.list()
-  item = 1
-  c = 0
-  cname = names(mydf[[1]])
-  mylist = mcmc.list()
-  for (cid in 1:num_chain) {
+ mylist = mcmc.list()
+ item = 1
+ cname = names(mydf[[1]])
+ mylist = mcmc.list()
+ for (cid in 1:num_chain) {
+   for (c in 0:1) {
      for (k in 1:N) {
-        z = mydf[[cid]][,str_which(cname, paste0("z\\.",c,"\\.",k,"\\.[1-2]"))]
-        w = mydf[[cid]][,str_which(cname, paste0("w\\.",item,"\\."))]
-        mydf[[cid]][[paste0("dist_z.",c,".",k,"_","w.",item)]] = sqrt(rowSums((z-w)^2))
+       z = mydf[[cid]][,str_which(cname, paste0("z\\.",c,"\\.",k,"\\.[1-2]"))]
+       w = mydf[[cid]][,str_which(cname, paste0("w\\.",c,"\\.",item,"\\."))]
+       mydf[[cid]][[paste0("dist_z.",c,".",k,"_","w.",c,".",item)]] = sqrt(rowSums((z-w)^2))
+     }}
+   mylist[[cid]] = mcmc(mydf[[cid]])
  }
-    mylist[[cid]] = mcmc(mydf[[cid]])
-  }
  #+END_SRC
 
  #+RESULTS:
@@ -1488,27 +1586,27 @@ summary(mylist)
 #+RESULTS:
 
 ** latent space
-   [[file:figure/star_latent.pdf]]
+   [[pdf:figure/star_latent.pdf]]
    #+BEGIN_SRC R :tangle R/visual-latent-space-plot.R
-   z0.star = Xstar[1:N,]
-   if (single_z) {
-     z1.star = NULL
-     w.star = Xstar[(N + 1):nrow(Xstar),]
-   } else {
-     z1.star = Xstar[(N+1):(2*N),]
-     w.star = Xstar[(2*N + 1):nrow(Xstar),]
-   }
-   xmin = min(z0.star[,1],z1.star[,1],w.star[,1])
-   ymin = min(z0.star[,2],z1.star[,2],w.star[,2])
-   xmax = max(z0.star[,1],z1.star[,1],w.star[,1])
-   ymax = max(z0.star[,2],z1.star[,2],w.star[,2])
+   z0.star = Xstar$z.0
+   z1.star = Xstar$z.1
+   w0.star = Xstar$w.0
+   w1.star = Xstar$w.1
+
+   xmin = min(z0.star[,1],z1.star[,1],w0.star[,1],w1.star[,1])
+   ymin = min(z0.star[,2],z1.star[,2],w0.star[,2],w1.star[,2])
+   xmax = max(z0.star[,1],z1.star[,1],w0.star[,1],w1.star[,1])
+   ymax = max(z0.star[,2],z1.star[,2],w0.star[,2],w1.star[,2])
 
    myname = c(1:N,paste0("I.",1:I))
    pdf("figure/star_latent.pdf")
-   print(lsjmplot(z0.star,w.star,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
-   if (!single_z) {
-     print(lsjmplot(z1.star,w.star,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+   print(lsjmplot(z0.star,w0.star,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+   if (!single_z && single_w) {
+     print(lsjmplot(z1.star,w0.star,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+   } else if (!single_z && !single_w) {
+     print(lsjmplot(z1.star,w1.star,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
    }
+
    dev.off(which = dev.cur())
    #+END_SRC
 
@@ -1516,62 +1614,70 @@ summary(mylist)
    : 2
 
 
-   [[file:figure/latent_position_plot_temp.pdf]]
+   [[pdf:figure/latent_position_plot_temp.pdf]]
    #+begin_src R
    pdf("figure/latent_position_plot_temp.pdf")
 
-   k = 10
+   k = 50
+
    ##df = mydf[[1]]
-df = mydf[[1]]
+   df = dlist[[2]]
    num_samples = nrow(df)
+
    z0dx = grepl("^z\\.0\\.", colnames(df))
    z1dx = grepl("^z\\.1\\.", colnames(df))
-   wdx = grepl("^w", colnames(df))
+   w0dx = grepl("^w\\.0\\.", colnames(df))
+   w1dx = grepl("^w\\.1\\.", colnames(df))
 
-   num_w = sum(wdx) / 2;
+   num_w = sum(w0dx) / 2;
    num_z = sum(z0dx) / 2;
-   aw = aperm( array(unlist( t(df[,wdx])), dim = c(2, num_w, num_samples)), c(2,1,3))
+   aw0 = aperm( array(unlist( t(df[,w0dx])), dim = c(2, num_w, num_samples)), c(2,1,3))
+   aw1 = aperm( array(unlist( t(df[,w1dx])), dim = c(2, num_w, num_samples)), c(2,1,3))
    az0 = aperm( array(unlist( t(df[,z0dx])), dim = c(2, num_z, num_samples)), c(2,1,3))
    az1 = aperm( array(unlist( t(df[,z1dx])), dim = c(2, num_z, num_samples)), c(2,1,3))
 
    z0 = az0[,,k]
    z1 = az1[,,k]
-   w = aw[,,k]
-   xmin = min(z0[,1],z1[,1],w[,1])
-   ymin = min(z0[,2],z1[,2],w[,2])
-   xmax = max(z0[,1],z1[,1],w[,1])
-   ymax = max(z0[,2],z1[,2],w[,2])
+   w0 = aw0[,,k]
+   w1 = aw1[,,k]
+   xmin = min(z0[,1],z1[,1],w0[,1],w1[,1])
+   ymin = min(z0[,2],z1[,2],w0[,2],w1[,2])
+   xmax = max(z0[,1],z1[,1],w0[,1],w1[,1])
+   ymax = max(z0[,2],z1[,2],w0[,2],w1[,2])
 
    myname = c(1:N,paste0("I.",1:I))
-   print(lsjmplot(z0,w,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
-   if (!single_z) {
-     print(lsjmplot(z1,w,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+   print(lsjmplot(z0,w0,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+   if (!single_z && single_w) {
+     print(lsjmplot(z1,w0,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+   } else if (!single_z && !single_w) {
+     print(lsjmplot(z1,w1,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
    }
+
    dev.off(which = dev.cur())
    #+end_src
 
    #+RESULTS:
    : 2
 
-
-
-
-   [[file:figure/latent_position_plot_vegan.pdf]]
+   [[pdf:figure/latent_position_plot_vegan.pdf]]
    #+begin_src R :tangle R/visual-latent-space-plot.R
    pdf("figure/latent_position_plot_vegan.pdf")
 
    z0 = matched$z0
    z1 = matched$z1
-   w = matched$w
-   xmin = min(z0[,1],z1[,1],w[,1])
-   ymin = min(z0[,2],z1[,2],w[,2])
-   xmax = max(z0[,1],z1[,1],w[,1])
-   ymax = max(z0[,2],z1[,2],w[,2])
+   w0 = matched$w0
+   w1 = matched$w1
+   xmin = min(z0[,1],z1[,1],w0[,1],w1[,1])
+   ymin = min(z0[,2],z1[,2],w0[,2],w1[,2])
+   xmax = max(z0[,1],z1[,1],w0[,1],w1[,1])
+   ymax = max(z0[,2],z1[,2],w0[,2],w1[,2])
 
    myname = c(1:N,paste0("I.",1:I))
-   print(lsjmplot(z0,w,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
-   if (!single_z) {
-     print(lsjmplot(z1,w,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+   print(lsjmplot(z0,w0,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+   if (!single_z && single_w) {
+     print(lsjmplot(z1,w0,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+   } else if (!single_z && !single_w) {
+     print(lsjmplot(z1,w1,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
    }
    dev.off(which = dev.cur())
    #+end_src
@@ -1610,7 +1716,11 @@ df = mydf[[1]]
    pdf("figure/z_pairs_plot.pdf")
    for (k in 1:10) {
      p = mcmc_pairs(mylist,
-                    regex_pars = paste0("^z.[0-1]\\.",k,"\\."),
+                    regex_pars = paste0("^z\\.0\\.",k,"\\."),
+                    off_diag_args = list(size = 0.05))
+     print(p)
+     p = mcmc_pairs(mylist,
+                    regex_pars = paste0("^z\\.1\\.",k,"\\."),
                     off_diag_args = list(size = 0.05))
      print(p)
    }
@@ -1625,7 +1735,11 @@ df = mydf[[1]]
    pdf("figure/w_pairs_plot.pdf")
    for (i in 1:10) {
      p = mcmc_pairs(mylist,
-                    regex_pars = paste0("^w\\.",i,"\\."),
+                    regex_pars = paste0("^w\\.0\\.",i,"\\."),
+                    off_diag_args = list(size = 0.05))
+     print(p)
+     p = mcmc_pairs(mylist,
+                    regex_pars = paste0("^w\\.1\\.",i,"\\."),
                     off_diag_args = list(size = 0.05))
      print(p)
    }
@@ -1645,7 +1759,7 @@ df = mydf[[1]]
    #+END_SRC
 
    #+RESULTS:
-   : 1
+   : 2
 
    [[file:figure/theta_parcoord.pdf]]
    #+BEGIN_SRC R :tangle R/visual-trace-plot.R
@@ -1725,12 +1839,22 @@ df = mydf[[1]]
    ## mcmc_intervals(mylist, pars=c("lambda.0.1.1")
    pdf("figure/w_mcmc_trace_plot.pdf")
    p0 <- mcmc_trace(mylist,
-                    regex_pars = "^w\\.[0-4]\\.",
+                    regex_pars = "^w\\.0\\.[0-4]\\.",
+                    ##transformations = "log",
+                    facet_args = list(nrow = 2, labeller = label_parsed))
+   print(p0 <- p0 + facet_text(size = 15))
+   p0 <- mcmc_trace(mylist,
+                    regex_pars = "^w\\.0\\.[5-9]\\.",
                     ##transformations = "log",
                     facet_args = list(nrow = 2, labeller = label_parsed))
    print(p0 <- p0 + facet_text(size = 15))
    p1 <- mcmc_trace(mylist,
-                    regex_pars = "^w\\.[5-9]\\.",
+                    regex_pars = "^w\\.1\\.[0-4]\\.",
+                    ##transformations = "log",
+                    facet_args = list(nrow = 2, labeller = label_parsed))
+   print(p1 <- p1 + facet_text(size = 15))
+   p1 <- mcmc_trace(mylist,
+                    regex_pars = "^w\\.1\\.[5-9]\\.",
                     ##transformations = "log",
                     facet_args = list(nrow = 2, labeller = label_parsed))
    print(p1 <- p1 + facet_text(size = 15))
@@ -1760,7 +1884,7 @@ df = mydf[[1]]
    dev.off(which = dev.cur())
    #+END_SRC
 
-   [[file:figure/beta_mcmc_trace_plot.pdf]]
+   [[pdf:figure/beta_mcmc_trace_plot.pdf]]
    #+BEGIN_SRC R :tangle R/visual-trace-plot.R
    pdf("figure/beta_mcmc_trace_plot.pdf")
    for (i in 1:I) {
@@ -1777,7 +1901,7 @@ df = mydf[[1]]
    #+RESULTS:
    : 2
 
-   [[file:figure/theta_mcmc_trace_plot.pdf]]
+   [[pdf:figure/theta_mcmc_trace_plot.pdf]]
    #+BEGIN_SRC R :tangle R/visual-trace-plot.R
    pdf("figure/theta_mcmc_trace_plot.pdf")
    color_scheme_set("mix-blue-pink")
@@ -2111,13 +2235,18 @@ num_samples = nrow(df)
 
 z0dx = grepl("^z\\.0\\.", colnames(df))
 z1dx = grepl("^z\\.1\\.", colnames(df))
-wdx = grepl("^w\\.", colnames(df))
-adx = z0dx | z1dx | wdx
+w0dx = grepl("^w\\.0\\.", colnames(df))
+w1dx = grepl("^w\\.1\\.", colnames(df))
+adx = z0dx | z1dx | w0dx | w1dx
 
 mlp_ = max(df$lp_)
 star = min(which.max(df$lp_))
 lpos = df[,adx]
-Xstar = matrix(unlist(lpos[star,]), ncol = 2)
+Xstar = list()
+Xstar$z.0 = matrix(unlist(df[star,z0dx]), byrow = T, ncol = 2)
+Xstar$z.1 = matrix(unlist(df[star,z1dx]), byrow = T, ncol = 2)
+Xstar$w.0 = matrix(unlist(df[star,w0dx]), byrow = T, ncol = 2)
+Xstar$w.1 = matrix(unlist(df[star,w1dx]), byrow = T, ncol = 2)
 return(list(lp_ = mlp_, Xstar=Xstar))}
 #+END_SRC
 

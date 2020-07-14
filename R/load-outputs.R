@@ -30,10 +30,11 @@ for(c in 0:1) {
       cnames = c(cnames, paste0("z.",c,".",k,".",d))
     }}
   }
+for (c in 0:1) {
 for (i in 1:I) {
   for (d in 1:2) {
-    cnames = c(cnames, paste0("w.",i,".",d))
-  }}
+    cnames = c(cnames, paste0("w.",c,".",i,".",d))
+  }}}
 
 for (c in 0:1) {
   cnames = c(cnames, paste0("gamma.",c))
@@ -46,10 +47,13 @@ cnames = c(cnames, "sigma", "lp_")
 ## myend = 25000
 dlist = list()
 for (cid in 1:num_chain) {
-dlist[[cid]] = readr::read_csv(paste0("output/sample_chain",cid,".csv"), col_names=F, skip = 800) %>% as.data.frame()
+dlist[[cid]] = readr::read_csv(paste0("output/sample_chain",cid,".csv"), col_names=F, skip=400) %>% as.data.frame()
 colnames(dlist[[cid]]) = cnames
 if (single_z) {
   dlist[[cid]] = dlist[[cid]][,!grepl("^z\\.1\\.", cnames)] ## remove duplicates when single_z
+}
+if (single_w) {
+  dlist[[cid]] = dlist[[cid]][,!grepl("^w\\.1\\.", cnames)] ## remove duplicates when single_z
 }
 }
 
@@ -67,8 +71,8 @@ mylist = mcmc.list()
   for (cid in 1:num_chain) {
      for (k in 1:N) {
         z = mydf[[cid]][,str_which(cname, paste0("z\\.",c,"\\.",k,"\\.[1-2]"))]
-        w = mydf[[cid]][,str_which(cname, paste0("w\\.",item,"\\."))]
-        mydf[[cid]][[paste0("dist_z.",c,".",k,"_","w.",item)]] = sqrt(rowSums((z-w)^2))
+        w = mydf[[cid]][,str_which(cname, paste0("w\\.",c,"\\.",item,"\\."))]
+        mydf[[cid]][[paste0("dist_z.",c,".",k,"_","w.",c,".",item)]] = sqrt(rowSums((z-w)^2))
  }
     mylist[[cid]] = mcmc(mydf[[cid]])
   }

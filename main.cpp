@@ -14,12 +14,13 @@
 // #include "is_empty.h"
 #include "create_rng.hpp"
 #include "readCSV.h"
-#include "update_lambda.h"
+#include "update_lambda_MH.h"
 #include "update_theta.h"
 #include "update_beta.h"
 #include "update_z.h"
 #include "update_single_z.h"
 #include "update_w.h"
+#include "update_double_w.h"
 #include "update_gamma.h"
 #include "update_single_gamma.h"
 #include "fun_lp.h"
@@ -64,10 +65,21 @@ int main(int argc, const char *argv[]) {
   }
 
   // single z or double z
+  bool SINGLE_W;
+  if (sarg[2] == "single_w") {
+    SINGLE_W = true;
+  } else if (sarg[2] == "double_w") {
+    SINGLE_W = false;
+  } else {
+    std::cout << "invalid arguemnt for SINGLE_W.\n" << std::endl;
+    return 0;
+  }
+
+  // single z or double z
   bool SINGLE_Z;
-  if (sarg[2] == "single_z") {
+  if (sarg[3] == "single_z") {
     SINGLE_Z = true;
-  } else if (sarg[2] == "double_z") {
+  } else if (sarg[3] == "double_z") {
     SINGLE_Z = false;
   } else {
     std::cout << "invalid arguemnt for SINGLE_Z.\n" << std::endl;
@@ -76,9 +88,9 @@ int main(int argc, const char *argv[]) {
 
   // missing?
   bool FULL_OBS;
-  if (sarg[3] == "full") {
+  if (sarg[4] == "full") {
     FULL_OBS = true;
-  } else if (sarg[3] == "sparse") {
+  } else if (sarg[4] == "sparse") {
     FULL_OBS = false;
   } else {
     std::cout << "invalid arguemnt for FULL_OBS.\n" << std::endl;
@@ -87,9 +99,9 @@ int main(int argc, const char *argv[]) {
 
   // latent space or not
   bool UPDATE_LATENT;
-  if (sarg[4] == "latent") {
+  if (sarg[5] == "latent") {
     UPDATE_LATENT = true;
-  } else if (sarg[4] == "no_latent") {
+  } else if (sarg[5] == "no_latent") {
     UPDATE_LATENT = false;
   } else {
     std::cout << "invalid arguemnt for UPDATE_LATENT.\n" << std::endl;
@@ -98,19 +110,19 @@ int main(int argc, const char *argv[]) {
 
   // gamma or not
   bool UPDATE_GAMMA;
-  if (sarg[5] == "gamma") {
+  if (sarg[6] == "gamma") {
     UPDATE_GAMMA = true;
-  } else if (sarg[5] == "no_gamma") {
+  } else if (sarg[6] == "no_gamma") {
     UPDATE_GAMMA = false;
   } else {
     std::cout << "invalid arguemnt for UPDATE_GAMMA.\n" << std::endl;
     return 0;
   }
 
-  int chain_id = atoi(argv[6]);
-  int num_samples = atoi(argv[7]);
-  int num_warmup = atoi(argv[8]);
-  int thin = atoi(argv[9]);
+  int chain_id = atoi(argv[7]);
+  int num_samples = atoi(argv[8]);
+  int num_warmup = atoi(argv[9]);
+  int thin = atoi(argv[10]);
   // double my_eps = atof(argv[4]);
   // int my_L = atoi(argv[5]);
   // double min_E = atof(argv[6]);
@@ -170,11 +182,20 @@ int main(int argc, const char *argv[]) {
   Eigen::MatrixXi mY(I, N);
   Eigen::MatrixXi mNA(I, N);
 
+  Eigen::MatrixXd mtab_sj(I, G);
+  Eigen::MatrixXd mIY_0(I, G);
+  Eigen::MatrixXd mIY_1(I, G);
+
+
   mlen = readCSV("input/mlen.csv", G, 1);
   tmp_mseg = readCSV("input/mseg.csv", I, N);
   mH = readCSV("input/mh.csv", I, N);
   // mt = readCSV("input/mt.csv", I, N);
   tmp_mY = readCSV("input/mi.csv", I, N);
+
+  mtab_sj = readCSV("mtab_sj.csv", I, G);
+  mIY_0 = readCSV("mIY_0.csv", I, G);
+  mIY_1 = readCSV("mIY_1.csv", I, G);
 
   mseg = tmp_mseg.cast<int>();
   mY = tmp_mY.cast<int>();
@@ -289,7 +310,6 @@ int main(int argc, const char *argv[]) {
   double sigma;
   // Eigen::MatrixXd z0(N, 2);
   // Eigen::MatrixXd z1(N, 2);
-  Eigen::MatrixXd w(I, 2);
   Eigen::VectorXd gamma(2);
   // Eigen::MatrixXd lambda0(I, G);
   // Eigen::MatrixXd lambda1(I, G);
@@ -302,7 +322,6 @@ int main(int argc, const char *argv[]) {
   double acc_sigma = 1.0; //sigma from its full conditional
   // Eigen::VectorXd acc_z0 = Eigen::VectorXd::Zero(N);
   // Eigen::VectorXd acc_z1 = Eigen::VectorXd::Zero(N);
-  Eigen::VectorXd acc_w = Eigen::VectorXd::Zero(I);
   Eigen::VectorXd acc_gamma;
   if (SINGLE_Z) {
     acc_gamma = Eigen::VectorXd::Zero(1);
@@ -338,7 +357,6 @@ int main(int argc, const char *argv[]) {
   beta = readCSV("input/init_beta.csv", I, 2);
   theta = readCSV("input/init_theta.csv", N, 2);
   // gamma = readCSV("input/init_gamma.csv", 2, 1);
-  w = readCSV("input/init_w.csv", I, 2);
 
   gamma(0) = 1;
   gamma(1) = 1;
@@ -363,6 +381,18 @@ int main(int argc, const char *argv[]) {
       std::cout << "gamma should be positive!\n";
       return 0;
     }
+  }
+
+  Eigen::MatrixXd w(2*I,2);
+  Eigen::VectorXd acc_w;
+  w = readCSV("input/init_w.csv", 2*I, 2);
+
+  if (SINGLE_W) {
+  w.block(I,0,I,2) = w.block(0,0,I,2);
+  acc_w = Eigen::VectorXd::Zero(I);
+  }
+  else {
+  acc_w = Eigen::VectorXd::Zero(2*I);
   }
 
   std::cout << std::fixed << std::setprecision(1);
@@ -392,9 +422,9 @@ int main(int argc, const char *argv[]) {
               for (int g=r.cols().begin(); g<r.cols().end(); ++g)
               {
 
-                update_lambda(lambda((c * I) + i, g), acc_lambda((c * I) + i, g),
+                update_lambda_MH(lambda((c * I) + i, g), acc_lambda((c * I) + i, g),
                               a_lambda(i,g), b_lambda(i,g), jump_lambda(i,g), g,
-                              beta(i, c), theta.col(c), gamma(c), z.block(c*N,0,N,2), w.row(i),
+                              beta(i, c), theta.col(c), gamma(c), z.block(c*N,0,N,2), w.row(c*I + i),
                               N, mNA.row(i), mlen(g), mseg.row(i), mH.row(i), mY.row(i), c, rng);
 
               }
@@ -416,7 +446,7 @@ int main(int argc, const char *argv[]) {
 
               cum_lambda.row(c*I + i) =
                 update_beta(beta(i,c), acc_beta(i,c), mu_beta(i,c), sigma_beta(i,c), jump_beta(i,c),
-                            lambda.row(c*I + i), theta.col(c), gamma(c), z.block(c*N,0,N,2), w.row(i),
+                            lambda.row(c*I + i), theta.col(c), gamma(c), z.block(c*N,0,N,2), w.row(c*I + i),
                             N, mNA.row(i), mlen, mseg.row(i), mH.row(i), mY.row(i), c, rng);
 
             }
@@ -436,7 +466,7 @@ int main(int argc, const char *argv[]) {
 
               update_theta( theta(k,c), acc_theta(k,c), mu_theta(k,c), jump_theta(k,c), sigma,
                             cum_lambda.block(c*I,k,I,1),
-                            beta.col(c), gamma(c), z.row(c*N + k), w,
+                            beta.col(c), gamma(c), z.row(c*N + k), w.block(c*I,0,I,2),
                             I,  mNA.col(k), mlen, mseg.col(k), mH.col(k), mY.col(k), c, rng);
 
             }
@@ -472,6 +502,7 @@ int main(int argc, const char *argv[]) {
           tbb::blocked_range<int>(0, N),
           [&](tbb::blocked_range<int> r) {
               for (int k = r.begin(); k < r.end(); ++k) {
+                // TODO: fix update_single_z according to update_double_w
                   z.row(k) = update_single_z(
                     z.row(k), acc_z(k), mu_z.row(k), sigma_z.row(k), jump_z.row(k),
                     cum_lambda.col(k), beta, theta.row(k), gamma,
@@ -494,7 +525,7 @@ int main(int argc, const char *argv[]) {
                   z.row(c * N + k) = update_z(
                     z.row(c * N + k), acc_z(c * N + k), mu_z.row(k), sigma_z.row(k),
                     jump_z.row(k), cum_lambda.block(c * I, k, I, 1), beta.col(c),
-                    theta(k, c), gamma(c), w, I, mNA.col(k), mlen, mseg.col(k), mH.col(k),
+                    theta(k, c), gamma(c), w.block(c*I,0,I,2), I, mNA.col(k), mlen, mseg.col(k), mH.col(k),
                     mY.col(k), c, rng);
                 }
 
@@ -504,18 +535,39 @@ int main(int argc, const char *argv[]) {
 
         // std::cout << "updating w...\n";
         // updating w...
-        tbb::parallel_for(
+        if (SINGLE_W) {
+
+          tbb::parallel_for(
             tbb::blocked_range<int>(0, I), [&](tbb::blocked_range<int> r) {
               for (int i = r.begin(); i < r.end(); ++i) {
 
                 w.row(i) = update_w(
-                    w.row(i), acc_w(i), mu_w.row(i), sigma_w.row(i), jump_w.row(i),
-                    cum_lambda.row(i), cum_lambda.row(I + i), beta.row(i), theta, gamma,
-                    z, N, G, mNA.row(i), mlen,
-                    mseg.row(i), mH.row(i), mY.row(i), rng);
+                  w.row(i), acc_w(i), mu_w.row(i), sigma_w.row(i), jump_w.row(i),
+                  cum_lambda.row(i), cum_lambda.row(I + i), beta.row(i), theta, gamma,
+                  z, N, mNA.row(i), mlen,
+                  mseg.row(i), mH.row(i), mY.row(i), rng);
 
               }
             });
+          w.block(I,0,I,2) = w.block(0,0,I,2);
+        }
+        else {
+
+          tbb::parallel_for(
+            tbb::blocked_range2d<int>(0, I, 0, 2), [&](tbb::blocked_range2d<int> r) {
+              for (int i = r.rows().begin(); i < r.rows().end(); ++i) {
+                for (int c = r.cols().begin(); c < r.cols().end(); ++c) {
+
+                  w.row(c * I + i) = update_double_w(
+                    w.row(c * I + i), acc_w(c*I + i), mu_w.row(i), sigma_w.row(i), jump_w.row(i),
+                    cum_lambda.row(c * I + i), beta(i,c), theta.col(c), gamma(c),
+                    z, N, mNA.row(i), mlen,
+                    mseg.row(i), mH.row(i), mY.row(i), c, rng);
+
+                }
+              }
+            });
+        }
 
       } // end of latent space updating
 
@@ -527,9 +579,9 @@ int main(int argc, const char *argv[]) {
         for (int i = 0; i < I; i++) {
           for (int g = 0; g < G; g++) {
 
-                update_lambda(lambda((c * I) + i, g), acc_lambda((c * I) + i, g),
+                update_lambda_MH(lambda((c * I) + i, g), acc_lambda((c * I) + i, g),
                               a_lambda(i,g), b_lambda(i,g), jump_lambda(i,g), g,
-                              beta(i, c), theta.col(c), gamma(c), z.block(c*N,0,N,2), w.row(i),
+                              beta(i, c), theta.col(c), gamma(c), z.block(c*N,0,N,2), w.row(c*I + i),
                               N, mNA.row(i), mlen(g), mseg.row(i), mH.row(i), mY.row(i), c, rng);
 
           }
@@ -542,7 +594,7 @@ int main(int argc, const char *argv[]) {
 
           cum_lambda.row(c*I + i) =
             update_beta(beta(i,c), acc_beta(i,c), mu_beta(i,c), sigma_beta(i,c), jump_beta(i,c),
-                        lambda.row(c*I + i), theta.col(c), gamma(c), z.block(c*N,0,N,2), w.row(i),
+                        lambda.row(c*I + i), theta.col(c), gamma(c), z.block(c*N,0,N,2), w.row(c*I + i),
                         N, mNA.row(i), mlen, mseg.row(i), mH.row(i), mY.row(i), c, rng);
 
         }
@@ -554,7 +606,7 @@ int main(int argc, const char *argv[]) {
 
               update_theta( theta(k,c), acc_theta(k,c), mu_theta(k,c), jump_theta(k,c), sigma,
                             cum_lambda.block(c*I,k,I,1),
-                            beta.col(c), gamma(c), z.row(c*N + k), w,
+                            beta.col(c), gamma(c), z.row(c*N + k), w.block(c*I,0,I,2),
                             I,  mNA.col(k), mlen, mseg.col(k), mH.col(k), mY.col(k), c, rng);
 
         }
@@ -603,7 +655,7 @@ int main(int argc, const char *argv[]) {
               z.row(c * N + k) = update_z(
                 z.row(c * N + k), acc_z(c * N + k), mu_z.row(k), sigma_z.row(k),
                 jump_z.row(k), cum_lambda.block(c * I, k, I, 1), beta.col(c),
-                theta(k, c), gamma(c), w, I, mNA.col(k), mlen, mseg.col(k), mH.col(k),
+                theta(k, c), gamma(c), w.block(c*I,0,I,2), I, mNA.col(k), mlen, mseg.col(k), mH.col(k),
                 mY.col(k), c, rng);
 
             }
@@ -612,19 +664,35 @@ int main(int argc, const char *argv[]) {
         }
 
       // updating w...
-      for (int i = 0; i < I; i++) {
+        if (SINGLE_W) {
 
-                w.row(i) = update_w(
-                    w.row(i), acc_w(i), mu_w.row(i), sigma_w.row(i), jump_w.row(i),
-                    cum_lambda.row(i), cum_lambda.row(I + i), beta.row(i), theta, gamma,
-                    z, N, G, mNA.row(i), mlen,
-                    mseg.row(i), mH.row(i), mY.row(i), rng);
+          for (int i = 0; i < I; i++) {
 
-      }
+            w.row(i) = update_w(
+              w.row(i), acc_w(i), mu_w.row(i), sigma_w.row(i), jump_w.row(i),
+              cum_lambda.row(i), cum_lambda.row(I + i), beta.row(i), theta, gamma,
+              z, N, mNA.row(i), mlen,
+              mseg.row(i), mH.row(i), mY.row(i), rng);
+
+          }
+        }
+        else {
+          for (int i = 0; i < I; i++) {
+            for (int c = 0; c < 2; c++) {
+
+              w.row(c * I + i) = update_double_w(
+                w.row(c * I + i), acc_w(c*I + i), mu_w.row(i), sigma_w.row(i), jump_w.row(i),
+                cum_lambda.row(c * I + i), beta(i,c), theta.col(c), gamma(c),
+                z, N, mNA.row(i), mlen,
+                mseg.row(i), mH.row(i), mY.row(i), c, rng);
+
+            }
+          }
+        }
 
       } // end of latent space updating
 
-    }
+    } // end of serial updating
 
     // std::cout << "updating sigma...\n";
     // updating sigma
@@ -649,17 +717,19 @@ int main(int argc, const char *argv[]) {
           // std::cout << "calculating log-posterior...\n";
 // eval log_prob
 
+
+      // TODO: match prior dimension with double / single z and w
       if (RUN_PAR) {
         lp_ = par_fun_lp(a_lambda, b_lambda, mu_beta, sigma_beta, mu_theta, sigma_theta,
                          a_sigma, b_sigma, mu_gamma, sigma_gamma, mu_z, sigma_z, mu_w, sigma_w,
                          lambda, cum_lambda, beta, theta, sigma, gamma, z, w,
-                         I, N, G, mNA, mlen, mseg, mH, mY, SINGLE_Z, UPDATE_GAMMA);
+                         I, N, G, mNA, mlen, mseg, mH, mY, SINGLE_Z, SINGLE_W, UPDATE_GAMMA);
       }
       else {
         lp_ = fun_lp(a_lambda, b_lambda, mu_beta, sigma_beta, mu_theta, sigma_theta,
                      a_sigma, b_sigma, mu_gamma, sigma_gamma, mu_z, sigma_z, mu_w, sigma_w,
                      lambda, cum_lambda, beta, theta, sigma, gamma, z, w,
-                     I, N, G, mNA, mlen, mseg, mH, mY, SINGLE_Z, UPDATE_GAMMA);
+                     I, N, G, mNA, mlen, mseg, mH, mY, SINGLE_Z, SINGLE_W, UPDATE_GAMMA);
       }
       // x.format(CommaInitFmt);
       osample << chain_id << ", " << ii

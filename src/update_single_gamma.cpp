@@ -55,13 +55,14 @@ void update_single_gamma(Eigen::VectorXd &gamma, Eigen::VectorXd &acc_gamma,
                                         cum_lambda(c * I + i, k) *
                                         (stan::math::exp(beta(i, c) + theta(k, c) -
                                                          gamma_s(c) *
-                                                         stan::math::distance(z.row(c*N + k), w.row(i))) -
+                                                         stan::math::distance(z.row(c*N + k), w.row(c*I + i))) -
                                          stan::math::exp(beta(i, c) + theta(k, c) -
                                                          gamma(c) *
-                                                         stan::math::distance(z.row(c*N + k), w.row(i))));
+                                                         stan::math::distance(z.row(c*N + k), w.row(c*I + i))));
 
                                     if (Y(i, k) == c) {
-                                        running_total += (gamma_s(c) - gamma(c)) * stan::math::distance(z.row(c*N + k), w.row(i));
+                                        running_total += (gamma_s(c) - gamma(c)) *
+                                            stan::math::distance(z.row(c*N + k), w.row(c*I + i));
                                     }
                                 }
                             }
@@ -91,13 +92,13 @@ void update_single_gamma(Eigen::VectorXd &gamma, Eigen::VectorXd &acc_gamma,
                         cum_lambda(c * I + i, k) *
                         (stan::math::exp(beta(i, c) + theta(k, c) -
                                          gamma_s(c) *
-                                         stan::math::distance(z.row(c*N + k), w.row(i))) -
+                                         stan::math::distance(z.row(c*N + k), w.row(c*I + i))) -
                          stan::math::exp(beta(i, c) + theta(k, c) -
                                          gamma(c) *
-                                         stan::math::distance(z.row(c*N + k), w.row(i))));
+                                         stan::math::distance(z.row(c*N + k), w.row(c*I + i))));
 
                     if (Y(i, k) == c) {
-                        logr_gamma += (gamma_s(c) - gamma(c)) * stan::math::distance(z.row(c*N + k), w.row(i));
+                        logr_gamma += (gamma_s(c) - gamma(c)) * stan::math::distance(z.row(c*N + k), w.row(c*I + i));
                     }
                 }
             }

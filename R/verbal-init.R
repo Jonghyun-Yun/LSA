@@ -9,7 +9,7 @@ set.seed(as.numeric(Sys.time()))
  init_beta = matrix(0*rnorm(2*I), ncol = 2);
  init_theta = matrix(0*rnorm(2*N), ncol = 2);
  init_gamma = matrix(c(-1, 1), nrow = 1);
- init_w = matrix(rnorm(2*I), ncol = 2);
+ init_w = matrix(rnorm(2*2*I), ncol = 2);
  init_z = matrix(rnorm(2*2*N), ncol = 2);
 
 readr::write_csv(as.data.frame(init_lambda), "input/init_lambda.csv", col_names = FALSE)

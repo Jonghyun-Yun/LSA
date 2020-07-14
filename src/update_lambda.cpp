@@ -1,7 +1,7 @@
 #include <stan/math.hpp>
-#include "update_lambda.h"
+#include "update_lambda_MH.h"
 
-void update_lambda(double &lambda, double &acc_lambda, const double &a_lambda,
+void update_lambda_MH(double &lambda, double &acc_lambda, const double &a_lambda,
                    const double &b_lambda, const double &jump_lambda,
                    const int g, const double &beta,
                    const Eigen::MatrixXd::ColXpr &theta, const double &gamma,
