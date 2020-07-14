@@ -14,7 +14,7 @@
 // #include "is_empty.h"
 #include "create_rng.hpp"
 #include "readCSV.h"
-#include "update_lambda_MH.h"
+#include "update_lambda.h"
 #include "update_theta.h"
 #include "update_beta.h"
 #include "update_z.h"
@@ -182,9 +182,8 @@ int main(int argc, const char *argv[]) {
   Eigen::MatrixXi mY(I, N);
   Eigen::MatrixXi mNA(I, N);
 
-  Eigen::MatrixXd mtab_sj(I, G);
-  Eigen::MatrixXd mIY_0(I, G);
-  Eigen::MatrixXd mIY_1(I, G);
+  // Eigen::MatrixXd mtab_sj(I, G);
+  Eigen::MatrixXd mIY(2 * I, G);
 
 
   mlen = readCSV("input/mlen.csv", G, 1);
@@ -193,9 +192,8 @@ int main(int argc, const char *argv[]) {
   // mt = readCSV("input/mt.csv", I, N);
   tmp_mY = readCSV("input/mi.csv", I, N);
 
-  mtab_sj = readCSV("mtab_sj.csv", I, G);
-  mIY_0 = readCSV("mIY_0.csv", I, G);
-  mIY_1 = readCSV("mIY_1.csv", I, G);
+  // mtab_sj = readCSV("mtab_sj.csv", I, G);
+  mIY = readCSV("mIY.csv", 2*I, G);
 
   mseg = tmp_mseg.cast<int>();
   mY = tmp_mY.cast<int>();
@@ -422,10 +420,10 @@ int main(int argc, const char *argv[]) {
               for (int g=r.cols().begin(); g<r.cols().end(); ++g)
               {
 
-                update_lambda_MH(lambda((c * I) + i, g), acc_lambda((c * I) + i, g),
-                              a_lambda(i,g), b_lambda(i,g), jump_lambda(i,g), g,
-                              beta(i, c), theta.col(c), gamma(c), z.block(c*N,0,N,2), w.row(c*I + i),
-                              N, mNA.row(i), mlen(g), mseg.row(i), mH.row(i), mY.row(i), c, rng);
+                lambda((c * I) + i, g) = update_lambda(
+                  a_lambda(i,g), b_lambda(i,g), g,
+                  beta(i, c), theta.col(c), gamma(c), z.block(c*N,0,N,2), w.row(c*I + i),
+                  N, mNA.row(i), mlen(g), mseg.row(i), mH.row(i), mIY(c*I + i, g), rng);
 
               }
             }
@@ -579,11 +577,10 @@ int main(int argc, const char *argv[]) {
         for (int i = 0; i < I; i++) {
           for (int g = 0; g < G; g++) {
 
-                update_lambda_MH(lambda((c * I) + i, g), acc_lambda((c * I) + i, g),
-                              a_lambda(i,g), b_lambda(i,g), jump_lambda(i,g), g,
-                              beta(i, c), theta.col(c), gamma(c), z.block(c*N,0,N,2), w.row(c*I + i),
-                              N, mNA.row(i), mlen(g), mseg.row(i), mH.row(i), mY.row(i), c, rng);
-
+                lambda((c * I) + i, g) = update_lambda(
+                  a_lambda(i,g), b_lambda(i,g), g,
+                  beta(i, c), theta.col(c), gamma(c), z.block(c*N,0,N,2), w.row(c*I + i),
+                  N, mNA.row(i), mlen(g), mseg.row(i), mH.row(i), mIY(c*I + i, g), rng);
           }
         }
       }

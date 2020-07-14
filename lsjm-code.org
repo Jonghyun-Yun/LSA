@@ -663,12 +663,10 @@ mtab_sj = t( apply(mseg, 1, function(x) tab_sj(x,G)) )
 tmp_0 = mseg; tmp_0[mi==1] = -99;
 tmp_1 = mseg; tmp_1[mi==0] = -99;
 
-mIY_0 = t( apply(tmp_0, 1, function(x) tab_IY(x,G)) )
-mIY_1 = t( apply(tmp_1, 1, function(x) tab_IY(x,G)) )
+mIY = rbind( t( apply(tmp_0, 1, function(x) tab_IY(x,G)) ), t( apply(tmp_1, 1, function(x) tab_IY(x,G)) ))
 
 readr::write_csv(as.data.frame(mtab_sj),"input/mtab_sj.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mIY_0),"input/mIY_0.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mIY_1),"input/mIY_1.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mIY),"input/mIY.csv", col_names = FALSE)
 #+END_SRC
 
 ** not used
@@ -838,12 +836,10 @@ mtab_sj = t( apply(mseg, 1, function(x) tab_sj(x,G)) )
 tmp_0 = mseg; tmp_0[mi==1] = -99;
 tmp_1 = mseg; tmp_1[mi==0] = -99;
 
-mIY_0 = t( apply(tmp_0, 1, function(x) tab_IY(x,G)) )
-mIY_1 = t( apply(tmp_1, 1, function(x) tab_IY(x,G)) )
+mIY = rbind( t( apply(tmp_0, 1, function(x) tab_IY(x,G)) ), t( apply(tmp_1, 1, function(x) tab_IY(x,G)) ))
 
 readr::write_csv(as.data.frame(mtab_sj),"input/mtab_sj.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mIY_0),"input/mIY_0.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mIY_1),"input/mIY_1.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mIY),"input/mIY.csv", col_names = FALSE)
 #+end_src
 ** prior & jump
    This is to export hyper-parameters and jumping rule
@@ -1148,12 +1144,10 @@ mtab_sj = t( apply(mseg, 1, function(x) tab_sj(x,G)) )
 tmp_0 = mseg; tmp_0[mi==1] = -99;
 tmp_1 = mseg; tmp_1[mi==0] = -99;
 
-mIY_0 = t( apply(tmp_0, 1, function(x) tab_IY(x,G)) )
-mIY_1 = t( apply(tmp_1, 1, function(x) tab_IY(x,G)) )
+mIY = rbind( t( apply(tmp_0, 1, function(x) tab_IY(x,G)) ), t( apply(tmp_1, 1, function(x) tab_IY(x,G)) ))
 
 readr::write_csv(as.data.frame(mtab_sj),"input/mtab_sj.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mIY_0),"input/mIY_0.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mIY_1),"input/mIY_1.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mIY),"input/mIY.csv", col_names = FALSE)
 #+end_src
 
 
