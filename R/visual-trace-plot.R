@@ -30,7 +30,7 @@ for (k in 1:10) {
 dev.off(which = dev.cur())
 
 pdf("figure/w_pairs_plot.pdf")
-for (i in 1:10) {
+for (i in 1:I) {
   p = mcmc_pairs(mylist,
                  regex_pars = paste0("^w\\.[0-1]\\.",i,"\\."),
                  off_diag_args = list(size = 0.05))
@@ -40,13 +40,13 @@ dev.off(which = dev.cur())
 
 pdf("figure/beta_parcoord.pdf")
 p = bayesplot::mcmc_parcoord(mylist,
-                             regex_pars = "^beta\\.[1-5]\\.")
+                             regex_pars = "^beta\\.[0-9]\\.")
 print(p)
 dev.off(which = dev.cur())
 
 pdf("figure/theta_parcoord.pdf")
 p = bayesplot::mcmc_parcoord(mylist,
-                             regex_pars = "^theta\\.[1-5]\\.")
+                             regex_pars = "^theta\\.[0-9]\\.")
 print(p)
 dev.off(which = dev.cur())
 

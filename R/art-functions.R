@@ -119,12 +119,12 @@ my_procrustes = function(Xstar, dlist, is_list = FALSE, translation = TRUE, scal
 
 getparam = function(posm, sj, i, k) {
 cname = names(posm)
-z = posm[str_which(cname, paste0("z\\..\\.",k,"\\.[1-2]"))] %>% matrix(ncol = 2) %>% t()
-w = posm[str_which(cname, paste0("w\\.",i,"\\."))]
+z = posm[str_which(cname, paste0("z\\.[0-1]\\.",k,"\\.[1-2]"))] %>% matrix(nrow = 2, ncol = 2) %>% t()
+w = posm[str_which(cname, paste0("w\\.[0-1]\\.",i,"\\.[1-2]"))] %>% matrix(nrow = 2, ncol = 2) %>% t()
 gamma = posm[str_which(cname, paste0("gamma"))]
 beta = posm[str_which(cname, paste0("beta\\.",i,"\\."))]
 theta = posm[str_which(cname, paste0("theta\\.",k,"\\."))]
-lambda = posm[str_which(cname, paste0("lambda\\..\\.",i,"\\."))] %>% matrix(ncol = 2) %>% t()
+lambda = posm[str_which(cname, paste0("lambda\\.[0-1]\\.",i,"\\."))] %>% matrix(ncol = 2) %>% t()
 H = sj[2:(G+1)] - sj[1:G]
 return(list(lambda=lambda,beta=beta,theta=theta,gamma=gamma,z=z,w=w,sj=sj,H=H))
 }

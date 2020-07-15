@@ -67,6 +67,7 @@ if (!double_z && !double_w) {
 Xstar = find_xstar_inlist(dlist)
 matched = my_procrustes(Xstar, dlist, is_list = T)
 mydf = matched$dlist
+mdf = bind_rows(matched$dlist, .id = "column_label")
 
 mylist = mcmc.list()
 item = 1

@@ -17,19 +17,3 @@ eval_accuracy <- function(param, t) {
     .Call(`_art_eval_accuracy`, param, t)
 }
 
-rcppeigen_hello_world <- function() {
-    .Call(`_art_rcppeigen_hello_world`)
-}
-
-rcppeigen_outerproduct <- function(x) {
-    .Call(`_art_rcppeigen_outerproduct`, x)
-}
-
-rcppeigen_innerproduct <- function(x) {
-    .Call(`_art_rcppeigen_innerproduct`, x)
-}
-
-rcppeigen_bothproducts <- function(x) {
-    .Call(`_art_rcppeigen_bothproducts`, x)
-}
-

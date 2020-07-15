@@ -1,14 +1,18 @@
-tmp = foreach(v=1:5, .combine='rbind') %dopar% apply(mydf[[1]], 2, mean)
-tmp = tmp[,1:( which( colnames(tmp) == "lp_") )]
+tmp = foreach(v=1:num_chain, .combine='rbind') %dopar% apply(mydf[[v]], 2, mean)
+if (num_chain > 1) {
+tmp = tmp[,1:( which( colnames(mydf[[1]]) == "lp_") )]
 posm = apply(tmp, 2, mean)
-cname = names(posm)
+} else {
+posm = tmp[1:( which( colnames(mydf[[1]]) == "lp_") )]
+}
 
+cname = names(posm)
 param = getparam(posm,sj,i,k)
 
 ## accuracy = foreach(k=1:N, .combine='rbind') %dopar% fun_accuracy_ick(t,i,k,posm,cname,sj)
 pdf(paste0("figure/tradeoff.pdf"))
 for (item in 1:I) {
-time = 1:(sj[G] + 200)
+time = 1:(sj[G] + 10)
 accuracy = foreach(k=1:N, .combine='rbind') %dopar%
   {
     param = getparam(posm,sj,item,k)
@@ -31,7 +35,7 @@ dev.off(which = dev.cur())
 ## system(paste0("open figure/tradeoff_", item, ".pdf")
 
 myN = 100
-maxt = sj[G] + 250
+maxt = sj[G] + 10
 num_seg = 100
 time = seq(0, maxt, (maxt) / num_seg)
 

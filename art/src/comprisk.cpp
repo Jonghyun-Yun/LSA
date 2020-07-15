@@ -1,8 +1,12 @@
 // [[Rcpp::depends(RcppEigen)]]
+// [[Rcpp::depends(RcppNumerical)]]
 
+#include <RcppNumerical.h>
 #include <RcppParallel.h>
 #include <RcppEigen.h>
 
+using namespace Numer;
+  
 typedef Eigen::Map<Eigen::MatrixXd> MapMatd;
 typedef Eigen::Map<Eigen::VectorXd> MapVecd;
 
@@ -14,7 +18,7 @@ class comprisk: public Func
         Eigen::VectorXd theta;
         Eigen::VectorXd gamma;
         Eigen::MatrixXd z;
-        Eigen::VectorXd w;
+        Eigen::MatrixXd w;
         Eigen::VectorXd sj;
         Eigen::VectorXd H;
         bool T_F; // T_F = 1: incidence rate for true response
@@ -26,7 +30,7 @@ class comprisk: public Func
             theta( Rcpp::as<MapVecd>(list_["theta"]) ),
             gamma( Rcpp::as<MapVecd>(list_["gamma"]) ),
             z( Rcpp::as<MapMatd>(list_["z"]) ),
-            w( Rcpp::as<MapVecd>(list_["w"]) ),
+            w( Rcpp::as<MapMatd>(list_["w"]) ),
             sj( Rcpp::as<MapVecd>(list_["sj"]) ),
             H( Rcpp::as<MapVecd>(list_["H"]) ),
             T_F( T_F_ ) {
@@ -45,13 +49,16 @@ class comprisk: public Func
                 g++;
             }
             for (int c=0; c<2; c++) {
-                res *= std::exp( -1.0 * ( cum_lambda(c) + ( t - sj(g) ) * lambda(c,g) ) * std::exp( beta(c) + theta(c) - gamma(c) * (z.row(c)-w).norm() ));
+              res *=
+                  std::exp(-1.0 * (cum_lambda(c) + (t - sj(g)) * lambda(c, g)) *
+                           std::exp(beta(c) + theta(c) -
+                                    gamma(c) * (z.row(c) - w.row(c)).norm()));
             }
             if (T_F) {
-                res *= lambda(1,g) * std::exp( beta(1) + theta(1) - gamma(1) * (z.row(1)-w).norm() );
+                res *= lambda(1,g) * std::exp( beta(1) + theta(1) - gamma(1) * (z.row(1)-w.row(1)).norm() );
             }
             else {
-                res *= lambda(0,g) * std::exp( beta(0) + theta(0) - gamma(0) * (z.row(0)-w).norm() );
+                res *= lambda(0,g) * std::exp( beta(0) + theta(0) - gamma(0) * (z.row(0)-w.row(0)).norm() );
             }
             return res;
         }
@@ -63,10 +70,10 @@ class comprisk: public Func
                 g++;
             }
             if (cause) {
-                res = lambda(1,g) * std::exp( beta(1) + theta(1) - gamma(1) * (z.row(1)-w).norm() );
+                res = lambda(1,g) * std::exp( beta(1) + theta(1) - gamma(1) * (z.row(1)-w.row(1)).norm() );
             }
             else {
-                res = lambda(0,g) * std::exp( beta(0) + theta(0) - gamma(0) * (z.row(0)-w).norm() );
+                res = lambda(0,g) * std::exp( beta(0) + theta(0) - gamma(0) * (z.row(0)-w.row(0)).norm() );
             }
             return res;
         }
