@@ -21,11 +21,11 @@ double update_lambda(const double &a_lambda,
 
         if (g < seg(k)) {
           post_b +=
-              len * std::exp(beta + theta(k) -
+              len * stan::math::exp(beta + theta(k) -
                               gamma * stan::math::distance(z.row(k), w));
         } else if (g == seg(k)) {
           post_b +=
-              H(k) * std::exp(beta + theta(k) -
+              H(k) * stan::math::exp(beta + theta(k) -
                               gamma * stan::math::distance(z.row(k), w));
         }
       }

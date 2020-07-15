@@ -112,9 +112,9 @@ mvar = readr::read_csv("input/mvar.csv", col_names=FALSE) %>% as.matrix()
 I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
 
 ## lambda
-a_lambda = matrix(0.01,I,G)
-b_lambda = matrix(0.01,I,G)
-jump_lambda = matrix(1.0,I,G)
+a_lambda = matrix(0.1,I,G)
+b_lambda = matrix(0.1,I,G)
+jump_lambda = matrix(0.5,I,G)
 
 mu_beta = matrix(0.0,I,2)
 sigma_beta = matrix(1.0,I,2)
@@ -137,7 +137,7 @@ jump_z = matrix(1.0,N,2)
 
 mu_w = matrix(0.0,I,2)
 sigma_w = matrix(1.0,I,2)
-jump_w = matrix(0.1,I,2)
+jump_w = matrix(0.5,I,2)
 
 readr::write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"input/pj_lambda.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"input/pj_beta.csv", col_names = FALSE)
@@ -146,3 +146,13 @@ readr::write_csv(as.data.frame(rbind(a_sigma,b_sigma)),"input/pj_sigma.csv", col
 readr::write_csv(as.data.frame(rbind(mu_gamma,sigma_gamma,jump_gamma)),"input/pj_gamma.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(rbind(mu_z,sigma_z,jump_z)),"input/pj_z.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(rbind(mu_w,sigma_w,jump_w)),"input/pj_w.csv", col_names = FALSE)
+
+mtab_sj = t( apply(mseg, 1, function(x) tab_sj(x,G)) )
+
+tmp_0 = mseg; tmp_0[mi==1] = -99;
+tmp_1 = mseg; tmp_1[mi==0] = -99;
+
+mIY = rbind( t( apply(tmp_0, 1, function(x) tab_IY(x,G)) ), t( apply(tmp_1, 1, function(x) tab_IY(x,G)) ))
+
+readr::write_csv(as.data.frame(mtab_sj),"input/mtab_sj.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mIY),"input/mIY.csv", col_names = FALSE)

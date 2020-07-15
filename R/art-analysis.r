@@ -1,15 +1,13 @@
-num_chain = 3
-single_z = 0
-single_w = 0
-
 library(art)
 library(coda)
 library(dplyr)
 library(stringr)
+library(magrittr)
 library(bayesplot)
 library(foreach)
 library(doParallel)
-registerDoParallel(cores = detectCores() - 1)
+#registerDoParallel(cores = detectCores() - 1)
+registerDoParallel(6)
 
 setwd("/Users/yunj/Dropbox/research/lsjm-art/lsjm-code")
 

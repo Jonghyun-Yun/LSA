@@ -75,16 +75,10 @@ double fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lambda,
 
     if (SINGLE_Z) {
         lp_ += normal_lpdf(to_vector(z.block(0,0,N,2)), to_vector(mu_z), to_vector(sigma_z));
-        if (UPDATE_GAMMA) {
-            lp_ += lognormal_lpdf(gamma(1), mu_gamma(1), sigma_gamma(1));
-        }
     }
     else {
         lp_ += normal_lpdf(to_vector(z.block(0,0,N,2)), to_vector(mu_z), to_vector(sigma_z)) +
         normal_lpdf(to_vector(z.block(N,0,N,2)), to_vector(mu_z), to_vector(sigma_z));
-        if (UPDATE_GAMMA) {
-            lp_ += lognormal_lpdf(gamma, mu_gamma, sigma_gamma); // they are vectors!
-        }
     }
 
     if (SINGLE_W) {
@@ -93,6 +87,15 @@ double fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lambda,
     else {
         lp_ += normal_lpdf(to_vector(w.block(0,0,I,2)), to_vector(mu_w), to_vector(sigma_w)) +
             normal_lpdf(to_vector(w.block(I,0,I,2)), to_vector(mu_w), to_vector(sigma_w));
+    }
+
+    if (UPDATE_GAMMA) {
+        if (SINGLE_Z && SINGLE_W) {
+            lp_ += lognormal_lpdf(gamma(1), mu_gamma(1), sigma_gamma(1));
+        }
+        else {
+            lp_ += lognormal_lpdf(gamma, mu_gamma, sigma_gamma); // they are vectors!
+        }
     }
 
     return lp_;

@@ -23,7 +23,7 @@ dev.off(which = dev.cur())
 pdf("figure/z_pairs_plot.pdf")
 for (k in 1:10) {
   p = mcmc_pairs(mylist,
-                 regex_pars = paste0("^z.[0-1]\\.",k,"\\."),
+                 regex_pars = paste0("^z\\.[0-1]\\.",k,"\\."),
                  off_diag_args = list(size = 0.05))
   print(p)
 }
@@ -32,7 +32,7 @@ dev.off(which = dev.cur())
 pdf("figure/w_pairs_plot.pdf")
 for (i in 1:10) {
   p = mcmc_pairs(mylist,
-                 regex_pars = paste0("^w\\.",i,"\\."),
+                 regex_pars = paste0("^w\\.[0-1]\\.",i,"\\."),
                  off_diag_args = list(size = 0.05))
   print(p)
 }
@@ -59,27 +59,42 @@ dev.off(which = dev.cur())
 
 pdf("figure/w_parcoord_plot.pdf")
 p = mcmc_parcoord(mylist,
-                  regex_pars = "^w.[1-5]\\.")
+                  regex_pars = "^w\\.[0-1]\\.[1-5]\\.")
 print(p)
 dev.off(which = dev.cur())
 
 ## mcmc_intervals(mylist, pars=c("lambda.0.1.1")
 pdf("figure/dist_mcmc_trace_plot.pdf")
 p0 <- mcmc_trace(mylist,
-                 regex_pars = "^dist_z.[0-1]\\.[0-4]_w",
+                 regex_pars = "^dist_z.[0-1]\\.[0-2]_w",
                  ##transformations = "log",
                  facet_args = list(nrow = 2, labeller = label_parsed))
-print(p0 <- p0 + facet_text(size = 15))
-p1 <- mcmc_trace(mylist,
-                 regex_pars = "^dist_z.[0-1]\\.[5-9]_w",
+print(p <- p + facet_text(size = 15))
+p <- mcmc_trace(mylist,
+                 regex_pars = "^dist_z.[0-1]\\.[3-6]_w",
                  ##transformations = "log",
                  facet_args = list(nrow = 2, labeller = label_parsed))
-print(p1 <- p1 + facet_text(size = 15))
+print(p <- p + facet_text(size = 15))
+p <- mcmc_trace(mylist,
+                 regex_pars = "^dist_z.[0-1]\\.[7-9]_w",
+                 ##transformations = "log",
+                 facet_args = list(nrow = 2, labeller = label_parsed))
+print(p <- p + facet_text(size = 15))
 dev.off(which = dev.cur())
 
 pdf("figure/z_mcmc_trace_plot.pdf")
 p <- mcmc_trace(mylist,
-                regex_pars = "^z.[0-1]\\.[1-2]\\.",
+                regex_pars = "^z.[0-1]\\.[0-2]\\.",
+                ##transformations = "log",
+                facet_args = list(nrow = 2, labeller = label_parsed))
+p + facet_text(size = 15)
+p <- mcmc_trace(mylist,
+                regex_pars = "^z.[0-1]\\.[3-6]\\.",
+                ##transformations = "log",
+                facet_args = list(nrow = 2, labeller = label_parsed))
+p + facet_text(size = 15)
+p <- mcmc_trace(mylist,
+                regex_pars = "^z.[0-1]\\.[7-9]\\.",
                 ##transformations = "log",
                 facet_args = list(nrow = 2, labeller = label_parsed))
 p + facet_text(size = 15)
@@ -88,16 +103,21 @@ dev.off(which = dev.cur())
 
 ## mcmc_intervals(mylist, pars=c("lambda.0.1.1")
 pdf("figure/w_mcmc_trace_plot.pdf")
-p0 <- mcmc_trace(mylist,
-                 regex_pars = "^w\\.[0-4]\\.",
+p <- mcmc_trace(mylist,
+                 regex_pars = "^w\\.[0-1]\\.[0-3]\\.",
                  ##transformations = "log",
                  facet_args = list(nrow = 2, labeller = label_parsed))
-print(p0 <- p0 + facet_text(size = 15))
-p1 <- mcmc_trace(mylist,
-                 regex_pars = "^w\\.[5-9]\\.",
+print(p <- p + facet_text(size = 15))
+p <- mcmc_trace(mylist,
+                 regex_pars = "^w\\.[0-1]\\.[4-6]\\.",
                  ##transformations = "log",
                  facet_args = list(nrow = 2, labeller = label_parsed))
-print(p1 <- p1 + facet_text(size = 15))
+print(p <- p + facet_text(size = 15))
+p <- mcmc_trace(mylist,
+                 regex_pars = "^w\\.[0-1]\\.[7-9]\\.",
+                 ##transformations = "log",
+                 facet_args = list(nrow = 2, labeller = label_parsed))
+print(p <- p + facet_text(size = 15))
 dev.off(which = dev.cur())
 
 pdf("figure/lambda_mcmc_trace_plot.pdf")

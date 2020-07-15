@@ -14,6 +14,8 @@
 // #include "is_empty.h"
 #include "create_rng.hpp"
 #include "readCSV.h"
+#include "readCSV_lastline.h"
+#include "fun_cum_lambda.h"
 #include "update_lambda.h"
 #include "update_theta.h"
 #include "update_beta.h"
@@ -30,11 +32,15 @@
 // typedef Eigen::Map<Eigen::VectorXd> MapVecd;
 // typedef Eigen::Block<Eigen::MatrixXd> BlkMatd;
 
+typedef Eigen::Map<Eigen::MatrixXd> MapMatd;
+typedef Eigen::Map<Eigen::VectorXd> MapVecd;
+typedef Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> MapMatdRow;
+
 // see https://eigen.tuxfamily.org/dox/structEigen_1_1IOFormat.html
 const static Eigen::IOFormat CSVFormatN(Eigen::StreamPrecision,
                                         Eigen::DontAlignCols, ", ", "\n");
 
-const static Eigen::IOFormat CSVFormat(Eigen::StreamPrecision,
+const static Eigen::IOFormat CSVFormat(Eigen::FullPrecision,
                                        Eigen::DontAlignCols, ", ", ", ");
 
 const static Eigen::IOFormat CommaInitFmt(Eigen::StreamPrecision,
@@ -53,11 +59,21 @@ int main(int argc, const char *argv[]) {
 
   // commandline argument:
 
+  bool CONT;
+  if (sarg[1] == "continue") {
+    CONT = true;
+  } else if (sarg[1] == "initialize") {
+    CONT = false;
+  } else {
+    std::cout << "invalid arguemnt for CONT.\n" << std::endl;
+    return 0;
+  }
+
   // use Intel TBB?
   bool RUN_PAR;
-  if (sarg[1] == "parallel") {
+  if (sarg[2] == "parallel") {
     RUN_PAR = true;
-  } else if (sarg[1] == "serial") {
+  } else if (sarg[2] == "serial") {
     RUN_PAR = false;
   } else {
     std::cout << "invalid arguemnt for RUN_PAR.\n" << std::endl;
@@ -66,9 +82,9 @@ int main(int argc, const char *argv[]) {
 
   // single z or double z
   bool SINGLE_W;
-  if (sarg[2] == "single_w") {
+  if (sarg[3] == "single_w") {
     SINGLE_W = true;
-  } else if (sarg[2] == "double_w") {
+  } else if (sarg[3] == "double_w") {
     SINGLE_W = false;
   } else {
     std::cout << "invalid arguemnt for SINGLE_W.\n" << std::endl;
@@ -77,9 +93,9 @@ int main(int argc, const char *argv[]) {
 
   // single z or double z
   bool SINGLE_Z;
-  if (sarg[3] == "single_z") {
+  if (sarg[4] == "single_z") {
     SINGLE_Z = true;
-  } else if (sarg[3] == "double_z") {
+  } else if (sarg[4] == "double_z") {
     SINGLE_Z = false;
   } else {
     std::cout << "invalid arguemnt for SINGLE_Z.\n" << std::endl;
@@ -88,9 +104,9 @@ int main(int argc, const char *argv[]) {
 
   // missing?
   bool FULL_OBS;
-  if (sarg[4] == "full") {
+  if (sarg[5] == "full") {
     FULL_OBS = true;
-  } else if (sarg[4] == "sparse") {
+  } else if (sarg[5] == "sparse") {
     FULL_OBS = false;
   } else {
     std::cout << "invalid arguemnt for FULL_OBS.\n" << std::endl;
@@ -99,9 +115,9 @@ int main(int argc, const char *argv[]) {
 
   // latent space or not
   bool UPDATE_LATENT;
-  if (sarg[5] == "latent") {
+  if (sarg[6] == "latent") {
     UPDATE_LATENT = true;
-  } else if (sarg[5] == "no_latent") {
+  } else if (sarg[6] == "no_latent") {
     UPDATE_LATENT = false;
   } else {
     std::cout << "invalid arguemnt for UPDATE_LATENT.\n" << std::endl;
@@ -110,19 +126,19 @@ int main(int argc, const char *argv[]) {
 
   // gamma or not
   bool UPDATE_GAMMA;
-  if (sarg[6] == "gamma") {
+  if (sarg[7] == "gamma") {
     UPDATE_GAMMA = true;
-  } else if (sarg[6] == "no_gamma") {
+  } else if (sarg[7] == "no_gamma") {
     UPDATE_GAMMA = false;
   } else {
     std::cout << "invalid arguemnt for UPDATE_GAMMA.\n" << std::endl;
     return 0;
   }
 
-  int chain_id = atoi(argv[7]);
-  int num_samples = atoi(argv[8]);
-  int num_warmup = atoi(argv[9]);
-  int thin = atoi(argv[10]);
+  int chain_id = atoi(argv[8]);
+  int num_samples = atoi(argv[9]);
+  int num_warmup = atoi(argv[10]);
+  int thin = atoi(argv[11]);
   // double my_eps = atof(argv[4]);
   // int my_L = atoi(argv[5]);
   // double min_E = atof(argv[6]);
@@ -161,7 +177,7 @@ int main(int argc, const char *argv[]) {
   }
   // if (is_empty(osummary)) inp << ".chain, " << "seed, " << "iter, " << "warm,
   // " << "thin" << std::endl;
-  osummary << chain_id << ", " << rseed << ", " << num_samples << ", " << num_warmup
+  osummary << (CONT?"continued, ":"initialized, ")<< chain_id << ", " << rseed << ", " << num_samples << ", " << num_warmup
            << ", " << thin << std::endl;
   osummary.close();
 
@@ -193,7 +209,7 @@ int main(int argc, const char *argv[]) {
   tmp_mY = readCSV("input/mi.csv", I, N);
 
   // mtab_sj = readCSV("mtab_sj.csv", I, G);
-  mIY = readCSV("mIY.csv", 2*I, G);
+  mIY = readCSV("input/mIY.csv", 2*I, G);
 
   mseg = tmp_mseg.cast<int>();
   mY = tmp_mY.cast<int>();
@@ -306,11 +322,9 @@ int main(int argc, const char *argv[]) {
   Eigen::MatrixXd theta(N, 2);
   Eigen::MatrixXd beta(I, 2);
   double sigma;
-  // Eigen::MatrixXd z0(N, 2);
-  // Eigen::MatrixXd z1(N, 2);
+  Eigen::MatrixXd z(2*N, 2);
+  Eigen::MatrixXd w(2*I,2);
   Eigen::VectorXd gamma(2);
-  // Eigen::MatrixXd lambda0(I, G);
-  // Eigen::MatrixXd lambda1(I, G);
   Eigen::MatrixXd lambda(2 * I, G);
   Eigen::MatrixXd cum_lambda(2 * I, N);
 
@@ -318,60 +332,79 @@ int main(int argc, const char *argv[]) {
   Eigen::MatrixXd acc_theta = Eigen::MatrixXd::Zero(N, 2);
   Eigen::MatrixXd acc_beta = Eigen::MatrixXd::Zero(I, 2);
   double acc_sigma = 1.0; //sigma from its full conditional
-  // Eigen::VectorXd acc_z0 = Eigen::VectorXd::Zero(N);
-  // Eigen::VectorXd acc_z1 = Eigen::VectorXd::Zero(N);
+  Eigen::VectorXd acc_z;
+  Eigen::VectorXd acc_w;
   Eigen::VectorXd acc_gamma;
-  if (SINGLE_Z) {
+  Eigen::MatrixXd acc_lambda = Eigen::MatrixXd::Zero(2*I, G);
+
+  Eigen::VectorXd lastline;
+  double lp_lastline;
+  int iter_lastline = 0;
+
+  if (CONT) {
+    std::cout << "Reading from a previous run...\n";
+
+    // read the last line of <sample file in output directory>
+    // lambda, theta, beta, z, w, gamma, sigma, lp
+    lastline = readCSV_lastline(fsample.str(), 2 + 2*I*G + N*2 + I*2 + 2*N*2 + 2*I*2 + 2 + 2);
+
+    // allocate values in the last line to parameters
+    iter_lastline = (int)lastline(1);
+    lambda = MapMatdRow(lastline.segment(2, 2*I*G).data(), 2*I, G);
+    theta = MapMatdRow(lastline.segment(2 + 2*I*G, N*2).data(), N, 2);
+    beta = MapMatdRow(lastline.segment(2 + 2*I*G + N*2, I*2).data(), I, 2);
+    z = MapMatdRow(lastline.segment(2 + 2*I*G + I*2 + N*2, 2*N*2).data(), 2*N, 2);
+    w = MapMatdRow(lastline.segment(2 + 2*I*G + I*2 + N*2 + 2*N*2, 2*I*2).data(), 2*I, 2);
+    gamma = lastline.segment(2 + 2*I*G + I*2 + N*2 + 2*N*2 + 2*I*2, 2);
+    sigma = lastline(2 + 2*I*G + I*2 + N*2 + 2*N*2 + 2*I*2 + 2);
+
+    // std::cout << std::fixed << std::setprecision(10)
+    //   << "lambda\n" << lambda << std::endl
+    //   << "theta\n" << theta << std::endl
+    //   << "beta\n" << beta << std::endl
+    //   << "z\n" << z << std::endl
+    //   << "w\n" << w << std::endl
+    //   << "gamma\n" << gamma << std::endl
+    //   << "sigma\n" << sigma << std::endl;
+
+    // lp_ read from the last line
+    lp_lastline = lastline(2 + 2*I*G + I*2 + N*2 + 2*N*2 + 2*I*2 + 2 + 1);
+
+    fun_cum_lambda(lambda, cum_lambda, I, N, mNA, mlen, mseg, mH);
+    lp_ = fun_lp(a_lambda, b_lambda, mu_beta, sigma_beta, mu_theta, sigma_theta,
+                 a_sigma, b_sigma, mu_gamma, sigma_gamma, mu_z, sigma_z, mu_w, sigma_w,
+                 lambda, cum_lambda, beta, theta, sigma, gamma, z, w,
+                 I, N, G, mNA, mlen, mseg, mH, mY, SINGLE_Z, SINGLE_W, UPDATE_GAMMA);
+
+    // check the log-posterior difference
+    if (std::abs(lp_ - lp_lastline) > 1) {
+        std::cout << std::fixed << std::setprecision(10)
+                << "The log-posteriror doesn't match.\n"
+                << "lp_ read from the last line: " << lp_lastline << std::endl
+                << "lp_ calculated from the last line: " << lp_ << std::endl
+                << "The chain cannot be continued. Start a one."<< std::endl;
+      return 0;
+    }
+  } else {
+    std::cout << "Initializing...\n";
+    lambda = readCSV("input/init_lambda.csv", 2*I, G);
+    beta = readCSV("input/init_beta.csv", I, 2);
+    theta = readCSV("input/init_theta.csv", N, 2);
+    z = readCSV("input/init_z.csv", 2*N, 2);
+    w = readCSV("input/init_w.csv", 2*I, 2);
+    gamma =  readCSV("input/init_gamma.csv", 2, 1);
+  }
+
+  if (SINGLE_Z && SINGLE_W) {
+    gamma(0) = -1.0 * gamma(1);
     acc_gamma = Eigen::VectorXd::Zero(1);
   } else {
     acc_gamma = Eigen::VectorXd::Zero(2);
   }
-  // Eigen::MatrixXd acc_lambda0 = Eigen::MatrixXd::Zero(I, G);
-  // Eigen::MatrixXd acc_lambda1 = Eigen::MatrixXd::Zero(I, G);
-  Eigen::MatrixXd acc_lambda = Eigen::MatrixXd::Zero(2*I, G);
 
-  // Eigen::VectorXd acc_all(4*N + 4*I + 2*I*G + 3);
-  
-  // acc_theta.setZero();
-  // acc_beta.setZero();
-  // acc_sigma = 1;
-  // acc_z0.setZero();
-  // acc_z1.setZero();
-  // acc_z.setZero();
-  // acc_w.setZero();
-  // acc_gamma.setZero();
-  // acc_lambda0.setZero();
-  // acc_lambda1.setZero();
-  // acc_lambda.setZero();
-
-  // Initialization
-  // theta.setZero();
-  // beta.setZero();
-  // sigma = 1.0;
-  // w.setZero();
-  // lambda.setOnes();
-
-  lambda = readCSV("input/init_lambda.csv", 2*I, G);
-  beta = readCSV("input/init_beta.csv", I, 2);
-  theta = readCSV("input/init_theta.csv", N, 2);
-  // gamma = readCSV("input/init_gamma.csv", 2, 1);
-
-  gamma(0) = 1;
-  gamma(1) = 1;
-
-  Eigen::MatrixXd z(2*N, 2);
-  z = readCSV("input/init_z.csv", 2*N, 2);
-
-  // z.setZero();
-
-  Eigen::VectorXd acc_z;
   if (SINGLE_Z) {
     z.block(N,0,N,2) = z.block(0,0,N,2);
     acc_z = Eigen::VectorXd::Zero(N);
-    if (gamma(0) != -1.0 * gamma(1)) {
-      std::cout << "gamma(0) is not -1.0 * gamma(1).\n";
-      return 0;
-    }
   }
   else {
     acc_z = Eigen::VectorXd::Zero(2*N);
@@ -380,10 +413,6 @@ int main(int argc, const char *argv[]) {
       return 0;
     }
   }
-
-  Eigen::MatrixXd w(2*I,2);
-  Eigen::VectorXd acc_w;
-  w = readCSV("input/init_w.csv", 2*I, 2);
 
   if (SINGLE_W) {
   w.block(I,0,I,2) = w.block(0,0,I,2);
@@ -401,6 +430,14 @@ int main(int argc, const char *argv[]) {
   }
 
   std::cout << "Starting Sampling...\n";
+
+  if (CONT) {
+
+    std::cout << std::endl
+              << "============================================\n"
+              << "Appending samples to a chain of size " << iter_lastline << " ...\n"
+              << "============================================\n";
+  }
   for (int ii = 1; ii <= num_iter; ii++) {
 
     std::clock_t c_start = std::clock();
@@ -559,7 +596,7 @@ int main(int argc, const char *argv[]) {
                   w.row(c * I + i) = update_double_w(
                     w.row(c * I + i), acc_w(c*I + i), mu_w.row(i), sigma_w.row(i), jump_w.row(i),
                     cum_lambda.row(c * I + i), beta(i,c), theta.col(c), gamma(c),
-                    z, N, mNA.row(i), mlen,
+                    z.block(c*N,0,N,2), N, mNA.row(i), mlen,
                     mseg.row(i), mH.row(i), mY.row(i), c, rng);
 
                 }
@@ -665,13 +702,14 @@ int main(int argc, const char *argv[]) {
 
           for (int i = 0; i < I; i++) {
 
-            w.row(i) = update_w(
-              w.row(i), acc_w(i), mu_w.row(i), sigma_w.row(i), jump_w.row(i),
-              cum_lambda.row(i), cum_lambda.row(I + i), beta.row(i), theta, gamma,
-              z, N, mNA.row(i), mlen,
-              mseg.row(i), mH.row(i), mY.row(i), rng);
+                w.row(i) = update_w(
+                  w.row(i), acc_w(i), mu_w.row(i), sigma_w.row(i), jump_w.row(i),
+                  cum_lambda.row(i), cum_lambda.row(I + i), beta.row(i), theta, gamma,
+                  z, N, mNA.row(i), mlen,
+                  mseg.row(i), mH.row(i), mY.row(i), rng);
 
-          }
+              }
+          w.block(I,0,I,2) = w.block(0,0,I,2);
         }
         else {
           for (int i = 0; i < I; i++) {
@@ -680,7 +718,7 @@ int main(int argc, const char *argv[]) {
               w.row(c * I + i) = update_double_w(
                 w.row(c * I + i), acc_w(c*I + i), mu_w.row(i), sigma_w.row(i), jump_w.row(i),
                 cum_lambda.row(c * I + i), beta(i,c), theta.col(c), gamma(c),
-                z, N, mNA.row(i), mlen,
+                z.block(c*N,0,N,2), N, mNA.row(i), mlen,
                 mseg.row(i), mH.row(i), mY.row(i), c, rng);
 
             }
@@ -704,9 +742,9 @@ int main(int argc, const char *argv[]) {
     }
     if (((ii % num_print == 0) && (ii > 10)) || ii ==  num_samples)
       std::cout << "Chain " << std::setw(3) << chain_id << ": "
-                << "Iteration: " << std::setw(7) << std::right << ii << " / "
-                << std::setw(7) << std::right << num_iter << " ["
-                << std::setw(3) << (int)(ii / (double)num_iter * 100) << "%]"
+                << "Iteration: " << std::setw(7) << std::right << ii + iter_lastline << " / "
+                << std::setw(7) << std::right << num_iter + iter_lastline << " ["
+                << std::setw(3) << (int)((ii + iter_lastline) / (double)(num_iter + iter_lastline) * 100) << "%]"
                 << (ii<=num_warmup?"  (Warmup)":"  (Sampling)") << std::endl;
 
     if ((ii % thin == 0) && (ii > num_warmup)) {
@@ -729,7 +767,9 @@ int main(int argc, const char *argv[]) {
                      I, N, G, mNA, mlen, mseg, mH, mY, SINGLE_Z, SINGLE_W, UPDATE_GAMMA);
       }
       // x.format(CommaInitFmt);
-      osample << chain_id << ", " << ii
+
+      // WARNING: DO NOT change the stream order unless you want to change it everywhere (R script too!)
+      osample << chain_id << ", " << ii + iter_lastline
               << ", " << lambda.format(CSVFormat)
               << ", " << theta.format(CSVFormat)
               << ", " << beta.format(CSVFormat)
@@ -750,15 +790,16 @@ int main(int argc, const char *argv[]) {
       return 0;
     }
 // if (is_empty(osummary)) osummary << ".chain, " << "accept_stat\n";
-  osummary << chain_id
-           << ", " << acc_lambda.mean() / (double)num_iter
-           << ", " << acc_beta.mean() / (double)num_iter
-           << ", " << acc_theta.mean() / (double)num_iter
-           << ", " << acc_z.mean() / (double)num_iter
-           << ", " << acc_w.mean() / (double)num_iter
-           << ", " << acc_gamma.mean() / (double)num_iter
-           << ", " << acc_sigma
-           << std::endl;
+    osummary << (CONT?"continued, ":"initialized, ")
+             << chain_id
+             << ", " << acc_lambda.mean() / (double)num_iter
+             << ", " << acc_theta.mean() / (double)num_iter
+             << ", " << acc_beta.mean() / (double)num_iter
+             << ", " << acc_z.mean() / (double)num_iter
+             << ", " << acc_w.mean() / (double)num_iter
+             << ", " << acc_gamma.mean() / (double)num_iter
+             << ", " << acc_sigma
+             << std::endl;
   osummary.close();
 
   return 1;

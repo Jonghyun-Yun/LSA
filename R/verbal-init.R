@@ -5,12 +5,14 @@ G = mvar[4]
 
 set.seed(as.numeric(Sys.time()))
 
+ set.seed(as.numeric(Sys.time()))
+
  init_lambda = matrix(1, nrow = 2*I, ncol = G);
- init_beta = matrix(0*rnorm(2*I), ncol = 2);
- init_theta = matrix(0*rnorm(2*N), ncol = 2);
- init_gamma = matrix(c(-1, 1), nrow = 1);
- init_w = matrix(rnorm(2*2*I), ncol = 2);
- init_z = matrix(rnorm(2*2*N), ncol = 2);
+ init_beta = 0*matrix(rnorm(2*I), ncol = 2);
+ init_theta = 0*matrix(rnorm(2*N), ncol = 2);
+ init_gamma = 1*matrix(c(1, 1), ncol = 1);
+ init_w = 0*matrix(rnorm(2*2*I), ncol = 2);
+ init_z = 0*matrix(rnorm(2*2*N), ncol = 2);
 
 readr::write_csv(as.data.frame(init_lambda), "input/init_lambda.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(init_beta), "input/init_beta.csv", col_names = FALSE)

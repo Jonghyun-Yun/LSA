@@ -44,12 +44,12 @@ Eigen::VectorXd update_single_z(const Eigen::MatrixXd::RowXpr &z, double &acc_z,
         logr_z -=
             cum_lambda(c * I + i) *
             (stan::math::exp(beta(i, c) + theta(c) -
-                             gamma(c) * stan::math::distance(z_s, w.row(i))) -
+                             gamma(c) * stan::math::distance(z_s, w.row(c*I + i))) -
              stan::math::exp(beta(i, c) + theta(c) -
-                             gamma(c) * stan::math::distance(z, w.row(i))));
+                             gamma(c) * stan::math::distance(z, w.row(c*I + i))));
 
         if (Y_k(i) == c) {
-          logr_z -= gamma(c) * ( stan::math::distance(z_s, w.row(i)) - stan::math::distance(z, w.row(i)));
+          logr_z -= gamma(c) * ( stan::math::distance(z_s, w.row(c*I + i)) - stan::math::distance(z, w.row(c*I + i)));
         }
       }
     }

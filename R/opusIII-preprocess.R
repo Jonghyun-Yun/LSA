@@ -60,12 +60,6 @@ mt[is.na(mt)] = -99
 mseg[is.na(mseg)] = -99
 mh[is.na(mh)] = -99
 
-# g = 1
-# mseg %>% rowwise() %>% mutate(g0 = sum(c_across(where(is.numeric)) == 0))
-
-
-#   mutate(paste0("g",g) = sum(group_by(item) %>% summarise(g0 = sum(resp == 0), T = sum(resp == 1))
-
 ## data and fixed parameters
 I = nrow(mt)
 N = ncol(mt)
@@ -79,13 +73,23 @@ readr::write_csv(as.data.frame(mt),"input/mt.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(mi),"input/mi.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(mNA),"input/mNA.csv", col_names = FALSE)
 
+mtab_sj = t( apply(mseg, 1, function(x) tab_sj(x,G)) )
+
+tmp_0 = mseg; tmp_0[mi==1] = -99;
+tmp_1 = mseg; tmp_1[mi==0] = -99;
+
+mIY = rbind( t( apply(tmp_0, 1, function(x) tab_IY(x,G)) ), t( apply(tmp_1, 1, function(x) tab_IY(x,G)) ))
+
+readr::write_csv(as.data.frame(mtab_sj),"input/mtab_sj.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mIY),"input/mIY.csv", col_names = FALSE)
+
 mvar = readr::read_csv("input/mvar.csv", col_names=FALSE) %>% as.matrix()
 I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
 
 ## lambda
-a_lambda = matrix(0.01,I,G)
-b_lambda = matrix(0.01,I,G)
-jump_lambda = matrix(1.0,I,G)
+a_lambda = matrix(0.1,I,G)
+b_lambda = matrix(0.1,I,G)
+jump_lambda = matrix(0.5,I,G)
 
 mu_beta = matrix(0.0,I,2)
 sigma_beta = matrix(sqrt(1.0),I,2)
@@ -108,7 +112,7 @@ jump_z = matrix(1.0,N,2)
 
 mu_w = matrix(0.0,I,2)
 sigma_w = matrix(sqrt(1.0),I,2)
-jump_w = matrix(0.25,I,2)
+jump_w = matrix(0.5,I,2)
 
 readr::write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"input/pj_lambda.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"input/pj_beta.csv", col_names = FALSE)
