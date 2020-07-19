@@ -335,7 +335,7 @@ int main(int argc, const char *argv[]) {
   Eigen::VectorXd acc_z;
   Eigen::VectorXd acc_w;
   Eigen::VectorXd acc_gamma;
-  Eigen::MatrixXd acc_lambda = Eigen::MatrixXd::Zero(2*I, G);
+  Eigen::MatrixXd acc_lambda = Eigen::MatrixXd::Ones(2*I, G);
 
   Eigen::VectorXd lastline;
   double lp_lastline;
@@ -537,7 +537,7 @@ int main(int argc, const char *argv[]) {
           tbb::blocked_range<int>(0, N),
           [&](tbb::blocked_range<int> r) {
               for (int k = r.begin(); k < r.end(); ++k) {
-                // TODO: fix update_single_z according to update_double_w
+                // DONE: fix update_single_z according to update_double_w
                   z.row(k) = update_single_z(
                     z.row(k), acc_z(k), mu_z.row(k), sigma_z.row(k), jump_z.row(k),
                     cum_lambda.col(k), beta, theta.row(k), gamma,
@@ -752,7 +752,6 @@ int main(int argc, const char *argv[]) {
           // std::cout << "calculating log-posterior...\n";
 // eval log_prob
 
-
       // TODO: match prior dimension with double / single z and w
       if (RUN_PAR) {
         lp_ = par_fun_lp(a_lambda, b_lambda, mu_beta, sigma_beta, mu_theta, sigma_theta,
@@ -792,7 +791,7 @@ int main(int argc, const char *argv[]) {
 // if (is_empty(osummary)) osummary << ".chain, " << "accept_stat\n";
     osummary << (CONT?"continued, ":"initialized, ")
              << chain_id
-             << ", " << acc_lambda.mean() / (double)num_iter
+             << ", " << acc_lambda.mean()
              << ", " << acc_theta.mean() / (double)num_iter
              << ", " << acc_beta.mean() / (double)num_iter
              << ", " << acc_z.mean() / (double)num_iter

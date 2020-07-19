@@ -76,28 +76,30 @@ if (double_z && !double_w) {
 }
 dev.off(which = dev.cur())
 
-z0.star = Xstar$z.0
-z1.star = Xstar$z.1
-w0.star = Xstar$w.0
-w1.star = Xstar$w.1
+if (!HAS_REF) {
+  z0.star = Xstar$z.0
+  z1.star = Xstar$z.1
+  w0.star = Xstar$w.0
+  w1.star = Xstar$w.1
 
-xmin = min(z0.star[,1],z1.star[,1],w0.star[,1],w1.star[,1])
-ymin = min(z0.star[,2],z1.star[,2],w0.star[,2],w1.star[,2])
-xmax = max(z0.star[,1],z1.star[,1],w0.star[,1],w1.star[,1])
-ymax = max(z0.star[,2],z1.star[,2],w0.star[,2],w1.star[,2])
+  xmin = min(z0.star[,1],z1.star[,1],w0.star[,1],w1.star[,1])
+  ymin = min(z0.star[,2],z1.star[,2],w0.star[,2],w1.star[,2])
+  xmax = max(z0.star[,1],z1.star[,1],w0.star[,1],w1.star[,1])
+  ymax = max(z0.star[,2],z1.star[,2],w0.star[,2],w1.star[,2])
 
-myname = c(1:N,paste0("I.",1:I))
-pdf("figure/latent_space_mode.pdf")
-print(lsjmplot(z0.star,w0.star,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
-if (double_z && !double_w) {
-  print(lsjmplot(z1.star,w0.star,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
-} else if (double_z && double_w) {
-  print(lsjmplot(z1.star,w1.star,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
-} else if (!double_z && double_w) {
-  print(lsjmplot(z0.star,w1.star,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+  myname = c(1:N,paste0("I.",1:I))
+  pdf("figure/latent_space_mode.pdf")
+  print(lsjmplot(z0.star,w0.star,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+  if (double_z && !double_w) {
+    print(lsjmplot(z1.star,w0.star,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+  } else if (double_z && double_w) {
+    print(lsjmplot(z1.star,w1.star,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+  } else if (!double_z && double_w) {
+    print(lsjmplot(z0.star,w1.star,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+  }
+
+  dev.off(which = dev.cur())
 }
-
-dev.off(which = dev.cur())
 
 pdf("figure/latent_space_mean.pdf")
 
@@ -112,11 +114,11 @@ ymax = max(z0[,2],z1[,2],w0[,2],w1[,2])
 
 myname = c(1:N,paste0("I.",1:I))
 print(lsjmplot(z0,w0,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
- if (double_z && !double_w) {
-   print(lsjmplot(z1,w0,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
- } else if (double_z && double_w) {
-   print(lsjmplot(z1,w1,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
- } else if (!double_z && double_w) {
-   print(lsjmplot(z0,w1,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
- }
+if (double_z && !double_w) {
+  print(lsjmplot(z1,w0,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+} else if (double_z && double_w) {
+  print(lsjmplot(z1,w1,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+} else if (!double_z && double_w) {
+  print(lsjmplot(z0,w1,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+}
 dev.off(which = dev.cur())

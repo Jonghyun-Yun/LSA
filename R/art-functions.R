@@ -1,38 +1,52 @@
 pullit = function(info,cl) {
-it = info %>% filter(Cluster_A == cl)# %>% dplyr::select(Item,Time)
-item = pull(it,Item)
-time = pull(it,Time)
-return(cbind(item,time))
+  it = info %>% filter(Cluster_A == cl)# %>% dplyr::select(Item,Time)
+  item = pull(it,Item)
+  time = pull(it,Time)
+  return(cbind(item,time))
 }
 
 tabulate_id = function(chrid) {
-## reference table of charactor and numeric id
+  ## reference table of charactor and numeric id
   chr = sort(unique(chrid))
   out = data.frame(chr = chr, num = 1:length(chr))
   return(out)
 }
 to_numID = function(x, tab) {
-    sapply(x, function(x) tab$num[which(tab$chr == x)])
+  sapply(x, function(x) tab$num[which(tab$chr == x)])
 }
 
 to_chrID = function(x, tab) {
-    sapply(x, function(x) tab$chr[which(tab$num == x)])
+  sapply(x, function(x) tab$chr[which(tab$num == x)])
 }
 
 tab_sj = function(seg_g, G) {
-res = NULL
-for (m in 0:(G-1)) {
-res = c(res, sum(seg_g >= m))
-}
-return(res)
+  res = NULL
+  for (m in 0:(G-1)) {
+    res = c(res, sum(seg_g >= m))
+  }
+  return(res)
 }
 
 tab_IY = function(seg_g, G) {
-res = NULL
-for (m in 0:(G-1)) {
-res = c(res, sum(seg_g == m))
+  res = NULL
+  for (m in 0:(G-1)) {
+    res = c(res, sum(seg_g == m))
+  }
+  return(res)
 }
-return(res)
+
+tabulate_id = function(chrid) {
+  ## reference table of charactor and numeric id
+  chr = sort(unique(chrid))
+  out = data.frame(chr = chr, num = 1:length(chr))
+  return(out)
+}
+to_numID = function(x, tab) {
+  sapply(x, function(x) tab$num[which(tab$chr == x)])
+}
+
+to_chrID = function(x, tab) {
+  sapply(x, function(x) tab$chr[which(tab$num == x)])
 }
 
 my_procrustes = function(Xstar, dlist, is_list = FALSE, translation = TRUE, scale = FALSE, reflect = TRUE) {
@@ -60,7 +74,7 @@ my_procrustes = function(Xstar, dlist, is_list = FALSE, translation = TRUE, scal
     z0 = aperm( array(unlist( t(df[,z0dx])), dim = c(2, num_z, num_samples)), c(2,1,3))
 
     w0star = Xstar$w.0
-   
+
     if (no_w1) {
       w1 = NULL
     } else {
@@ -101,32 +115,32 @@ my_procrustes = function(Xstar, dlist, is_list = FALSE, translation = TRUE, scal
   z0 = posm[1:num_z,]
   if (no_z1 && no_w1) {
     w0 = posm[num_z + (1:num_w),]
-    } else if (no_z1 && !no_w1) {
-      w0 = posm[num_z + (1:num_w),]
-      w1 = posm[num_z + num_w + (1:num_w),]
-    }
+  } else if (no_z1 && !no_w1) {
+    w0 = posm[num_z + (1:num_w),]
+    w1 = posm[num_z + num_w + (1:num_w),]
+  }
 
   if (!no_z1 && no_w1) {
     z1 = posm[num_z + (1:num_z),]
     w0 = posm[2*num_z + (1:num_w),]
   } else if (!no_z1 && !no_w1) {
-      z1 = posm[num_z + (1:num_z),]
-      w0 = posm[2*num_z + (1:num_w),]
-      w1 = posm[2*num_z + num_w + (1:num_w),]
-    }
+    z1 = posm[num_z + (1:num_z),]
+    w0 = posm[2*num_z + (1:num_w),]
+    w1 = posm[2*num_z + num_w + (1:num_w),]
+  }
   return(list(dlist = dlist, z0=z0, z1=z1, w0=w0, w1=w1))
 }
 
 getparam = function(posm, sj, i, k) {
-cname = names(posm)
-z = posm[str_which(cname, paste0("z\\.[0-1]\\.",k,"\\.[1-2]"))] %>% matrix(nrow = 2, ncol = 2) %>% t()
-w = posm[str_which(cname, paste0("w\\.[0-1]\\.",i,"\\.[1-2]"))] %>% matrix(nrow = 2, ncol = 2) %>% t()
-gamma = posm[str_which(cname, paste0("gamma"))]
-beta = posm[str_which(cname, paste0("beta\\.",i,"\\."))]
-theta = posm[str_which(cname, paste0("theta\\.",k,"\\."))]
-lambda = posm[str_which(cname, paste0("lambda\\.[0-1]\\.",i,"\\."))] %>% matrix(ncol = 2) %>% t()
-H = sj[2:(G+1)] - sj[1:G]
-return(list(lambda=lambda,beta=beta,theta=theta,gamma=gamma,z=z,w=w,sj=sj,H=H))
+  cname = names(posm)
+  z = posm[str_which(cname, paste0("z\\.[0-1]\\.",k,"\\.[1-2]"))] %>% matrix(nrow = 2, ncol = 2) %>% t()
+  w = posm[str_which(cname, paste0("w\\.[0-1]\\.",i,"\\.[1-2]"))] %>% matrix(nrow = 2, ncol = 2) %>% t()
+  gamma = posm[str_which(cname, paste0("gamma"))]
+  beta = posm[str_which(cname, paste0("beta\\.",i,"\\."))]
+  theta = posm[str_which(cname, paste0("theta\\.",k,"\\."))]
+  lambda = posm[str_which(cname, paste0("lambda\\.[0-1]\\.",i,"\\."))] %>% matrix(ncol = 2) %>% t()
+  H = sj[2:(G+1)] - sj[1:G]
+  return(list(lambda=lambda,beta=beta,theta=theta,gamma=gamma,z=z,w=w,sj=sj,H=H))
 }
 
 fun_hazard_surv = function(t,i,k,posm,cname,sj) {
@@ -143,7 +157,7 @@ fun_hazard_surv = function(t,i,k,posm,cname,sj) {
   seg = 0
   for (g in 1:G) {
     seg = seg + 1 * (t > sj[g])
-    }
+  }
   out = lambda[seg,2] * exp(beta[,2] + theta[,2] - gamma[,2] * sqrt(sum((z[,2]-w[,2])^2)))
   if (seg == 1) {
     for (c in 1:2) {
@@ -155,30 +169,30 @@ fun_hazard_surv = function(t,i,k,posm,cname,sj) {
       out = out * exp(
                     - ((t - sj[seg]) *lambda[seg,c] + sum(H[1:(seg-1)] * lambda[1:(seg-1),c])) * exp(beta[,c] + theta[,c] - gamma[,c] * sqrt(sum((z[,c]-w[,c])^2))))
     }
-    }
-    names(out) = NULL
-    return(out)
   }
+  names(out) = NULL
+  return(out)
+}
 
 fun_hazard_ick = function(t,i,c,k,posm,cname,sj) {
-z = posm[str_which(cname, paste0("z\\.",c,"\\.",k,"\\.[1-2]"))]
-w = posm[str_which(cname, paste0("w\\.",i))]
-gamma = posm[str_which(cname, paste0("gamma\\.",c))]
-beta = posm[str_which(cname, paste0("beta\\.",i,"\\.",c))]
-theta = posm[str_which(cname, paste0("theta\\.",k,"\\.",c))]
-lambda = posm[str_which(cname, paste0("lambda\\.",c,"\\.",i,"\\."))]
+  z = posm[str_which(cname, paste0("z\\.",c,"\\.",k,"\\.[1-2]"))]
+  w = posm[str_which(cname, paste0("w\\.",i))]
+  gamma = posm[str_which(cname, paste0("gamma\\.",c))]
+  beta = posm[str_which(cname, paste0("beta\\.",i,"\\.",c))]
+  theta = posm[str_which(cname, paste0("theta\\.",k,"\\.",c))]
+  lambda = posm[str_which(cname, paste0("lambda\\.",c,"\\.",i,"\\."))]
 
-G = length(lambda)
-seg = 0 * t
-for (g in 1:G)
-  seg = seg + 1 * (t > sj[g])
-hazard = lambda[seg] * exp(beta + theta - gamma * sum((z-w)^2))
-names(hazard) = NULL
-return(hazard)
+  G = length(lambda)
+  seg = 0 * t
+  for (g in 1:G)
+    seg = seg + 1 * (t > sj[g])
+  hazard = lambda[seg] * exp(beta + theta - gamma * sum((z-w)^2))
+  names(hazard) = NULL
+  return(hazard)
 }
 
 fun_accuracy_ick = function(t,i,k,posm,cname,sj) {
-fun_hazard_ick(t,i,1,k,posm,cname,sj) / (fun_hazard_ick(t,i,1,k,posm,cname,sj) + fun_hazard_ick(t,i,0,k,posm,cname,sj))
+  fun_hazard_ick(t,i,1,k,posm,cname,sj) / (fun_hazard_ick(t,i,1,k,posm,cname,sj) + fun_hazard_ick(t,i,0,k,posm,cname,sj))
 }
 
 library(ggplot2)
@@ -238,40 +252,40 @@ lsjmplot <- function( z, w, myname = NULL, xlim=NA, ylim=NA, lab = "Coordinate")
 }
 
 find_xstar = function(df) {
-num_samples = nrow(df)
+  num_samples = nrow(df)
 
-z0dx = grepl("^z\\.0\\.", colnames(df))
-z1dx = grepl("^z\\.1\\.", colnames(df))
-w0dx = grepl("^w\\.0\\.", colnames(df))
-w1dx = grepl("^w\\.1\\.", colnames(df))
-adx = z0dx | z1dx | w0dx | w1dx
+  z0dx = grepl("^z\\.0\\.", colnames(df))
+  z1dx = grepl("^z\\.1\\.", colnames(df))
+  w0dx = grepl("^w\\.0\\.", colnames(df))
+  w1dx = grepl("^w\\.1\\.", colnames(df))
+  adx = z0dx | z1dx | w0dx | w1dx
 
-mlp_ = max(df$lp_)
-star = min(which.max(df$lp_))
-lpos = df[,adx]
-Xstar = list()
-Xstar$z.0 = matrix(unlist(df[star,z0dx]), byrow = T, ncol = 2)
-if (sum(z1dx) == 0) {
-Xstar$z.1 = NULL
-} else {
-Xstar$z.1 = matrix(unlist(df[star,z1dx]), byrow = T, ncol = 2)
-}
-if (sum(w1dx) == 0) {
-Xstar$w.1 = NULL
-} else {
-Xstar$w.1 = matrix(unlist(df[star,w1dx]), byrow = T, ncol = 2)
-}
-Xstar$w.0 = matrix(unlist(df[star,w0dx]), byrow = T, ncol = 2)
-return(list(lp_ = mlp_, Xstar=Xstar))}
+  mlp_ = max(df$lp_)
+  star = min(which.max(df$lp_))
+  lpos = df[,adx]
+  Xstar = list()
+  Xstar$z.0 = matrix(unlist(df[star,z0dx]), byrow = T, ncol = 2)
+  if (sum(z1dx) == 0) {
+    Xstar$z.1 = NULL
+  } else {
+    Xstar$z.1 = matrix(unlist(df[star,z1dx]), byrow = T, ncol = 2)
+  }
+  if (sum(w1dx) == 0) {
+    Xstar$w.1 = NULL
+  } else {
+    Xstar$w.1 = matrix(unlist(df[star,w1dx]), byrow = T, ncol = 2)
+  }
+  Xstar$w.0 = matrix(unlist(df[star,w0dx]), byrow = T, ncol = 2)
+  return(list(lp_ = mlp_, Xstar=Xstar))}
 
 find_xstar_inlist = function(mydf) {
-num_chain = length(mydf)
-mlp = -Inf
+  num_chain = length(mydf)
+  mlp = -Inf
   for (i in 1:num_chain) {
-  slist = find_xstar(mydf[[i]])
-  if (slist$lp_ > mlp) Xstar = slist$Xstar
+    slist = find_xstar(mydf[[i]])
+    if (slist$lp_ > mlp) Xstar = slist$Xstar
   }
-return(Xstar)}
+  return(Xstar)}
 
 do_procrustes = function(Xstar, mydf, is_list = FALSE, translation = TRUE, scale = FALSE, reflect = TRUE) {
   posm = 0
@@ -324,8 +338,8 @@ do_procrustes = function(Xstar, mydf, is_list = FALSE, translation = TRUE, scale
     w = posm[-(1:N),]
     z1 = NULL
   } else {
-  z1 = posm[(N + 1):(2*N),]
-  w = posm[-(1:(2*N)),]
+    z1 = posm[(N + 1):(2*N),]
+    w = posm[-(1:(2*N)),]
   }
   return(list(mydf = mydf, z0=z0, z1=z1, w=w))
 }

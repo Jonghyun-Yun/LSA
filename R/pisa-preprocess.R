@@ -84,11 +84,11 @@ nitem = ncol(tt01)
 
 tf01 = data.frame(time = c(as.matrix(tt01)), status = 1)
 tmp <- survSplit(formula = Surv(time, status) ~ ., data = tf01, cut = sj, episode ="seg_g") %>%
-    mutate(seg = factor(tstart),
-           seg_g = seg_g - 2,
-           len = time - tstart
-           ) %>% filter(status == 1) %>%
-    as_tibble
+  mutate(seg = factor(tstart),
+         seg_g = seg_g - 2,
+         len = time - tstart
+         ) %>% filter(status == 1) %>%
+  as_tibble
 
 mseg = matrix(pull(tmp,seg_g),ncol=nitem) %>% t()
 mh = matrix(pull(tmp,len),ncol=nitem) %>% t()
@@ -100,7 +100,7 @@ mi = di01 %>% dplyr::select(-ST004D01T,-schid,-stuid) %>% dplyr::select(- CNTSCH
 I = nrow(mt)
 N = ncol(mt)
 C = 2
-G = ncut # 
+G = ncut #
 readr::write_csv(data.frame(I=I, N=N, C=C, G=G), "input/mvar.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(mlen),"input/mlen.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(mseg),"input/mseg.csv", col_names = FALSE)
