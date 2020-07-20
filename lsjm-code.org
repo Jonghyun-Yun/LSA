@@ -117,19 +117,11 @@
 #+Bibliography: ~/Zotero/myref.bib
 #+PANDOC_OPTIONS: csl:~/Zotero/styles/chicago-author-date.csl
 
-# #+LATEX_HEADER: \usepackage[backend=bibtex, style=numeric, natbib=true]{biblatex}
-# #+LATEX_HEADER: \addbibresource{~/Zotero/myref.bib}
-# #+LATEX_HEADER: \hypersetup{urlcolor=blue}
-# #+LATEX_HEADER: \hypersetup{colorlinks,urlcolor=blue}
-# #+LATEX_HEADER: \usepackage[authoryear]{natbib}
-
-# #+LATEX_HEADER: \usepackage[natbib=true, backend=bibtex, maxbibnames=3, doi=false, isbn=false, style=nature]{biblatex}
-#+LATEX_HEADER: \usepackage[natbib=true, backend=bibtex, maxbibnames=3, doi=false, isbn=false, style=nature]{biblatex}
 #+LATEX_HEADER: \addbibresource{~/Zotero/myref.bib}
-# #+LATEX_HEADER: \AtEveryBibitem{\clearfield{note}}
-# #+LATEX_HEADER: \AtEveryBibitem{\clearfield{month}}
-# #+LATEX_HEADER: \AtEveryBibitem{\clearfield{day}}
-# #+LATEX_HEADER: \AtEveryBibitem{\clearfield{eprint}}
+#+LATEX_HEADER: \AtEveryBibitem{\clearfield{note}}
+#+LATEX_HEADER: \AtEveryBibitem{\clearfield{month}}
+#+LATEX_HEADER: \AtEveryBibitem{\clearfield{day}}
+#+LATEX_HEADER: \AtEveryBibitem{\clearfield{eprint}}
 
 #+latex: \begingroup
 #+latex: \renewcommand{\section}[2]{}%
@@ -1905,35 +1897,42 @@ mv output pisa-KR-singleZ-singleW
 #+end_src
 
 #+begin_src sh :tangle run.sh
+#!/usr/bin/env bash
 export STAN_NUM_THREADS=10
 
 mkdir -p output
-rm output/*
+rm -r output/*
 
-mv pisa-KR-sci2018-singleZ-singleW output
+rsync -rv pisa-KR-sci2018-singleZ-singleW/ output
 
 Rscript "R/pisa-KR-sci2018-preprocess.R"
 cp input/{mvar,mlen}.csv output/
-cp run.sh output/
+
+touch output/run_hist.sh
+cat run.sh >> output/run_hist.sh
+
 for v in {1..3}
 do
     ./main continue parallel single_w single_z full latent no_gamma $v 10000 10 10
 done
-mv output pisa-KR-sci2018-singleZ-singleW
+rsync -rv output/ pisa-KR-sci2018-singleZ-singleW
 
 mkdir -p output
-rm output/*
+rm -r output/*
 
-mv pisa-KR-singleZ-singleW output
+rsync -rv pisa-KR-singleZ-singleW/ output
 
 Rscript "R/pisa-KR-preprocess.R"
 cp input/{mvar,mlen}.csv output/
-cp run.sh output/
+
+touch output/run_hist.sh
+cat run.sh >> output/run_hist.sh
+
 for v in {1..3}
 do
     ./main continue parallel single_w single_z full latent no_gamma $v 10000 10 10
 done
-mv output pisa-KR-singleZ-singleW
+rsync -rv output/ pisa-KR-singleZ-singleW
 #+end_src
 
 #+begin_src sh :tangle run.sh
@@ -1990,22 +1989,15 @@ done
 mv output opusIII-singleZ-singleW
 #+end_src
 
+** Using R
 #+BEGIN_SRC R :tangle R/run-analysis.R
 num_chain = 3; double_z = 0; double_w = 0; HAS_REF = 0;
-#+END_SRC
-
-#+BEGIN_SRC R :tangle R/run-analysis.R
-out_dir = "marketing-singleZ-singleW/"
-system(paste0("rm figure/*.pdf"))
-source("R/art-analysis.R")
-system(paste0("mkdir -p ", out_dir, "figure/"))
-system(paste0("mv figure/*.pdf ", out_dir,"figure/"))
 
 out_dir = "pisa-KR-sci2018-singleZ-singleW/"
 system(paste0("rm figure/*.pdf"))
 source("R/art-analysis.R")
 system(paste0("mkdir -p ", out_dir, "figure/"))
-system(paste0("mv figure/*.pdf ", out_dir,"figure/"))
+system(paste0("rsync -rv figure/*.pdf ", out_dir,"figure/"))
 
 ref_dir = "pisa-singleZ-singleW/"
 HAS_REF = 1
@@ -2014,9 +2006,17 @@ out_dir = "pisa-KR-singleZ-singleW/"
 system(paste0("rm figure/*.pdf"))
 source("R/art-analysis.R")
 system(paste0("mkdir -p ", out_dir, "figure/"))
-system(paste0("mv figure/*.pdf ", out_dir,"figure/"))
+system(paste0("rsync -rv figure/*.pdf ", out_dir,"figure/"))
 
 HAS_REF = 0
+#+END_SRC
+
+#+BEGIN_SRC R :tangle R/run-analysis.R
+out_dir = "marketing-singleZ-singleW/"
+system(paste0("rm figure/*.pdf"))
+source("R/art-analysis.R")
+system(paste0("mkdir -p ", out_dir, "figure/"))
+system(paste0("mv figure/*.pdf ", out_dir,"figure/"))
 #+END_SRC
 
 #+BEGIN_SRC R
@@ -2041,7 +2041,6 @@ system(paste0("mkdir -p ", out_dir, "figure/"))
 system(paste0("mv figure/*.pdf figure/",out_dir))
 #+END_SRC
 
-** Using R
 #+BEGIN_SRC R :results none
 ## Rcpp::sourceCpp("comprisk.cpp")
 ## install.packages("art_1.0.tar.gz", repos = NULL, type="source")
@@ -2058,7 +2057,7 @@ library(magrittr)
 library(bayesplot)
 library(foreach)
 library(doParallel)
-                                        #registerDoParallel(cores = detectCores() - 1)
+##registerDoParallel(cores = detectCores() - 1)
 registerDoParallel(6)
 
 setwd("/Users/yunj/Dropbox/research/lsjm-art/lsjm-code")
@@ -2135,7 +2134,7 @@ no_w1 = !grepl("^w\\.1\\.", cnames)
 
 dlist = list()
 for (cid in 1:num_chain) {
-  dlist[[cid]] = readr::read_csv(paste0(out_dir,"sample_chain",cid,".csv"), col_names=F, skip=0) %>% as.data.frame()
+  dlist[[cid]] = readr::read_csv(paste0(out_dir,"sample_chain",cid,".csv"), col_names=F, skip=1000) %>% as.data.frame()
   colnames(dlist[[cid]]) = cnames
   if (!double_z && !double_w) {
     dlist[[cid]] = dlist[[cid]][,no_z1 & no_w1] ## remove duplicates when single_z and single_w

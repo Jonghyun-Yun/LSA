@@ -6,7 +6,7 @@ library(magrittr)
 library(bayesplot)
 library(foreach)
 library(doParallel)
-                                        #registerDoParallel(cores = detectCores() - 1)
+##registerDoParallel(cores = detectCores() - 1)
 registerDoParallel(6)
 
 setwd("/Users/yunj/Dropbox/research/lsjm-art/lsjm-code")
