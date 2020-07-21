@@ -34,7 +34,7 @@ rm -r output/*
 
 rsync -rv pisa-KR-sci2018-singleZ-singleW/ output
 
-Rscript "R/pisa-KR-sci2018-preprocess.R"
+Rscript R/pisa-KR-sci2018-preprocess.R
 cp input/{mvar,mlen}.csv output/
 
 touch output/run_hist.sh
@@ -51,7 +51,7 @@ rm -r output/*
 
 rsync -rv pisa-KR-singleZ-singleW/ output
 
-Rscript "R/pisa-KR-preprocess.R"
+Rscript R/pisa-KR-preprocess.R
 cp input/{mvar,mlen}.csv output/
 
 touch output/run_hist.sh

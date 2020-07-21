@@ -7,7 +7,7 @@
 // #include <cmath>
 #include <cstdlib>  // to process main(arguemnts)
 #include <ctime>    // std::time
-#include <typeinfo> // typeid(a).name()
+// #include <typeinfo> // typeid(a).name()
 #include <string>
 #include <vector>
 
@@ -32,14 +32,18 @@
 // typedef Eigen::Map<Eigen::VectorXd> MapVecd;
 // typedef Eigen::Block<Eigen::MatrixXd> BlkMatd;
 
+// map c++ array to Eigen
 typedef Eigen::Map<Eigen::MatrixXd> MapMatd;
 typedef Eigen::Map<Eigen::VectorXd> MapVecd;
+
+// map c++ array to Eigen matrix by rows
 typedef Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> MapMatdRow;
 
 // see https://eigen.tuxfamily.org/dox/structEigen_1_1IOFormat.html
 const static Eigen::IOFormat CSVFormatN(Eigen::StreamPrecision,
                                         Eigen::DontAlignCols, ", ", "\n");
 
+// format matrix by row vectors (all separated by commas)
 const static Eigen::IOFormat CSVFormat(Eigen::FullPrecision,
                                        Eigen::DontAlignCols, ", ", ", ");
 
@@ -47,6 +51,8 @@ const static Eigen::IOFormat CommaInitFmt(Eigen::StreamPrecision,
                                           Eigen::DontAlignCols, ", ", ", ", "",
                                           "", "", "\n");
 
+// NOTE: inline function may speed up the run time, but it may slow down the compilatoin time.
+// https://www.edureka.co/blog/inline-function-in-cpp/
 inline double update_sigma(const double& a_sigma, const double &b_sigma,
                            const Eigen::MatrixXd &theta, const int &N, boost::ecuyer1988 &rng) {
   return stan::math::sqrt(stan::math::inv_gamma_rng(a_sigma + 0.5 * N, b_sigma + 0.5 * theta.array().square().sum(), rng));
@@ -58,7 +64,6 @@ int main(int argc, const char *argv[]) {
   sarg.assign(argv, argv + argc);
 
   // commandline argument:
-
   bool CONT;
   if (sarg[1] == "continue") {
     CONT = true;
@@ -80,7 +85,7 @@ int main(int argc, const char *argv[]) {
     return 0;
   }
 
-  // single z or double z
+  // single w or double w
   bool SINGLE_W;
   if (sarg[3] == "single_w") {
     SINGLE_W = true;
@@ -102,7 +107,7 @@ int main(int argc, const char *argv[]) {
     return 0;
   }
 
-  // missing?
+  // missing or not?
   bool FULL_OBS;
   if (sarg[5] == "full") {
     FULL_OBS = true;
@@ -139,11 +144,8 @@ int main(int argc, const char *argv[]) {
   int num_samples = atoi(argv[9]);
   int num_warmup = atoi(argv[10]);
   int thin = atoi(argv[11]);
-  // double my_eps = atof(argv[4]);
-  // int my_L = atoi(argv[5]);
-  // double min_E = atof(argv[6]);
-  // double max_E = atof(argv[7]);
 
+  // log-posterior
   double lp_;
   int num_print;
 
@@ -159,9 +161,15 @@ int main(int argc, const char *argv[]) {
   std::stringstream fstart, fsummary, fsample;
   // std::streingtream fwarmup;
 
+  // MCMC chain configuration
   fstart << "./output/start.csv";
+
   // fwarmup << "./output/warmup.csv";
+
+  // acceptance rate
   fsummary << "./output/summary.csv";
+
+  // posterior samples
   fsample << "./output/sample_chain" << chain_id << ".csv";
 
   // use current time as seed for random generator
@@ -201,19 +209,30 @@ int main(int argc, const char *argv[]) {
   // Eigen::MatrixXd mtab_sj(I, G);
   Eigen::MatrixXd mIY(2 * I, G);
 
-
+  // time segment length
   mlen = readCSV("input/mlen.csv", G, 1);
+
+  // segment event occurs
   tmp_mseg = readCSV("input/mseg.csv", I, N);
+
+  // t - s_j for smallest j s.t. s_j < t
   mH = readCSV("input/mh.csv", I, N);
+
   // mt = readCSV("input/mt.csv", I, N);
+
+  // response
   tmp_mY = readCSV("input/mi.csv", I, N);
 
   // mtab_sj = readCSV("mtab_sj.csv", I, G);
+
+  // #{Y=c} for each time segment
   mIY = readCSV("input/mIY.csv", 2*I, G);
 
+  // integer conversion
   mseg = tmp_mseg.cast<int>();
   mY = tmp_mY.cast<int>();
 
+  // missing indicator: 0 missing; 1 not missing
   if (FULL_OBS) {
     mNA.setOnes();
   }
@@ -337,6 +356,8 @@ int main(int argc, const char *argv[]) {
   Eigen::VectorXd acc_gamma;
   Eigen::MatrixXd acc_lambda = Eigen::MatrixXd::Ones(2*I, G);
 
+  // to read the lastline of sample_chain.csv
+  // used to continue and append chains
   Eigen::VectorXd lastline;
   double lp_lastline;
   int iter_lastline = 0;
@@ -370,6 +391,7 @@ int main(int argc, const char *argv[]) {
     // lp_ read from the last line
     lp_lastline = lastline(2 + 2*I*G + I*2 + N*2 + 2*N*2 + 2*I*2 + 2 + 1);
 
+    // lp_ calculated using samples in the last line
     fun_cum_lambda(lambda, cum_lambda, I, N, mNA, mlen, mseg, mH);
     lp_ = fun_lp(a_lambda, b_lambda, mu_beta, sigma_beta, mu_theta, sigma_theta,
                  a_sigma, b_sigma, mu_gamma, sigma_gamma, mu_z, sigma_z, mu_w, sigma_w,
@@ -733,6 +755,7 @@ int main(int argc, const char *argv[]) {
     // updating sigma
     sigma = update_sigma(a_sigma, b_sigma, theta, N, rng);
 
+    // rough estimated run time for 100 iterations
     if (ii == 10) {
       std::clock_t c_end = std::clock();
       double time_elapsed_ms = 10.0 * 1000.0 * (c_end - c_start) / CLOCKS_PER_SEC;
@@ -740,6 +763,8 @@ int main(int argc, const char *argv[]) {
                 << " milliseconds.\n"
                 << "Adjust your expectations accordingly!\n\n";
     }
+
+    // print sampling process
     if (((ii % num_print == 0) && (ii > 10)) || ii ==  num_samples)
       std::cout << "Chain " << std::setw(3) << chain_id << ": "
                 << "Iteration: " << std::setw(7) << std::right << ii + iter_lastline << " / "
@@ -749,8 +774,9 @@ int main(int argc, const char *argv[]) {
 
     if ((ii % thin == 0) && (ii > num_warmup)) {
 
-          // std::cout << "calculating log-posterior...\n";
-// eval log_prob
+
+      // std::cout << "calculating log-posterior...\n";
+      // evaluate log_posteriror
 
       // TODO: match prior dimension with double / single z and w
       if (RUN_PAR) {
@@ -765,9 +791,9 @@ int main(int argc, const char *argv[]) {
                      lambda, cum_lambda, beta, theta, sigma, gamma, z, w,
                      I, N, G, mNA, mlen, mseg, mH, mY, SINGLE_Z, SINGLE_W, UPDATE_GAMMA);
       }
-      // x.format(CommaInitFmt);
 
-      // WARNING: DO NOT change the stream order unless you want to change it everywhere (R script too!)
+      // save samples to a csv file
+      // NOTE: DO NOT change the stream order unless you want to change it everywhere (R script too!)
       osample << chain_id << ", " << ii + iter_lastline
               << ", " << lambda.format(CSVFormat)
               << ", " << theta.format(CSVFormat)
@@ -788,7 +814,6 @@ int main(int argc, const char *argv[]) {
       std::cout << "cannot open the log file:" << fsummary.str() << "\n";
       return 0;
     }
-// if (is_empty(osummary)) osummary << ".chain, " << "accept_stat\n";
     osummary << (CONT?"continued, ":"initialized, ")
              << chain_id
              << ", " << acc_lambda.mean()
