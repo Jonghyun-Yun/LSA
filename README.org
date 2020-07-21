@@ -3,8 +3,13 @@
 #+include: ~/org/OSX.org::CMakeLists
 #+include: ~/org/OSX.org::compile_commands
 
-* STAN MATH LIBRARY
-  You need to install ~Stan math library~ (https://github.com/stan-dev/math). I am using
+* Getting started...
+
+  Tempest (latent space competing risk model for response and response time) runs based on C++ for Gibbs samplers and R / Rcpp for data preprocessing and posterior sample analysis.
+The Tempest depends on the Stan math library. We should build the Stan math library, and then you can build the Tempest executable.
+
+* Building the Stan math library
+  First, you need to build ~Stan Math Library~ obtained from https://github.com/stan-dev/math. I am using
 develop commit fd1d8917ee5754810cfab4f7871760315e075135
 
 The below is a shell script to download and build the Stan Math Library. You may change the target directory ~path/to/stan-math~.
@@ -21,10 +26,10 @@ install.packages("StanHeaders")
 For more inforamtion, please see https://cran.r-project.org/web/packages/StanHeaders/vignettes/stanmath.html
 I initialized an R package in an ~art~ directory using the STAN header.
 
-* CMAKE
+* CMake
   The below is a CMake build script.
-You need to set ~MATH~ variable to indicate the Stan Math Library directory (here, it is set to ~/Users/yunj/stan-dev/math~).
-Then, save the script as ~CMakeLists.txt~.
+You need to set ~MATH~ variable to indicate the Stan Math Library path (here, it is set to ~/Users/yunj/stan-dev/math~). Then, save the script as ~CMakeLists.txt~.
+
   #+begin_src cmake :tangle CMakeLists.txt
   cmake_minimum_required(VERSION 3.0)
   project(tempest)
@@ -77,11 +82,12 @@ Then, save the script as ~CMakeLists.txt~.
  #+end_src
 
 * How to use
-  In the project root folder, use ~cmake~ and ~make~ to build the executable program ~main~.
+  In the project root folder, use ~cmake~ and then ~make~ to build the executable program ~main~.
 #+BEGIN_SRC sh
 cmake .
 make -j8
 #+END_SRC
+- See ~run.sh~ for an example to use the main executable.
 - The ~main~ executable needs arguments to run. Specify ~full~ if there is no missing; ~sparse~ otherwise. See ~run.sh~ for an example.
 - ~pisa-preprocess.R~ contains R scripts to preprocess the PISA data (cluster S01).
 - ~opusIII-preprocess.R~ contains R scripts to preprocess the opusIII data.
