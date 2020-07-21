@@ -12,7 +12,7 @@ The Tempest depends on the Stan math library. We should build the Stan math libr
   First, you need to build ~Stan Math Library~ obtained from https://github.com/stan-dev/math. I am using
 develop commit fd1d8917ee5754810cfab4f7871760315e075135
 
-The below is a shell script to download and build the Stan Math Library. You may change the target directory ~path/to/stan-math~.
+The below is a shell script borrowed from https://github.com/stan-dev/math. It downloads and builds the Stan Math Library. You may want to change the target directory ~path/to/stan-math~.
 #+BEGIN_SRC sh
 git clone https://github.com/stan-dev/math.git path/to/stan-math
 make -f path/to/stan-math/make/standalone math-clean
