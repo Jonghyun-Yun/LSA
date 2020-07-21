@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.0)
- project(lsjm-code)
+ project(tempest)
 
  set(MATH /Users/yunj/stan-dev/math)
- set(PROJROOT /Users/yunj/Dropbox/research/lsjm-art/lsjm-code)
+ set(PROJROOT .)
  set(Xcode_CLT /Library/Developer/CommandLineTools)
 
  set(CMAKE_CXX_FLAGS_DEBUG "-g")
