@@ -51,7 +51,9 @@ no_w1 = !grepl("^w\\.1\\.", cnames)
 
 dlist = list()
 for (cid in 1:num_chain) {
+  ## pisa-KR KR-sci data should skip 1000
   dlist[[cid]] = readr::read_csv(paste0(out_dir,"sample_chain",cid,".csv"), col_names=F, skip=1000) %>% as.data.frame()
+  ## dlist[[cid]] = readr::read_csv(paste0(out_dir,"sample_chain",cid,".csv"), col_names=F) %>% as.data.frame()
   colnames(dlist[[cid]]) = cnames
   if (!double_z && !double_w) {
     dlist[[cid]] = dlist[[cid]][,no_z1 & no_w1] ## remove duplicates when single_z and single_w
