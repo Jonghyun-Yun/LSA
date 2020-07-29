@@ -11,7 +11,7 @@
 
 #+PROPERTY: header-args :tangle
 #+PROPERTY: header-args :eval never-export
-#+PROPERTY: header-args:R :session *Tempest* :exports both :results none :noweb yes :eval never-export
+#+PROPERTY: header-args:R :session *R-Org* :exports both :results none :noweb yes :eval never-export
 * OrgMode :noexport:
 #+INFOJS_OPT: view:nil toc:t ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
 
@@ -1158,7 +1158,6 @@ Please ignore the variables "corr_fix_duration", "computed_rt" and "temp", I eit
 - 7: rt: response time
 - 8: choice; response
 
-
 #+BEGIN_SRC R
 source("R/marketing-preprocess.R")
 source("R/marketing-init.R")
@@ -1180,7 +1179,9 @@ names(df) = c("person", "item", "resp", "RT" )
 name_item = unique(df$item)
 name_person = unique(df$person)
 pick_item = df$item %in% name_item
+#+END_SRC
 
+#+BEGIN_SRC R :results none :tangle R/marketing-preprocess.R
 df = df[pick_item, ]
 
 pick_person = df$person %in% unique(df$person)
@@ -2145,7 +2146,7 @@ dlist = list()
 for (cid in 1:num_chain) {
   ## pisa-KR KR-sci data should skip 1000
   dlist[[cid]] = readr::read_csv(paste0(out_dir,"sample_chain",cid,".csv"), col_names=F, skip=1000) %>% as.data.frame()
-  ## dlist[[cid]] = readr::read_csv(paste0(out_dir,"sample_chain",cid,".csv"), col_names=F) %>% as.data.frame()
+  ##dlist[[cid]] = readr::read_csv(paste0(out_dir,"sample_chain",cid,".csv"), col_names=F) %>% as.data.frame()
   colnames(dlist[[cid]]) = cnames
   if (!double_z && !double_w) {
     dlist[[cid]] = dlist[[cid]][,no_z1 & no_w1] ## remove duplicates when single_z and single_w
@@ -2756,7 +2757,10 @@ getparam = function(posm, sj, i, k) {
   theta = posm[str_which(cname, paste0("theta\\.",k,"\\."))]
   lambda = posm[str_which(cname, paste0("lambda\\.[0-1]\\.",i,"\\."))] %>% matrix(ncol = 2) %>% t()
   H = sj[2:(G+1)] - sj[1:G]
-  return(list(lambda=lambda,beta=beta,theta=theta,gamma=gamma,z=z,w=w,sj=sj,H=H))
+  res = list(lambda=lambda,beta=beta,theta=theta,gamma=gamma,z=z,w=w,sj=sj,H=H)
+  if (any(unlist(lapply(res, is.na)))) stop("Index out of range")
+  if (ncol(lambda) != (G+1)) stop("ncol(lambda) != G+1")
+  else return(res)
 }
 #+END_SRC
 
@@ -2785,7 +2789,7 @@ cumcifun(param, 1, ll, uu);
 [[pdf:figure/CIF.pdf::1]]
 #+BEGIN_SRC R :tangle R/CIF.R
 myN = min(100, N)
-maxt = sj[G] + 10
+maxt = sj[G+1] + 10
 num_seg = 100
 time = seq(0, maxt, (maxt) / num_seg)
 
@@ -2808,7 +2812,7 @@ for (item in 1:I) {
   p = ggplot(data=plot_T, aes(x=time, y=CIF, group=person)) +
     geom_line(aes(color=factor(person)), show.legend=FALSE) +
     ylim(0,1) +
-                                       # # geom_line(group="3", col="red") +
+    ## geom_line(group="3", col="red") +
     ##scale_colour_grey() +
     theme_bw() +
     ggtitle(paste0("Cumulative incidence function for TRUE response (item ",item,")."))
@@ -2819,7 +2823,7 @@ for (item in 1:I) {
   p = ggplot(data=plot_F, aes(x=time, y=CIF, group=person)) +
     geom_line(aes(color=factor(person)), show.legend=FALSE) +
     ylim(0,1) +
-                                        # geom_line(group="3", col="red") +
+    ## geom_line(group="3", col="red") +
     ## scale_colour_grey() +
     theme_bw() +
     ggtitle(paste0("Cumulative incidence function for FALSE response (item ",item,")."))
@@ -2835,7 +2839,10 @@ z0 = matched$z0
 w0 = matched$w0
 ## myI = sort(c(35,7,6,24,28,29,8,27,13,15)) ## opus
 ## myI = sort(c(32,24,30,8,2,15,6,12,5,20,7,26,21,31)) ## verbal
-myI = sort(c(17,14,3,2,15,9,10,13,11))
+## myI = sort(c(17,14,3,2,15,9,10,13,11)) ## pisa
+## myI = sort(c(8,9,5,4,13,2,3,15)) ## pisa KR sci
+myI = sort(c(8,12,14,17,1,6,13,18)) ## pisa KR
+
 which_z = function(w, z) {
 which.min(colSums((t(z) - w)^2))
 }
@@ -2846,7 +2853,7 @@ myN = c(myN, which_z(w0[myI[i],],z0))
 }
 myN = c(myN, which.min(rowSums(z0^2)), which.max(rowSums(z0^2)))
 
-maxt = sj[G] + 10
+maxt = sj[G+1] + 10
 num_seg = 100
 time = seq(0, maxt, (maxt) / num_seg)
 
@@ -2926,6 +2933,164 @@ dev.off(which = dev.cur())
 system(paste0("rsync -v figure/CIF_person.pdf ", out_dir, "figure/"))
 system(paste0("rsync -v figure/latent_space_person.pdf ", out_dir, "figure/"))
 #+END_SRC
+
+[[pdf:figure/latent_space_cl1.pdf]]
+#+begin_src R :tangle R/CIF_cl.R
+pdf("figure/latent_space_cl1.pdf")
+
+## myI = sort(c(35,7,6,24,28,29,8,27,13,15)) ## opus
+## myI = sort(c(32,24,30,8,2,15,6,12,5,20,7,26,21,31)) ## verbal
+## myI = sort(c(17,14,3,2,15,9,10,13,11)) ## pisa
+## myI = sort(c(8,9,5,4,13,2,3,15)) ## pisa KR sci
+
+## myN = c(23,37,20,27,33,36) ## marketing
+## myI = 1:I # marketing
+
+## myN = c(62,589,14,219,524,509,161,435,252,595) ## pisa KR
+## myI = 1:I # pisa KR
+
+## myN = c(518, 584, 370, 418, 79, 276, 572, 358, 73, 274) ## pisa
+## myI = 1:I # pisa
+
+myN = c(270,367,712,17,615,265,653,484,155,290) ## pisa KR sci
+myI = 1:I # pisa KR sci
+
+z1 = matched$z1
+w1 = matched$w1
+z0 = matched$z0[myN,]
+w0 = matched$w0[myI,]
+
+xmin = min(z0[,1],z1[,1],w0[,1],w1[,1])
+ymin = min(z0[,2],z1[,2],w0[,2],w1[,2])
+xmax = max(z0[,1],z1[,1],w0[,1],w1[,1])
+ymax = max(z0[,2],z1[,2],w0[,2],w1[,2])
+
+myname = c(myN,paste0("I.",myI))
+print(lsjmplot(z0,w0,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+if (double_z && !double_w) {
+  print(lsjmplot(z1,w0,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+} else if (double_z && double_w) {
+  print(lsjmplot(z1,w1,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+} else if (!double_z && double_w) {
+  print(lsjmplot(z0,w1,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+}
+dev.off(which = dev.cur())
+#+end_src
+
+[[pdf:figure/CIF_cl1.pdf::1]]
+#+BEGIN_SRC R :tangle R/CIF_cl1.R
+## choose a few people adn items from latent space
+
+which_z = function(w, z) {
+which.min(colSums((t(z) - w)^2))
+}
+
+## myN = NULL
+## for (i in 1:length(myI)) {
+## myN = c(myN, which_z(w0[myI[i],],z0))
+## }
+## myN = c(myN, which.min(rowSums(z0^2)), which.max(rowSums(z0^2)))
+
+maxt = sj[G] + 500
+num_seg = 100
+time = seq(0, maxt, (maxt) / num_seg)
+
+pdf(paste0("figure/CIF_cl1.pdf"))
+
+for (item in myI) {
+
+  CIF_T = foreach (k = myN, .combine='rbind') %dopar% {
+    c(0,cumcicurve(getparam(posm, sj, item, k), 1, 0, maxt, num_seg))
+  }
+
+  CIF_F = foreach (k = myN, .combine='rbind') %dopar% {
+    c(0,cumcicurve(getparam(posm, sj, item, k), 0, 0, maxt, num_seg))
+  }
+
+  CIF_T = data.frame(t(CIF_T), c(time))
+  colnames(CIF_T) = c(myN,"time")
+
+  plot_T <- reshape2::melt(CIF_T, id.vars="time")
+  colnames(plot_T) = c("time", "person", "CIF")
+
+  p = ggplot(data=plot_T, aes(x=time, y=CIF, group=person)) +
+    geom_line(aes(color=factor(person)), show.legend=TRUE) +
+    ylim(0,1) +
+    ## geom_line(group="3", col="red") +
+    ##scale_colour_grey() +
+    theme_bw() +
+    ggtitle(paste0("Cumulative incidence function for TRUE response (item ",item,")."))
+  print(p)
+
+  CIF_F = data.frame(t(CIF_F), c(time))
+  colnames(CIF_F) = c(myN,"time")
+
+  plot_F <- reshape2::melt(CIF_F, id.vars=c("time"))
+  colnames(plot_F) = c("time", "person", "CIF")
+
+  p = ggplot(data=plot_F, aes(x=time, y=CIF, group=person)) +
+    geom_line(aes(color=factor(person)), show.legend=TRUE) +
+    ylim(0,1) +
+    ## geom_line(group="3", col="red") +
+    ## scale_colour_grey() +
+    theme_bw() +
+    ggtitle(paste0("Cumulative incidence function for FALSE response (item ",item,")."))
+  print (p)
+
+}
+dev.off(which = dev.cur())
+#+END_SRC
+
+#+BEGIN_SRC R :tangle R/CIF_cl1.R
+system(paste0("rsync -v figure/CIF_cl1.pdf ", out_dir, "figure/"))
+system(paste0("rsync -v figure/latent_space_cl1.pdf ", out_dir, "figure/"))
+#+END_SRC
+
+#+BEGIN_SRC R
+mN = length(myN)
+mise = matrix(0,mN,mN)
+for (kk in 1:(mN-1)) {
+for (ll in (kk+1):mN) {
+mise[ll,kk] = sum((CIF_T[,kk] - CIF_T[,ll])^2) / maxt
+}
+}
+#+END_SRC
+
+#+BEGIN_SRC R
+posm_CIF_T = CIF_T[,-ncol(CIF_T)]
+num_iter = min(unlist(lapply(mydf,  nrow)))
+
+mises = foreach(v=1:num_chain, .combine='rbind') %dopar% {
+  foreach(nn = seq(1, num_iter, 10), .combine='rbind') %dopar% {
+CIF_T = foreach (k = myN, .combine='cbind') %dopar% {
+    c(0,cumcicurve(getparam(unlist(mydf[[v]][nn,]), sj, item, k), 1, 0, maxt, num_seg))
+ }
+colSums((posm_CIF_T - CIF_T)^2) / maxt
+  }
+}
+
+apply(mises, 2, median)
+
+
+  sam = mydf[[v]][,1:( which( colnames(mydf[[v]]) == "lp_") )]
+
+  CIF_T = foreach (k = myN, .combine='rbind') %dopar% {
+    c(0,cumcicurve(getparam(posm, sj, item, k), 1, 0, maxt, num_seg))
+  }
+
+}
+  apply(mydf[[v]], 2, mean)
+if (num_chain > 1) {
+  tmp = tmp[,1:( which( colnames(mydf[[1]]) == "lp_") )]
+  posm = apply(tmp, 2, mean)
+} else {
+  posm = tmp[1:( which( colnames(mydf[[1]]) == "lp_") )]
+}
+
+cname = names(posm)
+param = getparam(posm,sj,i,k)
+
+#+END_SRC
 ** FDA
 #+BEGIN_SRC R
 library(fda)
@@ -2939,14 +3104,15 @@ tmp = as.matrix(CIF_T)
 y = tmp[, -ncol(tmp)]
 x = tmp[, ncol(tmp)]
 
-basis <- create.polygonal.basis(x)
+## basis <- create.polygonal.basis(x)
 ## basis <- create.bspline.basis(c(0, max(x)), nbasis=50, norder=4) #below 0 occurs
-##basis <- create.bspline.basis(c(0, max(x)), nbasis=20)
+basis <- create.bspline.basis(c(0, max(x)), nbasis=10)
 ##basis <- create.fourier.basis(c(0, max(x)), nbasis=99)
-##basis <- create.fourier.basis(c(0, max(x)), nbasis=27)
-##basis = create.monomial.basis(c(0, max(x)), nbasis=25)
+##basis <- create.fourier.basis(c(0, max(x)), nbasis=10)
+##basis = create.monomial.basis(c(0, max(x)), nbasis=10)
 ##basis = create.exponential.basis(c(0, max(x)), nbasis=9) # not work
 fdobj <- smooth.basis(x,y,basis,fdnames=list("t", "Respondant", "CIF_T"))$fd
+##fdobj <- smooth.monotone(x,y,basis,fdnames=list("t", "Respondant", "CIF_T"))$fd
 
 pdf("figure/functionDA.pdf")
 plot(fdobj)
@@ -2955,8 +3121,8 @@ dev.off(which = dev.cur())
 
 #+BEGIN_SRC R
 kran = 2:2
-##res = funFEM(fdobj,K=kran,model='AkjBk',init='hclust',lambda=0,disp=TRUE)
-                                        # res = funFEM(fdobj,K=kran,model='AkjBk',crit="icl",init='hclust',lambda=0,disp=TRUE)
+## res = funFEM(fdobj,K=kran,model='AkjBk',init='hclust',lambda=0,disp=TRUE)
+## res = funFEM(fdobj,K=kran,model='AkjBk',crit="icl",init='hclust',lambda=0,disp=TRUE)
 res = funFEM(fdobj,K=kran,model='AkjBk',init='hclust',lambda=0,disp=TRUE)
 
 ## plot(kran,res$plot$bic,type='b',xlab='K',main='ICL')

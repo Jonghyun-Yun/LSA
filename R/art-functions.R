@@ -140,7 +140,9 @@ getparam = function(posm, sj, i, k) {
   theta = posm[str_which(cname, paste0("theta\\.",k,"\\."))]
   lambda = posm[str_which(cname, paste0("lambda\\.[0-1]\\.",i,"\\."))] %>% matrix(ncol = 2) %>% t()
   H = sj[2:(G+1)] - sj[1:G]
-  return(list(lambda=lambda,beta=beta,theta=theta,gamma=gamma,z=z,w=w,sj=sj,H=H))
+  res = list(lambda=lambda,beta=beta,theta=theta,gamma=gamma,z=z,w=w,sj=sj,H=H)
+  if (any(unlist(lapply(res, is.na)))) stop("Index out of range")
+  else return(res)
 }
 
 fun_hazard_surv = function(t,i,k,posm,cname,sj) {

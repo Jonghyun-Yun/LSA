@@ -3,7 +3,10 @@ z0 = matched$z0
 w0 = matched$w0
 ## myI = sort(c(35,7,6,24,28,29,8,27,13,15)) ## opus
 ## myI = sort(c(32,24,30,8,2,15,6,12,5,20,7,26,21,31)) ## verbal
-myI = sort(c(17,14,3,2,15,9,10,13,11))
+## myI = sort(c(17,14,3,2,15,9,10,13,11)) ## pisa
+## myI = sort(c(8,9,5,4,13,2,3,15)) ## pisa KR sci
+myI = sort(c(8,12,14,17,1,6,13,18)) ## pisa KR
+
 which_z = function(w, z) {
 which.min(colSums((t(z) - w)^2))
 }
@@ -14,7 +17,7 @@ myN = c(myN, which_z(w0[myI[i],],z0))
 }
 myN = c(myN, which.min(rowSums(z0^2)), which.max(rowSums(z0^2)))
 
-maxt = sj[G] + 10
+maxt = sj[G+1] + 10
 num_seg = 100
 time = seq(0, maxt, (maxt) / num_seg)
 
