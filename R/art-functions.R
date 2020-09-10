@@ -142,7 +142,9 @@ getparam = function(posm, sj, i, k) {
   H = sj[2:(G+1)] - sj[1:G]
   res = list(lambda=lambda,beta=beta,theta=theta,gamma=gamma,z=z,w=w,sj=sj,H=H)
   if (any(unlist(lapply(res, is.na)))) stop("Index out of range")
-  if (ncol(lambda) != (G+1)) stop("ncol(lambda) != G+1")
+  ## should if be G+1? or G?
+  ## if (ncol(lambda) != (G+1)) stop("ncol(lambda) != G+1")
+  if (ncol(lambda) != (G)) stop("ncol(lambda) != G")
   else return(res)
 }
 
