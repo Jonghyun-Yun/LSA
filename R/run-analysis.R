@@ -1,8 +1,5 @@
 num_chain = 3; double_z = 0; double_w = 0; HAS_REF = 0;
-ref_dir = "pisa-singleZ-singleW/"
-HAS_REF = 1
-
-out_dir = "pisa-KR-singleZ-singleW/"
+out_dir = "chess-singleZ-singleW/"
 
 out_dir = "pisa-KR-sci2018-singleZ-singleW/"
 system(paste0("rm figure/*.pdf"))

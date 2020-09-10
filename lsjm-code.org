@@ -12,7 +12,7 @@
 #+PROPERTY: header-args :tangle
 #+PROPERTY: header-args :eval never-export
 #+PROPERTY: header-args:R :session *R-Org* :exports both :results none :noweb yes :eval never-export
-* OrgMode :noexport:
+* OrgMode                                                          :noexport:
 #+INFOJS_OPT: view:nil toc:t ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
 
 #+REVEAL_ROOT: https://cdn.jsdelivr.net/npm/reveal.js
@@ -101,35 +101,18 @@
 
 * References
 #+BEGIN_SRC emacs-lisp :eval yes :exports none
-(require 'org-ref)
-(require 'org-ref-citeproc)
-
-(when (file-exists-p "readme.html")
-  (delete-file "readme.html"))
-(let ((org-export-before-parsing-hook '(orcp-citeproc)))
-  (browse-url (org-html-export-to-html)))
-#+End_src
-
-#+BEGIN_SRC emacs-lisp :eval yes :exports none
 (add-hook 'org-export-before-parsing-hook 'orcp-citeproc)
 #+END_SRC
 
 #+Bibliography: ~/Zotero/myref.bib
 #+PANDOC_OPTIONS: csl:~/Zotero/styles/chicago-author-date.csl
 
-#+LATEX_HEADER: \addbibresource{~/Zotero/myref.bib}
-#+LATEX_HEADER: \AtEveryBibitem{\clearfield{note}}
-#+LATEX_HEADER: \AtEveryBibitem{\clearfield{month}}
-#+LATEX_HEADER: \AtEveryBibitem{\clearfield{day}}
-#+LATEX_HEADER: \AtEveryBibitem{\clearfield{eprint}}
-
-#+latex: \begingroup
-#+latex: \renewcommand{\section}[2]{}%
-
 # for html export with bib
 # bibliographystyle:unsrt
 # bibliography:~/Zotero/myref.bib
 
+#+latex: \begingroup
+#+latex: \renewcommand{\section}[2]{}%
 #+latex: \printbibliography[sorting=ydnt, heading=none, type=article] % for biblatex, comment out everything else
 #+latex: \endgroup
 * pseudo code
@@ -347,7 +330,6 @@ cat ../pisa2015/README.txt
 source('R/pisa-preprocess.R')
 source('R/pisa-init.R')
 #+END_SRC
-
 
 #+BEGIN_SRC R :results none :tangle R/pisa-preprocess.R
 ## pick_person = 1:592
@@ -709,7 +691,6 @@ readr::write_csv(as.data.frame(init_gamma), "input/init_gamma.csv", col_names = 
 readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
 #+END_SRC
-
 
 * opusIII-matrices-data.dat
 #+BEGIN_SRC R
@@ -1145,7 +1126,6 @@ dev.off(which = dev.cur())
 #+END_SRC
 
 * Marketing
-
 ** description
 
 Here is the description of the dataset: Each row of the data represents one fixation.  The duration of the fixation is given by the column labeled "event_duration" and is in units of milliseconds.  The variable ~choice~ indicates the choice that the subject made in that trial, 1 is left and 0 is right. The variable "roi" indicates whether the fixation was to the left ("1) or the right ("2").  The variable ~rt~ is the reaction time for the trial. "fix_num" is the number of the fixation within the trial, with 1 being first fixation, 2 being second fixation etc.  Similarly, "rev_fix_num" is the number of the fixation but going backwards from the last fixation, so 1 is the last fixation, 2 is the second-to-last fixation, etc.
@@ -1362,6 +1342,465 @@ logrt_boxp
 dev.off(which = dev.cur())
 #+END_SRC
 
+* Smith and Krajbich                                                 :ATTACH:
+:PROPERTIES:
+:ID:       d0a1e4f9-326e-4950-8d12-d805efe8950a
+:END:
+[[skim:///Users/yunj/Dropbox/MobileOrg/.attach/E9/b2bce3-9166-40d2-874f-7bbbb27393ea/smith_krajbich_2018_jepg.pdf::4;;1][In the two-food task (Figure 1b), subjects were presented with two previously rated food items, one on each side of the computer screen, and asked to choose the one they would like to eat most at the end of the experiment. Only positively rated (i.e., rating 0) food items were included in this task, to ensure that subjects were choosing between items that were relevant to them. These posi tively rated items were randomly selected, subject to the con straints that (a) no item could be shown more than seven times and (b) the value difference between the items could not exceed five.]]
+
+[[skim:///Users/yunj/Dropbox/MobileOrg/.attach/E9/b2bce3-9166-40d2-874f-7bbbb27393ea/smith_krajbich_2018_jepg.pdf::4;;2][Many subjects (two-food: n 􏰂 22; food-risk: n 􏰂 39) did not have enough positively rated food items to generate 200 valid trials in each of the food choice tasks, so these subjects completed as many constraint-satisfying trials as were generated (two-food: M 􏰂 171.3; food-risk: M 􏰂 146.7). In the food tasks, we limited the difference in value between the options in order to increase the experiment’s efficiency by focusing on trials with nontrivial decisions. This also facilitates the model fitting procedure, which relies on the RT distributions of “correct” and “error” choices.]]
+
+** description
+[[mu4e:msgid:15884427-B662-4EF9-A15A-EA609676DECF@g.ucla.edu][Re: new marketing data]]
+[[mu4e:msgid:D5AF8D06-A080-44CA-96F7-386165ED972F@g.ucla.edu][new marketing data]]
+
+It should be formatted similarly to the previous one. Each row is a fixation/dwell.  A few notes:
+"LeftRight" - 1 is left, 2 is right
+"ROI" - 1 is left, 2 is right
+"DwellLength" is the duration of the dwell/fixation in seconds
+
+You can also see that there are columns for the names of the snack foods in each trial.  If you need more information than this, let me know.  I could provide you with a link to the images of the items.  You would just need to link the images to the names.
+
+LeftRight is the choice variable - 1 means left choice, 2 means right choice
+FoodLeft and FoodRight are just unique food identifiers.  They should be redundant with the food names.
+ValueLeft and ValueRight are the independent ratings of the foods on the left and right.  Subjects should generally be choosing the item with the higher value.
+DwellLength is the fixation/dwell time for that particular fixation/dwell. The units are seconds.
+
+*Plan*: "correctness" is defined by the choice of higher valued food. Exclude cases with the same valued food. "item" is defined using the value difference (not exceed 5).
+
+#+BEGIN_SRC R
+source("R/twofood-preprocess.R")
+source("R/twofood-init.R")
+#+END_SRC
+
+#+BEGIN_SRC R :results none :tangle R/twofood-preprocess.R
+setwd("~/Dropbox/research/lsjm-art/lsjm-code")
+
+library(dplyr)
+library(magrittr)
+
+source("R/art-functions.R")
+#+END_SRC
+
+#+BEGIN_SRC R :results none :tangle R/twofood-preprocess.R
+## fix_num and roi vary per item and person -> it might mean something, but I drop them (used distinct without these columns)
+load("data/SmithKrajbich2018.RData")
+#+END_SRC
+
+#+BEGIN_SRC R :results none :tangle R/twofood-preprocess.R
+df = data %>% select(SubjectNumber, LeftRight, RT, ValueLeft, ValueRight)
+df = distinct(df)
+names(df) = c("person", "item", "resp", "RT" )
+name_item = unique(df$item)
+name_person = unique(df$person)
+pick_item = df$item %in% name_item
+#+END_SRC
+
+#+BEGIN_SRC R :results none :tangle R/twofood-preprocess.R
+df = df[pick_item, ]
+
+pick_person = df$person %in% unique(df$person)
+df = df[pick_person,]
+
+di = df[,-4]
+dt = df[,-3]
+
+nitem = length(unique(df$item))
+nperson = length(unique(df$person))
+#+END_SRC
+
+#+BEGIN_SRC R :results none
+tab_item = tabulate_id(name_item)
+tab_person = tabulate_id(name_person)
+#+END_SRC
+
+** knot selection
+#+begin_src R :tangle R/marketing-preprocess.R
+time = pull(dt,RT)
+ncut = 5
+## interval <- seq(from=0, to = max(time)+1,length.out = 8)
+pseq =  seq(from=0, to = 1, length.out = ncut + 1)
+sj = quantile(time, probs = pseq) %>% round()
+sj[1] = 0; sj[length(sj)] = sj[length(sj)] + 1
+#+end_src
+
+** survSplit
+#+BEGIN_SRC R :results none :tangle R/marketing-preprocess.R
+library(survival)
+status = rep(1, nrow(dt))
+
+tdf = data.frame(item = dt$item, person = dt$person, time = dt$RT, response = di$resp, status = 1)
+tmp <- survSplit(formula = Surv(time, status) ~ ., data = tdf, cut = sj, episode ="seg_g") %>%
+  mutate(seg = factor(tstart),
+         seg_g = seg_g - 2,
+         len = time - tstart
+         ) %>% filter(status == 1) %>%
+  as_tibble
+#+END_SRC
+
+#+BEGIN_SRC R :results none :tangle R/marketing-preprocess.R
+item = pull(tmp, item)
+person = pull(tmp, person)
+seg_g = pull(tmp,seg_g)
+H = pull(tmp,len)
+#+END_SRC
+
+#+BEGIN_SRC R :tangle R/marketing-preprocess.R
+mi = reshape2::dcast(tmp %>% select(item, person, response), item ~ person)[,-1]
+mt = reshape2::dcast(tmp %>% select(item, person, time), item ~ person)[,-1]
+mNA = mi; mNA[!is.na(mNA)] = 1;  mNA[is.na(mNA)] = 0
+mseg = reshape2::dcast(tmp %>% select(item, person, seg_g), item ~ person)[,-1]
+mh = reshape2::dcast(tmp %>% select(item, person, len), item ~ person)[,-1]
+mlen = sj[2:(ncut+1)] - sj[1:(ncut)]
+
+mi[is.na(mi)] = -99
+mt[is.na(mt)] = -99
+mseg[is.na(mseg)] = -99
+mh[is.na(mh)] = -99
+#+END_SRC
+
+#+begin_src R :results none :tangle R/marketing-preprocess.R
+## data and fixed parameters
+I = nrow(mt)
+N = ncol(mt)
+C = 2
+G = ncut #
+#+end_src
+
+#+begin_src R :results none :tangle R/marketing-preprocess.R
+readr::write_csv(data.frame(I=I, N=N, C=C, G=G), "input/mvar.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mlen),"input/mlen.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mseg),"input/mseg.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mh),"input/mh.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mt),"input/mt.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mi),"input/mi.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mNA),"input/mNA.csv", col_names = FALSE)
+#+end_src
+
+#+begin_src R :results none :tangle R/marketing-preprocess.R
+mtab_sj = t( apply(mseg, 1, function(x) tab_sj(x,G)) )
+
+tmp_0 = mseg; tmp_0[mi==1] = -99;
+tmp_1 = mseg; tmp_1[mi==0] = -99;
+
+mIY = rbind( t( apply(tmp_0, 1, function(x) tab_IY(x,G)) ), t( apply(tmp_1, 1, function(x) tab_IY(x,G)) ))
+
+readr::write_csv(as.data.frame(mtab_sj),"input/mtab_sj.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mIY),"input/mIY.csv", col_names = FALSE)
+#+end_src
+
+** prior & jump
+This is to export hyper-parameters and jumping rule
+#+BEGIN_SRC R :results none :tangle R/marketing-preprocess.R
+mvar = readr::read_csv("input/mvar.csv", col_names=FALSE) %>% as.matrix()
+I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
+
+## lambda
+a_lambda = matrix(0.1,I,G)
+b_lambda = matrix(0.1,I,G)
+jump_lambda = matrix(0.5,I,G)
+
+mu_beta = matrix(0.0,I,2)
+sigma_beta = matrix(sqrt(1.0),I,2)
+jump_beta = matrix(0.25,I,2)
+
+mu_theta = matrix(0.0,N,2)
+sigma_theta = matrix(sqrt(1.0),N,2)
+jump_theta = matrix(1.0,N,2)
+
+a_sigma = 1.0
+b_sigma = 1.0
+
+mu_gamma = matrix(0.0,1,2)
+sigma_gamma = matrix(sqrt(1.0),1,2)
+jump_gamma = matrix(1.0,1,2)
+
+mu_z = matrix(0.0,N,2)
+sigma_z = matrix(sqrt(1.0),N,2)
+jump_z = matrix(1.0,N,2)
+
+mu_w = matrix(0.0,I,2)
+sigma_w = matrix(sqrt(1.0),I,2)
+jump_w = matrix(0.5,I,2)
+#+END_SRC
+
+#+BEGIN_SRC R :results none :tangle R/marketing-preprocess.R
+readr::write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"input/pj_lambda.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"input/pj_beta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_theta,sigma_theta,jump_theta)),"input/pj_theta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(a_sigma,b_sigma)),"input/pj_sigma.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_gamma,sigma_gamma,jump_gamma)),"input/pj_gamma.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_z,sigma_z,jump_z)),"input/pj_z.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_w,sigma_w,jump_w)),"input/pj_w.csv", col_names = FALSE)
+#+END_SRC
+
+** init
+#+BEGIN_SRC R :results none :tangle R/marketing-init.R
+mvar = as.matrix( readr::read_csv("input/mvar.csv", col_names=F) )
+I = mvar[1]
+N = mvar[2]
+G = mvar[4]
+
+set.seed(as.numeric(Sys.time()))
+
+init_lambda = matrix(1, nrow = 2*I, ncol = G);
+init_beta = 0*matrix(rnorm(2*I), ncol = 2);
+init_theta = 0*matrix(rnorm(2*N), ncol = 2);
+init_gamma = 1*matrix(c(1, 1), ncol = 1);
+init_w = 0*matrix(rnorm(2*2*I), ncol = 2);
+init_z = 0*matrix(rnorm(2*2*N), ncol = 2);
+#+END_SRC
+
+#+BEGIN_SRC R :results none :tangle R/marketing-init.R
+readr::write_csv(as.data.frame(init_lambda), "input/init_lambda.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_beta), "input/init_beta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_theta), "input/init_theta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_gamma), "input/init_gamma.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
+#+END_SRC
+** boxplot
+
+#+BEGIN_SRC R :results value :tangle R/marketing-preprocess.R
+df %>% group_by(item) %>% summarise(F = sum(resp == 0), T = sum(resp == 1))
+#+END_SRC
+
+[[file:figure/boxplot_ART.pdf]]
+#+BEGIN_SRC R :tangle R/marketing-preprocess.R
+pdf("figure/boxplot_ART.pdf")
+rt_boxp <- ggplot(df, aes(x=factor(resp),y=RT,fill=factor(resp)))+
+  geom_boxplot() + labs(title="RT by accuracy") + facet_wrap(~item)
+logrt_boxp <- ggplot(df, aes(x=factor(resp),y=log(RT),fill=factor(resp)))+
+  geom_boxplot() + labs(title="log RT by accuracy") + facet_wrap(~item)
+rt_boxp
+logrt_boxp
+dev.off(which = dev.cur())
+#+END_SRC
+
+* Chess proficiency                                                  :ATTACH:
+:PROPERTIES:
+:ID:       aaa8e8c6-ea9b-47b0-8901-047b0388e662
+:END:
+[[mu4e:msgid:380ABC3A-4965-4B3A-9B29-D3F370AAF0E8@g.ucla.edu][New data - chess proficiency]]
+
+** description
+
+- Choose-a-move test A (test B is a parallel version of A)
+  A1 - A40: 1 if correct (the correct answer is vastly superior to all other legal moves)
+  AR1 - AR40: RT (< 30s; or no response)
+  1-20: tactical items
+  21-30: positional items
+  31-40: endgame items
+  Item difficulty increased within each set
+  Missingness in RT -> should be excluded
+
+- Predict-a-move test
+  items are related. no unique solution. points of merit on a scale from 0 to 5.
+
+#+BEGIN_SRC R
+source("R/chess-preprocess.R")
+source("R/chess-init.R")
+#+END_SRC
+
+#+BEGIN_SRC R :results none :tangle R/chess-preprocess.R
+setwd("~/research/lsjm-art/lsjm-code")
+
+library(dplyr)
+library(magrittr)
+
+source("R/art-functions.R")
+#+END_SRC
+
+#+BEGIN_SRC R :results none :tangle R/chess-preprocess.R
+library(foreign)
+chess <- read.spss("data/opennkweb.sav", to.data.frame = TRUE)
+dataset.labels <- as.data.frame(attr(chess, "variable.labels"))
+PPNR = chess[,1]
+#+END_SRC
+
+#+BEGIN_SRC R :tangle R/chess-preprocess.R
+dt = cbind(PPNR, chess[,grepl("AR[1-9]+", names(chess))]) %>% na.omit
+di = cbind(PPNR, chess[,grepl("A[1-9]+", names(chess))]) %>% filter(PPNR %in% dt$PPNR)
+
+nitem = 40
+nperson = nrow(di)
+
+di_long <- reshape2::melt(di, id.vars=c("PPNR"))
+dt_long <- reshape2::melt(dt, id.vars=c("PPNR"))
+
+identical(di_long[,1],dt_long[,1])
+
+dit = cbind(di_long, dt_long[,3])
+colnames(dit) = c("person","item","resp","RT")
+
+tab_item = data.frame(chr = colnames(di)[-1], num = 1:nitem)
+
+dit$item = to_numID(dit$item, tab_item)
+#+END_SRC
+
+** knot selection
+#+begin_src R :tangle R/chess-preprocess.R
+time = pull(dit, RT)
+ncut = 5
+## interval <- seq(from=0, to = max(time)+1,length.out = 8)
+pseq =  seq(from=0, to = 1, length.out = ncut + 1)
+sj = quantile(time, probs = pseq) %>% round()
+sj[1] = 0; sj[length(sj)] = sj[length(sj)] + 1
+#+end_src
+
+** survSplit
+#+BEGIN_SRC R :results none :tangle R/chess-preprocess.R
+library(survival)
+status = rep(1, nrow(dt))
+
+tdf = data.frame(item = dit$item, person = dit$person, time = dit$RT, response = dit$resp, status = 1)
+tmp <- survSplit(formula = Surv(time, status) ~ ., data = tdf, cut = sj, episode ="seg_g") %>%
+  mutate(seg = factor(tstart),
+         seg_g = seg_g - 2,
+         len = time - tstart
+         ) %>% filter(status == 1) %>%
+  as_tibble
+#+END_SRC
+
+#+BEGIN_SRC R :results none :tangle R/chess-preprocess.R
+item = pull(tmp, item)
+person = pull(tmp, person)
+seg_g = pull(tmp,seg_g)
+H = pull(tmp,len)
+#+END_SRC
+
+#+BEGIN_SRC R :tangle R/chess-preprocess.R
+mi = reshape2::dcast(tmp %>% select(item, person, response), item ~ person)[,-1]
+mt = reshape2::dcast(tmp %>% select(item, person, time), item ~ person)[,-1]
+mNA = mi; mNA[!is.na(mNA)] = 1;  mNA[is.na(mNA)] = 0
+mseg = reshape2::dcast(tmp %>% select(item, person, seg_g), item ~ person)[,-1]
+mh = reshape2::dcast(tmp %>% select(item, person, len), item ~ person)[,-1]
+mlen = sj[2:(ncut+1)] - sj[1:(ncut)]
+
+mi[is.na(mi)] = -99
+mt[is.na(mt)] = -99
+mseg[is.na(mseg)] = -99
+mh[is.na(mh)] = -99
+#+END_SRC
+
+#+begin_src R :results none :tangle R/chess-preprocess.R
+## data and fixed parameters
+I = nrow(mt)
+N = ncol(mt)
+C = 2
+G = ncut #
+#+end_src
+
+#+begin_src R :results none :tangle R/chess-preprocess.R
+readr::write_csv(data.frame(I=I, N=N, C=C, G=G), "input/mvar.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mlen),"input/mlen.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mseg),"input/mseg.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mh),"input/mh.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mt),"input/mt.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mi),"input/mi.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mNA),"input/mNA.csv", col_names = FALSE)
+#+end_src
+
+#+begin_src R :results none :tangle R/chess-preprocess.R
+mtab_sj = t( apply(mseg, 1, function(x) tab_sj(x,G)) )
+
+tmp_0 = mseg; tmp_0[mi==1] = -99;
+tmp_1 = mseg; tmp_1[mi==0] = -99;
+
+mIY = rbind( t( apply(tmp_0, 1, function(x) tab_IY(x,G)) ), t( apply(tmp_1, 1, function(x) tab_IY(x,G)) ))
+
+readr::write_csv(as.data.frame(mtab_sj),"input/mtab_sj.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mIY),"input/mIY.csv", col_names = FALSE)
+#+end_src
+
+** prior & jump
+This is to export hyper-parameters and jumping rule
+#+BEGIN_SRC R :results none :tangle R/chess-preprocess.R
+mvar = readr::read_csv("input/mvar.csv", col_names=FALSE) %>% as.matrix()
+I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
+
+## lambda
+a_lambda = matrix(0.1,I,G)
+b_lambda = matrix(0.1,I,G)
+jump_lambda = matrix(0.5,I,G)
+
+mu_beta = matrix(0.0,I,2)
+sigma_beta = matrix(sqrt(1.0),I,2)
+jump_beta = matrix(0.25,I,2)
+
+mu_theta = matrix(0.0,N,2)
+sigma_theta = matrix(sqrt(1.0),N,2)
+jump_theta = matrix(1.0,N,2)
+
+a_sigma = 1.0
+b_sigma = 1.0
+
+mu_gamma = matrix(0.0,1,2)
+sigma_gamma = matrix(sqrt(1.0),1,2)
+jump_gamma = matrix(1.0,1,2)
+
+mu_z = matrix(0.0,N,2)
+sigma_z = matrix(sqrt(1.0),N,2)
+jump_z = matrix(1.0,N,2)
+
+mu_w = matrix(0.0,I,2)
+sigma_w = matrix(sqrt(1.0),I,2)
+jump_w = matrix(0.5,I,2)
+#+END_SRC
+
+#+BEGIN_SRC R :results none :tangle R/chess-preprocess.R
+readr::write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"input/pj_lambda.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"input/pj_beta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_theta,sigma_theta,jump_theta)),"input/pj_theta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(a_sigma,b_sigma)),"input/pj_sigma.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_gamma,sigma_gamma,jump_gamma)),"input/pj_gamma.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_z,sigma_z,jump_z)),"input/pj_z.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_w,sigma_w,jump_w)),"input/pj_w.csv", col_names = FALSE)
+#+END_SRC
+
+** init
+#+BEGIN_SRC R :results none :tangle R/chess-init.R
+mvar = as.matrix( readr::read_csv("input/mvar.csv", col_names=F) )
+I = mvar[1]
+N = mvar[2]
+G = mvar[4]
+
+set.seed(as.numeric(Sys.time()))
+
+init_lambda = matrix(1, nrow = 2*I, ncol = G);
+init_beta = 0*matrix(rnorm(2*I), ncol = 2);
+init_theta = 0*matrix(rnorm(2*N), ncol = 2);
+init_gamma = 1*matrix(c(1, 1), ncol = 1);
+init_w = 0*matrix(rnorm(2*2*I), ncol = 2);
+init_z = 0*matrix(rnorm(2*2*N), ncol = 2);
+#+END_SRC
+
+#+BEGIN_SRC R :results none :tangle R/chess-init.R
+readr::write_csv(as.data.frame(init_lambda), "input/init_lambda.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_beta), "input/init_beta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_theta), "input/init_theta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_gamma), "input/init_gamma.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
+#+END_SRC
+** boxplot
+
+#+BEGIN_SRC R :results value :tangle R/chess-preprocess.R
+dit %>% group_by(item) %>% summarise(F = sum(resp == 0), T = sum(resp == 1))
+#+END_SRC
+
+[[file:figure/boxplot_ART.pdf]]
+#+BEGIN_SRC R :tangle R/chess-preprocess.R
+pdf("figure/boxplot_ART.pdf")
+rt_boxp <- ggplot(dit, aes(x=factor(resp),y=RT,fill=factor(resp)))+
+  geom_boxplot() + labs(title="RT by accuracy") + facet_wrap(~item)
+logrt_boxp <- ggplot(dit, aes(x=factor(resp),y=log(RT),fill=factor(resp)))+
+  geom_boxplot() + labs(title="log RT by accuracy") + facet_wrap(~item)
+rt_boxp
+logrt_boxp
+dev.off(which = dev.cur())
+#+END_SRC
+
 * MATH: Korea_PISA2015
 ** notebook
 #+BEGIN_SRC R
@@ -1392,7 +1831,6 @@ pdx = which(colnames(df) %in% polytomous)
 pdx = c(pdx,pdx + 184)
 df[,-pdx]
 #+END_SRC
-
 
 #+BEGIN_SRC R
 dim(df)
@@ -1600,7 +2038,6 @@ readr::write_csv(as.data.frame(init_gamma), "input/init_gamma.csv", col_names = 
 readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
 #+END_SRC
-
 
 * Science: Korea_PISA2018
 ** notebook
@@ -1855,7 +2292,7 @@ dit01 %>% group_by(item) %>% summarise(F = sum(res == 0), T = sum(res == 1), mis
 #+BEGIN_SRC R :tangle R/pisa-KR-sci2018-preprocess.R
 pdf("figure/boxplot_ART.pdf")
 ## rt_boxp <- ggplot(dit01, aes(x=factor(res),y=time,fill=factor(res)))+
-  ## geom_boxplot() + labs(title="RT by accuracy") + facet_wrap(~item)
+## geom_boxplot() + labs(title="RT by accuracy") + facet_wrap(~item)
 logrt_boxp <- ggplot(dit01[,4:6], aes(x=factor(res),y=log(time),fill=factor(res)))+
   geom_boxplot() + labs(title="log RT by accuracy") + facet_wrap(~item)
 ## print(rt_boxp)
@@ -1865,6 +2302,22 @@ dev.off(which = dev.cur())
 
 * C++ MCMC output
 ** Shell to run C++
+#+begin_src sh :tangle run.sh
+#!/usr/bin/env bash
+export STAN_NUM_THREADS=6
+mkdir -p output
+rm output/*
+Rscript "R/chess-preprocess.R"
+cp input/{mvar,mlen}.csv output/
+cp run.sh output/
+for v in {1..3}
+do
+    Rscript "R/chess-init.R"
+    ./main initialize parallel single_w single_z full latent no_gamma $v 10000 10000 10
+done
+mv output chess-singleZ-singleW
+#+END_SRC
+
 #+begin_src sh :tangle run.sh
 #!/usr/bin/env bash
 export STAN_NUM_THREADS=6
@@ -1993,7 +2446,7 @@ mv output opusIII-singleZ-singleW
 ** Using R
 #+BEGIN_SRC R :tangle R/run-analysis.R
 num_chain = 3; double_z = 0; double_w = 0; HAS_REF = 0;
-out_dir = "pisa-KR-sci2018-singleZ-singleW/"
+out_dir = "chess-singleZ-singleW/"
 #+END_SRC
 
 #+BEGIN_SRC R :tangle R/run-analysis.R
@@ -2145,7 +2598,7 @@ no_w1 = !grepl("^w\\.1\\.", cnames)
 dlist = list()
 for (cid in 1:num_chain) {
   ## pisa-KR KR-sci data should skip 1000
-  dlist[[cid]] = readr::read_csv(paste0(out_dir,"sample_chain",cid,".csv"), col_names=F, skip=1000) %>% as.data.frame()
+  dlist[[cid]] = readr::read_csv(paste0(out_dir,"sample_chain",cid,".csv"), col_names=F, skip=0) %>% as.data.frame()
   ##dlist[[cid]] = readr::read_csv(paste0(out_dir,"sample_chain",cid,".csv"), col_names=F) %>% as.data.frame()
   colnames(dlist[[cid]]) = cnames
   if (!double_z && !double_w) {
@@ -2621,11 +3074,11 @@ dev.off(which = dev.cur())
 ## mcmc_intervals(mylist, pars=c("lambda.0.1.1")
 pdf("figure/w_mcmc_trace_plot.pdf")
 for (i in 1:min(I, 40)) {
-p <- mcmc_trace(mylist,
-                regex_pars = paste0("^w\\.[0-1]\\.",i,"\\."),
-                ##transformations = "log",
-                facet_args = list(nrow = 2, labeller = label_parsed))
-print(p <- p + facet_text(size = 15))
+  p <- mcmc_trace(mylist,
+                  regex_pars = paste0("^w\\.[0-1]\\.",i,"\\."),
+                  ##transformations = "log",
+                  facet_args = list(nrow = 2, labeller = label_parsed))
+  print(p <- p + facet_text(size = 15))
 }
 dev.off(which = dev.cur())
 #+END_SRC
@@ -2844,12 +3297,12 @@ w0 = matched$w0
 myI = sort(c(8,12,14,17,1,6,13,18)) ## pisa KR
 
 which_z = function(w, z) {
-which.min(colSums((t(z) - w)^2))
+  which.min(colSums((t(z) - w)^2))
 }
 
 myN = NULL
 for (i in 1:length(myI)) {
-myN = c(myN, which_z(w0[myI[i],],z0))
+  myN = c(myN, which_z(w0[myI[i],],z0))
 }
 myN = c(myN, which.min(rowSums(z0^2)), which.max(rowSums(z0^2)))
 
@@ -2982,7 +3435,7 @@ dev.off(which = dev.cur())
 ## choose a few people adn items from latent space
 
 which_z = function(w, z) {
-which.min(colSums((t(z) - w)^2))
+  which.min(colSums((t(z) - w)^2))
 }
 
 ## myN = NULL
@@ -3050,9 +3503,9 @@ system(paste0("rsync -v figure/latent_space_cl1.pdf ", out_dir, "figure/"))
 mN = length(myN)
 mise = matrix(0,mN,mN)
 for (kk in 1:(mN-1)) {
-for (ll in (kk+1):mN) {
-mise[ll,kk] = sum((CIF_T[,kk] - CIF_T[,ll])^2) / maxt
-}
+  for (ll in (kk+1):mN) {
+    mise[ll,kk] = sum((CIF_T[,kk] - CIF_T[,ll])^2) / maxt
+  }
 }
 #+END_SRC
 
@@ -3062,24 +3515,28 @@ num_iter = min(unlist(lapply(mydf,  nrow)))
 
 mises = foreach(v=1:num_chain, .combine='rbind') %dopar% {
   foreach(nn = seq(1, num_iter, 10), .combine='rbind') %dopar% {
-CIF_T = foreach (k = myN, .combine='cbind') %dopar% {
-    c(0,cumcicurve(getparam(unlist(mydf[[v]][nn,]), sj, item, k), 1, 0, maxt, num_seg))
- }
-colSums((posm_CIF_T - CIF_T)^2) / maxt
+    CIF_T = foreach (k = myN, .combine='cbind') %dopar% {
+      c(0,cumcicurve(getparam(unlist(mydf[[v]][nn,]), sj, item, k), 1, 0, maxt, num_seg))
+    }
+    colSums((posm_CIF_T - CIF_T)^2) / maxt
   }
 }
+#+END_SRC
 
+#+BEGIN_SRC R
 apply(mises, 2, median)
+#+END_SRC
 
+#+BEGIN_SRC R
 
-  sam = mydf[[v]][,1:( which( colnames(mydf[[v]]) == "lp_") )]
+sam = mydf[[v]][,1:( which( colnames(mydf[[v]]) == "lp_") )]
 
-  CIF_T = foreach (k = myN, .combine='rbind') %dopar% {
-    c(0,cumcicurve(getparam(posm, sj, item, k), 1, 0, maxt, num_seg))
-  }
+CIF_T = foreach (k = myN, .combine='rbind') %dopar% {
+  c(0,cumcicurve(getparam(posm, sj, item, k), 1, 0, maxt, num_seg))
+}
 
 }
-  apply(mydf[[v]], 2, mean)
+apply(mydf[[v]], 2, mean)
 if (num_chain > 1) {
   tmp = tmp[,1:( which( colnames(mydf[[1]]) == "lp_") )]
   posm = apply(tmp, 2, mean)
@@ -3089,7 +3546,6 @@ if (num_chain > 1) {
 
 cname = names(posm)
 param = getparam(posm,sj,i,k)
-
 #+END_SRC
 ** FDA
 #+BEGIN_SRC R

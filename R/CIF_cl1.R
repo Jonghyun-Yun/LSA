@@ -1,7 +1,7 @@
 ## choose a few people adn items from latent space
 
 which_z = function(w, z) {
-which.min(colSums((t(z) - w)^2))
+  which.min(colSums((t(z) - w)^2))
 }
 
 ## myN = NULL

@@ -174,7 +174,7 @@ colnames(dit01)[4:6] = c("item","res","time")
 
 pdf("figure/boxplot_ART.pdf")
 ## rt_boxp <- ggplot(dit01, aes(x=factor(res),y=time,fill=factor(res)))+
-  ## geom_boxplot() + labs(title="RT by accuracy") + facet_wrap(~item)
+## geom_boxplot() + labs(title="RT by accuracy") + facet_wrap(~item)
 logrt_boxp <- ggplot(dit01[,4:6], aes(x=factor(res),y=log(time),fill=factor(res)))+
   geom_boxplot() + labs(title="log RT by accuracy") + facet_wrap(~item)
 ## print(rt_boxp)

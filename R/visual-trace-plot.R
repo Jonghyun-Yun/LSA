@@ -104,11 +104,11 @@ dev.off(which = dev.cur())
 ## mcmc_intervals(mylist, pars=c("lambda.0.1.1")
 pdf("figure/w_mcmc_trace_plot.pdf")
 for (i in 1:min(I, 40)) {
-p <- mcmc_trace(mylist,
-                regex_pars = paste0("^w\\.[0-1]\\.",i,"\\."),
-                ##transformations = "log",
-                facet_args = list(nrow = 2, labeller = label_parsed))
-print(p <- p + facet_text(size = 15))
+  p <- mcmc_trace(mylist,
+                  regex_pars = paste0("^w\\.[0-1]\\.",i,"\\."),
+                  ##transformations = "log",
+                  facet_args = list(nrow = 2, labeller = label_parsed))
+  print(p <- p + facet_text(size = 15))
 }
 dev.off(which = dev.cur())
 

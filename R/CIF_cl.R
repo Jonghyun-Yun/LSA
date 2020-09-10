@@ -8,11 +8,14 @@ pdf("figure/latent_space_cl1.pdf")
 ## myN = c(23,37,20,27,33,36) ## marketing
 ## myI = 1:I # marketing
 
-##myN = c(62,589,14,219,524,509,161,435,252,595) ## pisa KR
-##myI = 1:I # pisa KR
+## myN = c(62,589,14,219,524,509,161,435,252,595) ## pisa KR
+## myI = 1:I # pisa KR
 
-myN = c(518, 584, 370, 418, 79, 276, 572, 358, 73, 274) ## pisa
-myI = 1:I # pisa
+## myN = c(518, 584, 370, 418, 79, 276, 572, 358, 73, 274) ## pisa
+## myI = 1:I # pisa
+
+myN = c(270,367,712,17,615,265,653,484,155,290) ## pisa KR sci
+myI = 1:I # pisa KR sci
 
 z1 = matched$z1
 w1 = matched$w1

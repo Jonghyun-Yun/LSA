@@ -8,12 +8,12 @@ w0 = matched$w0
 myI = sort(c(8,12,14,17,1,6,13,18)) ## pisa KR
 
 which_z = function(w, z) {
-which.min(colSums((t(z) - w)^2))
+  which.min(colSums((t(z) - w)^2))
 }
 
 myN = NULL
 for (i in 1:length(myI)) {
-myN = c(myN, which_z(w0[myI[i],],z0))
+  myN = c(myN, which_z(w0[myI[i],],z0))
 }
 myN = c(myN, which.min(rowSums(z0^2)), which.max(rowSums(z0^2)))
 
