@@ -140,10 +140,22 @@ int main(int argc, const char *argv[]) {
     return 0;
   }
 
-  int chain_id = atoi(argv[8]);
-  int num_samples = atoi(argv[9]);
-  int num_warmup = atoi(argv[10]);
-  int thin = atoi(argv[11]);
+  // to play with sign of gammas e.g. both positive, one negative and one positive, etc.
+  bool SIGN_GAMMA;
+  if (sarg[8] == "true") {
+    SIGN_GAMMA = true;
+  } else if (sarg[8] == "false") {
+    SIGN_GAMMA = false;
+  } else {
+    std::cout << "invalid arguemnt for SIGN_GAMMA.\n" << std::endl;
+    return 0;
+  }
+
+
+  int chain_id = atoi(argv[9]);
+  int num_samples = atoi(argv[10]);
+  int num_warmup = atoi(argv[11]);
+  int thin = atoi(argv[12]);
 
   // log-posterior
   double lp_;
@@ -365,7 +377,7 @@ int main(int argc, const char *argv[]) {
   if (CONT) {
     std::cout << "Reading from a previous run...\n";
 
-    // read the last line of <sample file in output directory>
+    // read the last line of a "sample" file in output directory>
     // lambda, theta, beta, z, w, gamma, sigma, lp
     lastline = readCSV_lastline(fsample.str(), 2 + 2*I*G + N*2 + I*2 + 2*N*2 + 2*I*2 + 2 + 2);
 
@@ -418,7 +430,10 @@ int main(int argc, const char *argv[]) {
   }
 
   if (SINGLE_Z && SINGLE_W) {
-    gamma(0) = -1.0 * gamma(1);
+    // TODO gamma constraint
+    if (!SIGN_GAMMA) {
+      gamma(0) = -1.0 * gamma(1);
+    }
     acc_gamma = Eigen::VectorXd::Zero(1);
   } else {
     acc_gamma = Eigen::VectorXd::Zero(2);
@@ -430,9 +445,12 @@ int main(int argc, const char *argv[]) {
   }
   else {
     acc_z = Eigen::VectorXd::Zero(2*N);
-    if (gamma(0) < 0 || gamma(1) <0) {
-      std::cout << "gamma should be positive!\n";
-      return 0;
+    // TODO gamma constraint
+    if (!SIGN_GAMMA) {
+      if (gamma(0) < 0 || gamma(1) <0) {
+        std::cout << "gamma should be positive!\n";
+        return 0;
+      }
     }
   }
 
