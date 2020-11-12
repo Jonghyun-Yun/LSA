@@ -14,6 +14,7 @@ setwd("/Users/yunj/Dropbox/research/lsjm-art/lsjm-code")
 source("R/art-functions.R")
 
 source('R/load-outputs.R')
+source('R/write_summary.R')
 source('R/visual-latent-space-plot.R')
 source('R/visual-trace-plot.R')
 source('R/CIF_posm.R')
