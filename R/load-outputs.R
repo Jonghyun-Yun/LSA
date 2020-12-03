@@ -18,7 +18,6 @@ for (k in 1:N) {
   for (c in 0:1) {
     cnames = c(cnames, paste0("theta.",k,".",c))
   }}
-
 for (i in 1:I) {
   for (c in 0:1) {
     cnames = c(cnames, paste0("beta.",i,".",c))

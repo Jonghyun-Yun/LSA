@@ -3227,6 +3227,23 @@ system(paste0("mkdir -p ", out_dir, "figure/"))
 system(paste0("mv figure/*.pdf figure/",out_dir))
 #+END_SRC
 
+#+begin_src R
+## install.packages("coda")
+install.packages("dplyr")
+install.packages("stringr")
+install.packages("magrittr")
+install.packages("bayesplot")
+install.packages("foreach")
+install.packages("doParallel")
+install.packages("reshape2")
+install.packages("readr")
+install.packages("data.table")
+install.packages("survival")
+#+end_src
+
+#+begin_src R
+install.packages(c("ggplot2","ggrepel","fda","funFEM"))                 
+#+end_src
 #+BEGIN_SRC R :results none
 ## Rcpp::sourceCpp("comprisk.cpp")
 ## install.packages("art_1.0.tar.gz", repos = NULL, type="source")
@@ -3254,10 +3271,10 @@ source("R/art-functions.R")
 #+BEGIN_SRC R :results none :tangle R/art-analysis.R
 source('R/load-outputs.R')
 source('R/write_summary.R')
-source('R/visual-latent-space-plot.R')
-source('R/visual-trace-plot.R')
-source('R/CIF_posm.R')
-source('R/CIF.R')
+## source('R/visual-latent-space-plot.R')
+## source('R/visual-trace-plot.R')
+## source('R/CIF_posm.R')
+## source('R/CIF.R')
 #+END_SRC
 
 print average acceptance rate per type of quantities: \lambda, \beta, \theta, z, w, \gamma, \sigma
@@ -3287,7 +3304,6 @@ for (k in 1:N) {
   for (c in 0:1) {
     cnames = c(cnames, paste0("theta.",k,".",c))
   }}
-
 for (i in 1:I) {
   for (c in 0:1) {
     cnames = c(cnames, paste0("beta.",i,".",c))
@@ -3461,12 +3477,19 @@ for (cid in 1:num_chain) {
 }
 #+END_SRC
 
+The posterior means of \beta, \theta, \lambda are exported to CSV files.
 #+begin_src R :tangle R/write_summary.R
 ss = summary(mylist)
 mm = ss$statistics[,"Mean"]
 rr = c(grep("^beta",  names(mm)), grep("^theta",  names(mm)))
 dout = data.frame(vname = names(mm[rr]), mean = mm[rr])
 readr::write_csv(dout, paste0(out_dir, "beta_theta_mean.csv"))
+#+end_src
+
+#+begin_src R :tangle R/write_summary.R
+rr = grep("^lambda",  names(mm))
+dout = data.frame(vname = names(mm[rr]), mean = mm[rr])
+readr::write_csv(dout, paste0(out_dir, "lambda_mean.csv"))
 #+end_src
 
 #+BEGIN_SRC R :results none
