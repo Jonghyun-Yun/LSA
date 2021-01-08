@@ -4628,3 +4628,5 @@ do_procrustes = function(Xstar, mydf, is_list = FALSE, translation = TRUE, scale
 # Local Variables:
 # eval: (flyspell-mode -1)
 # End:
+
+* TEST
