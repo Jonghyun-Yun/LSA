@@ -3244,9 +3244,10 @@ install.packages("survival")
 #+begin_src R
 install.packages(c("ggplot2","ggrepel","fda","funFEM"))                 
 #+end_src
+
 #+BEGIN_SRC R :results none
 ## Rcpp::sourceCpp("comprisk.cpp")
-## install.packages("art_1.0.tar.gz", repos = NULL, type="source")
+install.packages("art_1.0.tar.gz", repos = NULL, type="source")
 detach(package:art)
 library(art)
 #+END_SRC
@@ -3270,17 +3271,44 @@ source("R/art-functions.R")
 
 #+BEGIN_SRC R :results none :tangle R/art-analysis.R
 source('R/load-outputs.R')
-source('R/write_summary.R')
-## source('R/visual-latent-space-plot.R')
-## source('R/visual-trace-plot.R')
-## source('R/CIF_posm.R')
-## source('R/CIF.R')
+## source('R/write_summary.R')
+source('R/visual-latent-space-plot.R')
+source('R/visual-trace-plot.R')
+source('R/CIF_posm.R')
+source('R/CIF.R')
 #+END_SRC
 
 print average acceptance rate per type of quantities: \lambda, \beta, \theta, z, w, \gamma, \sigma
 #+BEGIN_SRC sh
 cat output/summary.csv
 #+END_SRC
+** example to extract w0 and z0
+#+begin_src R
+out_dir = "chessB_pn/"
+num_chain = 3; double_z = 0; double_w = 0; HAS_REF = 0;
+
+library(art)
+library(coda)
+library(dplyr)
+library(stringr)
+library(magrittr)
+library(bayesplot)
+library(foreach)
+library(doParallel)
+##registerDoParallel(cores = detectCores() - 1)
+registerDoParallel(6)
+
+setwd("/Users/yunj/Dropbox/research/lsjm-art/lsjm-code")
+
+source("R/art-functions.R")
+source("R/load-outputs.R")
+
+z0 = matched$z0
+w0 = matched$w0
+
+readr::write_csv(as.data.frame(w0), paste0(out_dir, "w0.csv"))
+readr::write_csv(as.data.frame(z0), paste0(out_dir, "z0.csv"))
+#+end_src
 
 ** load outputs
 #+begin_src R :tangle R/load-outputs.R
@@ -3490,6 +3518,18 @@ readr::write_csv(dout, paste0(out_dir, "beta_theta_mean.csv"))
 rr = grep("^lambda",  names(mm))
 dout = data.frame(vname = names(mm[rr]), mean = mm[rr])
 readr::write_csv(dout, paste0(out_dir, "lambda_mean.csv"))
+#+end_src
+
+#+begin_src R :tangle R/write_summary.R
+rr = grep("^^z\\.0\\.",  names(mm))
+dout = data.frame(vname = names(mm[rr]), mean = mm[rr])
+readr::write_csv(dout, paste0(out_dir, "z0_mean.csv"))
+#+end_src
+
+#+begin_src R :tangle R/write_summary.R
+rr = grep("^^z\\.0\\.",  names(mm))
+dout = data.frame(vname = names(mm[rr]), mean = mm[rr])
+readr::write_csv(dout, paste0(out_dir, "z0_mean.csv"))
 #+end_src
 
 #+BEGIN_SRC R :results none
