@@ -3434,7 +3434,6 @@ pdf("spc_cl_dist_rbf.pdf")
 print(cl_lsjmplot(z0,w0,cl_z,cl_w,xlim=c(xmin,xmax),ylim=c(ymin,ymax)))
 
 dev.off(which = dev.cur())
-
 #+end_src
 
 ** load outputs
