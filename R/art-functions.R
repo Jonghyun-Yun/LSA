@@ -272,6 +272,68 @@ lsjmplot <- function( z, w, myname = NULL, xlim=NA, ylim=NA, lab = "Coordinate")
   pp + mytheme
 }
 
+library(ggplot2)
+library(ggrepel)
+
+cl_lsjmplot <- function( z, w, cl_z, cl_w, myname = NULL, xlim=NA, ylim=NA, lab = "Coordinate") {
+
+  ## extract objects
+  n_z = nrow(z)
+  n_w = nrow(w)
+
+  cl = rbind(cl_z, cl_w)[[1]]
+  cl = as.factor(cl)
+  cl_z = cl[1:n_z]
+  cl_w = cl[(n_z+1):length(cl)]
+  x = rbind(z,w)
+  idx = rep("w", nrow(x))
+  idx[1:nrow(z)] = "z"
+  position <- as.data.frame(x)
+  ndim <- dim(x)[2]
+
+  colnames(position) <- paste("position",1:ndim,sep="")
+
+  padding = 1.05
+  if (any(is.na(xlim))) {
+    x1 <- -max(abs(position[,1]))*padding
+    x2 <- max(abs(position[,1]))*padding
+  } else {
+    x1 <- xlim[1]
+    x2 <- xlim[2]
+  }
+  if (any(is.na(ylim))) {
+    y1 <- -max(abs(position[,2]))*padding
+    y2 <- max(abs(position[,2]))*padding
+  } else {
+    y1 <- ylim[1]
+    y2 <- ylim[2]
+  }
+
+  mytheme = theme(axis.line = element_line(colour = "black"),
+                  ##panel.grid.major = element_blank(),
+                  panel.grid.minor = element_blank(),
+                  ##panel.border = element_blank(),
+                  panel.background = element_blank()
+                  )
+
+  position$idx = idx
+
+  ## plot
+  pp = ggplot(subset(position,idx=="z"),aes(x=position1,y=position2,colour=cl_z)) +
+    ##theme(text=element_text(size=20)) +
+    ## geom_point()+
+    xlim(x1,x2) + ylim(y1,y2) +
+    xlab(paste(lab," 1",sep="")) + ylab(paste(lab," 2",sep="")) +
+    ##xlab("Position 1") + ylab("Position 2") +
+    geom_hline(yintercept = 0, color = "gray70", linetype=2) +
+    geom_vline(xintercept = 0, color = "gray70", linetype=2) + mytheme
+  pp = pp + geom_point()
+  pp +
+    geom_text(data = subset(position, idx == "w"), aes(x=position1,y=position2,label=(1:n_w),colour=cl_w),
+                         ## segment.color = "grey50",
+                         check_overlap = FALSE, show.legend=FALSE,size = 4)
+}
+
 find_xstar = function(df) {
   num_samples = nrow(df)
 
