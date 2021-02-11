@@ -10,7 +10,7 @@
 # #+SETUPFILE: ~/setup/my-theme-readtheorg.setup
 
 #+PROPERTY: header-args :eval never-export
-#+PROPERTY: header-args:R :session *R-Org* :exports both :results code :noweb yes
+#+PROPERTY: header-args:R :session *R-Org* :exports both :noweb yes
 #+PROPERTY: header-args:jupyter-python :session *jupyter-lsjm* :kernel tf :async yes
 
 * OrgMode                                                          :noexport:
@@ -1633,7 +1633,7 @@ logrt_boxp
 dev.off(which = dev.cur())
 #+END_SRC
 
-* Chess proficiency                                                  :ATTACH:
+* Chess proficiency (this is for Chees A)                            :ATTACH:
 :PROPERTIES:
 :ID:       aaa8e8c6-ea9b-47b0-8901-047b0388e662
 :END:
@@ -1653,7 +1653,7 @@ dev.off(which = dev.cur())
 - Predict-a-move test
   items are related. no unique solution. points of merit on a scale from 0 to 5.
 
-#+BEGIN_SRC R
+#+BEGIN_SRC R :results none
 source("R/chess-preprocess.R")
 source("R/chess-init.R")
 #+END_SRC
@@ -1694,6 +1694,9 @@ tab_item = data.frame(chr = colnames(di)[-1], num = 1:nitem)
 dit$item = to_numID(dit$item, tab_item)
 #+END_SRC
 
+#+RESULTS:
+: [1] TRUE
+
 ** knot selection
 #+begin_src R :tangle R/chess-preprocess.R
 time = pull(dit, RT)
@@ -1703,6 +1706,8 @@ pseq =  seq(from=0, to = 1, length.out = ncut + 1)
 sj = quantile(time, probs = pseq) %>% round()
 sj[1] = 0; sj[length(sj)] = sj[length(sj)] + 1
 #+end_src
+
+#+RESULTS:
 
 ** survSplit
 #+BEGIN_SRC R :results none :tangle R/chess-preprocess.R
@@ -1856,10 +1861,11 @@ logrt_boxp
 dev.off(which = dev.cur())
 #+END_SRC
 
-** Choose-a-move test B
-*** description
+* Choose-a-move test B
+See [[id:aaa8e8c6-ea9b-47b0-8901-047b0388e662][Chess proficiency (this is for Chees A)]]
+** description
 
-#+BEGIN_SRC R
+#+BEGIN_SRC R :results none
 source("R/chessB-preprocess.R")
 source("R/chessB-init.R")
 #+END_SRC
@@ -1900,7 +1906,7 @@ tab_item = data.frame(chr = colnames(di)[-1], num = 1:nitem)
 dit$item = to_numID(dit$item, tab_item)
 #+END_SRC
 
-*** knot selection
+** knot selection
 #+begin_src R :tangle R/chessB-preprocess.R
 time = pull(dit, RT)
 ncut = 5
@@ -1910,7 +1916,7 @@ sj = quantile(time, probs = pseq) %>% round()
 sj[1] = 0; sj[length(sj)] = sj[length(sj)] + 1
 #+end_src
 
-*** survSplit
+** survSplit
 #+BEGIN_SRC R :results none :tangle R/chessB-preprocess.R
 library(survival)
 status = rep(1, nrow(dt))
@@ -1975,7 +1981,7 @@ readr::write_csv(as.data.frame(mtab_sj),"input/mtab_sj.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(mIY),"input/mIY.csv", col_names = FALSE)
 #+end_src
 
-*** prior & jump
+** prior & jump
 This is to export hyper-parameters and jumping rule
 #+BEGIN_SRC R :results none :tangle R/chessB-preprocess.R
 mvar = readr::read_csv("input/mvar.csv", col_names=FALSE) %>% as.matrix()
@@ -2020,7 +2026,7 @@ readr::write_csv(as.data.frame(rbind(mu_z,sigma_z,jump_z)),"input/pj_z.csv", col
 readr::write_csv(as.data.frame(rbind(mu_w,sigma_w,jump_w)),"input/pj_w.csv", col_names = FALSE)
 #+END_SRC
 
-*** init
+** init
 #+BEGIN_SRC R :results none :tangle R/chessB-init.R
 mvar = as.matrix( readr::read_csv("input/mvar.csv", col_names=F) )
 I = mvar[1]
@@ -2148,6 +2154,34 @@ init_z = 0*matrix(rnorm(2*2*N), ncol = 2);
 #+END_SRC
 
 #+BEGIN_SRC R :results none :tangle R/chessB_pn-init.R
+readr::write_csv(as.data.frame(init_lambda), "input/init_lambda.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_beta), "input/init_beta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_theta), "input/init_theta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_gamma), "input/init_gamma.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
+#+END_SRC
+
+** Choose-a-move test B: no_latent Gamma(0) = 0, Gamma(1) = 0
+#+BEGIN_SRC R :results none :tangle R/chessB_no_latent-init.R
+mvar = as.matrix( readr::read_csv("input/mvar.csv", col_names=F) )
+I = mvar[1]
+N = mvar[2]
+G = mvar[4]
+
+set.seed(as.numeric(Sys.time()))
+
+init_lambda = matrix(1, nrow = 2*I, ncol = G);
+init_beta = 0*matrix(rnorm(2*I), ncol = 2);
+init_theta = 0*matrix(rnorm(2*N), ncol = 2);
+
+init_gamma = 0*matrix(c(1, -1), ncol = 1);
+
+init_w = 0*matrix(rnorm(2*2*I), ncol = 2);
+init_z = 0*matrix(rnorm(2*2*N), ncol = 2);
+#+END_SRC
+
+#+BEGIN_SRC R :results none :tangle R/chessB_no_latent-init.R
 readr::write_csv(as.data.frame(init_lambda), "input/init_lambda.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(init_beta), "input/init_beta.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(init_theta), "input/init_theta.csv", col_names = FALSE)
@@ -2919,7 +2953,7 @@ dev.off(which = dev.cur())
 
 * C++ MCMC output
 ** Shell to run C++
-#+begin_src sh :tangle run.sh
+#+begin_src sh
 #!/usr/bin/env bash
 export STAN_NUM_THREADS=6
 mkdir -p output
@@ -2950,9 +2984,9 @@ mv output verbal_pn
 Rscript R/run-analysis.R verbal_pn/
 #+END_SRC
 
-#+begin_src sh
+#+begin_src sh :tangle run.sh
 #!/usr/bin/env bash
-export STAN_NUM_THREADS=6
+export STAN_NUM_THREADS=3
 mkdir -p output
 # rm output/*
 # Rscript "R/chessB-preprocess.R"
@@ -2974,11 +3008,10 @@ cp run.sh output/
 
 for v in {1..3}
 do
-    Rscript "R/chessB_nn-init.R"
+    Rscript "R/chessB_no_latent-init.R"
     ./main initialize parallel single_w single_z full latent no_gamma true $v 10000 10000 10
 done
-mv output chessB_nn
-Rscript R/run-analysis.R chessB_nn/
+mv output chessB_no_latent
 
 #+END_SRC
 
@@ -3139,7 +3172,6 @@ do
 done
 mv output opusIII-singleZ-singleW
 #+end_src
-
 ** Using R
 #+BEGIN_SRC R :tangle R/run-analysis.R
 #!/usr/bin/env Rscript
@@ -3312,6 +3344,11 @@ readr::write_csv(as.data.frame(z0), paste0(out_dir, "z0.csv"))
 #+end_src
 
 ** use w0 and z0 for bicluster
+Method: cite:dhillon_co-clustering_2001
+Code: https://scikit-learn.org/stable/modules/biclustering.html
+https://scikit-learn.org/stable/auto_examples/bicluster/plot_bicluster_newsgroups.html#sphx-glr-auto-examples-bicluster-plot-bicluster-newsgroups-py
+How to determine # of clutsers: https://scikit-learn.org/stable/auto_examples/bicluster/plot_bicluster_newsgroups.html#sphx-glr-auto-examples-bicluster-plot-bicluster-newsgroups-py
+
 #+begin_src R
 out_dir = "chessB_pn/"
 num_chain = 3; double_z = 0; double_w = 0; HAS_REF = 0;
@@ -3332,261 +3369,6 @@ setwd("/Users/yunj/Dropbox/research/lsjm-art/lsjm-code")
 w0 = readr::read_csv(paste0(out_dir, "w0.csv"))
 z0 = readr::read_csv(paste0(out_dir, "z0.csv"))
 #+end_src
-
-#+RESULTS:
-#+begin_export latex
-|    -0.27959589586782 |    0.441031865192514 |
-|    0.223229722939987 |     1.03944486461179 |
-|     1.03906107988431 |   -0.728197329961871 |
-|     -0.5865100715142 |   -0.753186962801836 |
-|   0.0828518332460382 |   -0.830242384677982 |
-|   -0.940519667757979 |   -0.735382306817386 |
-|   -0.850882901707406 |    0.972550234173188 |
-|     1.60382839268179 |   -0.326296900758288 |
-|    0.251830308017431 |   -0.910146709817404 |
-|     1.83306962344225 |     1.33196743536026 |
-|    0.516815143851431 |   -0.752639481947375 |
-|     1.77813081086745 |    0.449461423236894 |
-|  -0.0110527144483608 |    -1.29323992726279 |
-|   -0.492163535117201 |    0.933105833364243 |
-|    -1.40678890608839 |    0.171203312763039 |
-|   -0.873925115602517 |     1.56500961779228 |
-|   -0.401064080794247 |    0.684052740169607 |
-|    -1.40105487413479 |   0.0503461342393475 |
-|     1.07767415262334 |  -0.0296237478868086 |
-|     0.34026716226126 |     -0.8257115104175 |
-|    -1.18731453312373 |    -0.53623154401685 |
-|    0.859757150914539 |    -1.28104570282836 |
-|   -0.949946543661062 |    0.378727629029933 |
-|    -1.01616180633881 |     1.06658929989404 |
-|    0.914292861572634 |   -0.138762144206229 |
-|   -0.950878575149374 |     1.01726323736431 |
-|   -0.870555794111871 |  -0.0806154095139299 |
-|    0.116926327153856 |   -0.654121747722099 |
-|    0.376380609848043 |    0.932185917779778 |
-|     1.47043547960914 |   -0.796784607328093 |
-|    0.133995893403525 |    0.997378958030328 |
-|    0.162669249248283 |     1.01385352150489 |
-|      1.0737453000852 |  -0.0609345635525821 |
-|    0.336030989231473 |    0.245961951157403 |
-|    0.683625978356396 |     1.15039985746595 |
-|    0.070835313538377 |  -0.0699958708809266 |
-|    0.362912113655502 |    0.931114184660474 |
-|    0.535393472737416 |    0.219570210388178 |
-|   -0.547212560339431 |    0.490591472258291 |
-|   -0.775447212499391 |    0.322173037121457 |
-|   -0.323668443236811 |    0.690355814827424 |
-|  -0.0769650325798357 |    -1.21056524151349 |
-|    0.473904352317476 |    -1.13891122469828 |
-|   -0.164269363154321 |   -0.428536769440164 |
-|     1.25908296343385 |   -0.418882587122904 |
-|   -0.190806358065433 |    0.946521193357656 |
-|  -0.0386641221205328 |    0.871498734936655 |
-|     1.13878385423506 |   -0.733320183478512 |
-|   -0.196518027615602 |    -0.75383917480099 |
-|    0.438595684711858 |    0.244500912252232 |
-|    -1.06084331912456 |    0.186838697769172 |
-|   -0.206036717734369 |    0.750481725387561 |
-|     1.00330939517442 |    -1.10503741855804 |
-|   -0.582730997808807 |    0.302432713376294 |
-|    0.879452302108076 |  -0.0450934047338536 |
-|     0.93642552443734 |   -0.900465427444986 |
-|   -0.561179204410624 |    0.309670446777093 |
-|  -0.0727749424033438 |    0.893151479845351 |
-|    0.881893920430764 |   -0.670351641590383 |
-|    0.780525347147814 |   -0.803730733706289 |
-|   -0.998312391922282 |    -1.09001436907256 |
-|   -0.604392692003191 |    0.535280671331391 |
-|   -0.149831733286854 |    0.609786966957042 |
-|    0.669977738383689 |    0.843728311742383 |
-|    -0.66516480916152 |   -0.966204114225986 |
-|   -0.335349981571904 |   -0.144757917276294 |
-|    0.696497676475975 |   -0.883050120979443 |
-|     1.83274727624152 |   0.0010691143784408 |
-|   -0.764874373917201 |    0.360430264697472 |
-|   -0.648891584884733 |    0.582578426063279 |
-|    -1.29435357272918 |   -0.312593254559763 |
-|    0.771968081870736 |    -1.01657846585538 |
-|     1.51673406927513 |    0.930533702404101 |
-|  -0.0464612096167556 |   -0.437458824340194 |
-|   -0.502066521032625 |    0.412732284742489 |
-| -0.00963605303874091 |    0.867200862212821 |
-|   -0.914885001639629 |    0.929810302293313 |
-|    0.218075743914111 |    -1.23709893325842 |
-|    0.889523304557654 |   -0.176809138589572 |
-|   -0.560150827890251 |    0.315202823380119 |
-|   -0.857789377905916 |   0.0379872927653945 |
-|   -0.736743336011662 |    0.490700481208654 |
-|   -0.437624419319045 |    0.840778532125219 |
-|   -0.556311197873296 |    -1.16571629988052 |
-|   -0.574113389369362 |   0.0989852015845556 |
-|    -1.39343710038292 |   -0.597809323713661 |
-|   -0.434786591319279 |    -1.34175320859748 |
-|   -0.728157270462082 |     0.72571058503315 |
-|   -0.891612387964202 |    0.163677067575928 |
-|   -0.208334393148292 |    0.921989798681622 |
-|    -1.03227164111794 |    0.269741600358475 |
-|   -0.728422924470481 |     1.24799489933178 |
-|    0.274732935873941 |    0.969907978366986 |
-|    0.911238783388223 |  -0.0712145354826548 |
-|     0.60080844247826 |    0.013503937687681 |
-|    0.817422573046475 |    -1.12933787429088 |
-|   -0.630608119864178 |   -0.996659214935572 |
-|     1.19462937898261 |   -0.343252950493692 |
-|    -0.75443765167352 |     0.85816677205279 |
-|   -0.645158979818578 |    0.953238636332737 |
-|    0.130630429357654 |    0.931630168576308 |
-|   -0.399039209695253 |   -0.668874384167253 |
-|     1.23134225536266 |   -0.332080055315927 |
-|     2.23115594042196 |    0.808366763210369 |
-|     0.76060512185698 |    0.171412242217833 |
-|    0.730567129439153 |     -1.0208580870239 |
-|   0.0227674622294495 |    -1.00133944302735 |
-|     1.33802358021772 |   -0.916642125128853 |
-|    0.541471982546275 |   -0.414193799922798 |
-|    -1.16607329784126 |    0.374396534098449 |
-|   -0.775544890550785 |   -0.705320391847193 |
-|   -0.927727049312156 |     0.42572044348865 |
-|    0.766507714398414 |    0.467856435422006 |
-|     1.53681681889267 |  -0.0577376338937247 |
-|    0.289802288112529 |   -0.946684820779086 |
-|     0.52610690992877 |    -1.32577723755662 |
-|     1.23499553835625 |   -0.607934995581631 |
-|   -0.653780609036399 |    -1.15738979326317 |
-|   -0.336434232763492 |   -0.686088118911453 |
-|     -1.1480911607487 |    0.557793555532845 |
-|     0.17756627716472 |    -1.18360889066161 |
-|    0.250326170115607 |     1.00382881468853 |
-|   -0.210225138625023 |     0.82629318330594 |
-|   -0.326385354620217 |    0.498401796951117 |
-|   -0.356710835242133 |   0.0826944945193171 |
-|    0.320485927900588 |     1.03764246653618 |
-|     1.01494872710359 |  -0.0706354110354734 |
-|     1.48171155308353 |   -0.124729462735397 |
-|    0.606081433686019 |    -1.15920291787559 |
-|    0.568327314699634 |    -1.15437991235832 |
-|   -0.106075763392555 |    0.879852450728425 |
-|   -0.854957683365672 |     1.06302034937486 |
-|   -0.641587775087851 |    0.801110574246279 |
-|     2.00861977782183 |     1.04903545671209 |
-|    -1.54000251605182 |    -0.81804908307533 |
-|   -0.400560956174568 |    0.583760022227069 |
-|    -1.08943817646557 |   -0.114909382172684 |
-|    0.605643918507508 |    0.234298649547688 |
-|   -0.963780081039887 |   -0.917763271664287 |
-|   -0.605115927591755 |    -1.43498587714337 |
-|  -0.0608216916819401 |     1.03969679807425 |
-|     1.26994682687385 |   -0.451818810228487 |
-|   -0.729362707354382 |    -0.87202011724963 |
-|    0.770704833391482 |    -1.34801087825829 |
-|    0.429940987737698 |   -0.849823255850386 |
-|    0.696648365527387 |   0.0995435969229885 |
-|     1.19597753043361 |    0.278194079239494 |
-|    0.242415432142506 |    -1.04329310806677 |
-|   -0.576894503406692 |   0.0280468236664105 |
-|   -0.390859961143978 |     1.20539530891184 |
-|    -1.19349400808343 |    0.543453613901441 |
-|     1.77978785097747 |    0.266410372100177 |
-|     1.22308544671439 |   -0.521190232892357 |
-|   -0.187329426350725 |   -0.469553005057203 |
-|    0.762566871935814 |   -0.573788818017314 |
-|    0.866467458289801 |    -1.12744862403045 |
-|   -0.583849542724061 | -0.00605295416286215 |
-|   0.0443386901989566 |     1.01990721493811 |
-|    0.708434875960996 |    -1.12474666561265 |
-|    0.164039383830753 |     1.15959262943974 |
-|    -1.48611384516904 |   -0.400602325143561 |
-|    0.821524590326165 |   0.0617277414450208 |
-|    -1.10623166336763 | -0.00805139794931043 |
-|   -0.338417122939665 |    0.154411934764952 |
-|    0.917010607401724 |   -0.715228753434761 |
-|     1.16844000660761 |   -0.209636125913834 |
-|     0.51680131693131 |   -0.742517638137476 |
-|    0.522290149920031 |   -0.669334568451332 |
-|    0.482364612119785 |     1.39801576515412 |
-|   -0.534989042312714 |    0.056629010600413 |
-|    0.323854444864806 |    0.824704846394651 |
-|   -0.959490559847733 |    0.172506244689258 |
-|   -0.294776054102037 |     -1.0833550863859 |
-|    0.266080553059258 |     1.19225937607529 |
-|    0.598186408001377 |   -0.123475837638274 |
-|    0.942064776714546 |    0.310485334403895 |
-|   -0.223294415856053 |    -1.59873340500036 |
-|   -0.658598059274841 |    0.905937670264622 |
-|    0.697981762686512 |   -0.622790554397011 |
-|   -0.501455355763369 |    -1.34390309557478 |
-|    -0.36100323758319 |     1.18677038421913 |
-|    0.975455338891146 |  -0.0736060666370523 |
-|     1.10987022839225 |   -0.620709595581761 |
-|     2.17960144631908 |    0.294997682374945 |
-|     1.16877466080912 |   -0.465105835586268 |
-|     1.17132198637703 |   -0.401480427118283 |
-|   -0.485035489865076 |     1.21601831106202 |
-|    -1.12295473882448 |  -0.0133757251491998 |
-|    -1.05818507051715 |   -0.829227066448745 |
-|    0.466044601425452 |    0.735296214976195 |
-|   -0.423807214473666 |    0.291412845577586 |
-|    0.855394821667054 |    -1.36744271351577 |
-|     2.07370622205623 |    0.530345292234166 |
-|    0.599980511147607 |  -0.0477241971226369 |
-|   -0.917070628545034 |   0.0103083895686241 |
-|     0.70486094162931 |   -0.956654604968552 |
-|    0.532452295011571 |   -0.670303318600963 |
-|   -0.730827170532567 |     1.26864028677861 |
-|     1.00938500844622 |    0.501005724456831 |
-|    0.142375427236107 |   -0.837747646588773 |
-|   -0.216089530675997 |    0.431869597359357 |
-|    -0.78316066425426 |    0.926402291310507 |
-|   -0.147293599944536 |   0.0625401068516118 |
-|   -0.693692336934154 |   -0.722863906479263 |
-|    0.622719757980685 |    0.535628300419255 |
-|     1.09803926417884 |    0.392291880920339 |
-|   -0.327914319411454 |    0.291830276649663 |
-|    -0.83633032605447 |    0.555258902889698 |
-|   -0.347501260021711 |    0.938752127068051 |
-|  -0.0893929036682294 |    0.785912848601205 |
-|   -0.401369550739169 |   -0.180560098199895 |
-|   -0.184939584332662 |    -1.40899693117965 |
-|    -1.38645986396984 |   -0.317449888763892 |
-|     1.24700557926071 |   -0.113989073470948 |
-|    0.594445872451781 |      0.9212421040097 |
-|   -0.671923766831266 |     -1.3172196654942 |
-|   -0.936295825772615 |     0.89279199521868 |
-|   -0.625166160024541 |    -1.20130431351974 |
-|     2.13672584676369 |    0.808040238276915 |
-|     1.11131718826005 |     1.20097036911584 |
-|   -0.362720410483791 |   -0.345110294358756 |
-|    0.945675911874182 |    -1.30210694884016 |
-|     1.27314066047024 |  -0.0200819792438418 |
-|   -0.558511134795542 |   -0.722147058332658 |
-|    0.744031588637777 |   -0.700671619425665 |
-|   -0.814531161697786 |    0.440068049964943 |
-|    -1.12669045683675 |   -0.310046088999425 |
-|    -1.26884317945696 |   -0.393297234436125 |
-|     1.07641454662199 |    -0.76626611629449 |
-|    -1.43021623566402 |    0.521777482957152 |
-|    0.679054343036383 |     1.19676665110046 |
-|     2.21618116133251 |    0.356354469827604 |
-|     1.44076726485512 |  -0.0520742331760632 |
-|      1.5824054293973 |     0.37513435851212 |
-|   -0.792467423056463 |    0.772396133697903 |
-|   -0.443413948697031 |    0.729110050748964 |
-|     1.37740156412106 |    0.394322106568813 |
-|     1.15636706424242 |    0.319541799798275 |
-|     1.66562416537995 |   0.0121909606218617 |
-|    0.477791939040685 |    -1.22848464919069 |
-|   -0.807092284021752 |    0.405792181279483 |
-|    0.233988947019401 |    0.295010260767257 |
-|   -0.534733499846713 |   -0.733210048963549 |
-|    0.179802320824559 |    -1.07822623094996 |
-|    -1.11789630562685 |   -0.380910501352509 |
-|    0.934858947097946 |     -1.0453555752335 |
-|    0.575379852386098 |   -0.842478910035622 |
-|    -1.31032831185045 |     0.44826494343806 |
-|    0.716196657609065 |    0.136289319239501 |
-|     1.39955262579788 |    0.782034834364953 |
-|     1.06276525168516 |   -0.878550197340615 |
-#+end_export
 
 #+begin_src R
 D = matrix(0,nrow = nrow(z0), ncol = nrow(w0))
@@ -3618,7 +3400,6 @@ See https://scikit-learn.org/stable/modules/biclustering.html for the spectral c
 import numpy as np
 from matplotlib import pyplot as plt
 
-from sklearn.datasets import make_biclusters
 from sklearn.cluster import SpectralCoclustering
 from sklearn.metrics import consensus_score
 
@@ -3631,14 +3412,18 @@ plt.title("Original dataset")
 #+end_src
 
 #+RESULTS: 184db033-517c-4a42-b7dc-5999752f3fd6
+:RESULTS:
 : Text(0.5, 1.05, 'Original dataset')
+[[file:./.ob-jupyter/5c410dc2c8c9bfc6c337607fd33e76ea2dbf1260.png]]
+:END:
 
 #+NAME: 9ec5811f-af20-43af-9d7a-b81193dd62ec
 #+begin_src jupyter-python
-row_idx = np.linspace(0,(data.shape[0]-1), num=data.shape[0]).astype(int)
-col_idx = np.linspace(0,(data.shape[1]-1), num=data.shape[1]).astype(int)
+# row_idx = np.linspace(0,(data.shape[0]-1), num=data.shape[0]).astype(int)
+# col_idx = np.linspace(0,(data.shape[1]-1), num=data.shape[1]).astype(int)
+K = 2
 
-model = SpectralCoclustering(n_clusters=5, random_state=0)
+model = SpectralCoclustering(n_clusters=K, random_state=0)
 model.fit(data)
 
 fit_data = data[np.argsort(model.row_labels_)]
@@ -3651,7 +3436,7 @@ plt.title("After biclustering; rearranged to show biclusters")
 #+RESULTS: 9ec5811f-af20-43af-9d7a-b81193dd62ec
 :RESULTS:
 : Text(0.5, 1.05, 'After biclustering; rearranged to show biclusters')
-[[file:./.ob-jupyter/6a14d624646ef8d4ae19ac227c1a5f610e265106.png]]
+[[file:./.ob-jupyter/2358ac0c34e1b2d3ce346e94cce645b368b615be.png]]
 :END:
 
 #+NAME: 8eb17f79-bd45-4d6c-bb93-9df2515a0065
@@ -3660,8 +3445,8 @@ df_row = pd.DataFrame(model.row_labels_)
 df_col = pd.DataFrame(model.column_labels_)
 
 # save the dataframe as a csv file
-df_row.to_csv("chessB_pn/cl_row.csv")
-df_col.to_csv("chessB_pn/cl_col.csv")
+df_row.to_csv("chessB_pn/cl_row" + str(K) + ".csv")
+df_col.to_csv("chessB_pn/cl_col" + str(K) + ".csv")
 #+end_src
 
 #+RESULTS: 8eb17f79-bd45-4d6c-bb93-9df2515a0065
@@ -3669,24 +3454,221 @@ df_col.to_csv("chessB_pn/cl_col.csv")
 #+begin_src R
 source("R/art-functions.R")
 
+K = 2
+
 w0 = readr::read_csv(paste0(out_dir, "w0.csv"))
 z0 = readr::read_csv(paste0(out_dir, "z0.csv"))
 
-cl_z = readr::read_csv(paste0(out_dir,"cl_row.csv"))[,2]
-cl_w = readr::read_csv(paste0(out_dir,"cl_col.csv"))[,2]
+cl_z = readr::read_csv(paste0(out_dir,"cl_row",K,".csv"))[,2]
+cl_w = readr::read_csv(paste0(out_dir,"cl_col",K,".csv"))[,2]
 
 xmin = min(z0[,1],w0[,1])
 ymin = min(z0[,2],w0[,2])
 xmax = max(z0[,1],w0[,1])
 ymax = max(z0[,2],w0[,2])
 
-pdf("spc_cl_dist_rbf.pdf")
+pdf(paste0(out_dir,"spc_cl_dist_rbf",K,".pdf"))
 
 print(cl_lsjmplot(z0,w0,cl_z,cl_w,xlim=c(xmin,xmax),ylim=c(ymin,ymax)))
 
 dev.off(which = dev.cur())
 #+end_src
 
+#+RESULTS:
+#+begin_src R
+1
+#+end_src
+
+** simulation of survival times
+:PROPERTIES:
+:header-args:R: :tangle r/sim_surv_data.R
+:END:
+1. get break points for time
+2. fix item, get item parameters + piecewise constant rates
+3. calculate relative risk for each type (for all persons)
+4. simulate survival time -> response
+5. repeat for all items (40)
+6. repeat for many MCMC samples (10000?)
+
+#+begin_src R :results none
+out_dir = "chessB_pn/"
+num_chain = 3; double_z = 0; double_w = 0; HAS_REF = 0;
+
+library(art)
+library(coda)
+library(dplyr)
+library(stringr)
+library(magrittr)
+library(bayesplot)
+library(foreach)
+library(doParallel)
+library(timereg)
+##registerDoParallel(cores = detectCores() - 1)
+registerDoParallel(3)
+
+setwd("/Users/yunj/Dropbox/research/lsjm-art/lsjm-code")
+
+source("R/art-functions.R")
+source("R/load-outputs.R")
+#+end_src
+
+#+begin_src R :tangle R/art-functions.R
+gethaz_item = function(sam, cname, item, theta = NULL) {
+cname = colnames(sam)
+num_iter = nrow(sam)
+
+  d_zw = matrix(0,num_iter,N)
+  for (k in 1:N){
+    ## distance calculation can be fully vectorized (and storing z), but I don't have time for this.
+z = sam[,str_which(cname, paste0("^z\\.",0,"\\.",k,"\\.[1-2]"))]
+w = sam[,str_which(cname, paste0("^w\\.",0,"\\.",item,"\\."))]
+d_zw[,k] = sqrt(rowSums((z-w)^2))
+  }
+  beta = sam[,str_which(cname, paste0("^beta\\.",item,"\\."))]
+
+if (is.null(theta)) {
+  theta_temp = sam[,str_which(cname, paste0("^theta\\."))] ## (theta.k.0 theta.k.1)
+  teq = seq(1,ncol(theta_temp),2)
+theta = lambda = rr = list()
+theta[[1]] = theta_temp[,teq]
+theta[[2]] = theta_temp[,-teq]
+}
+
+  lambda_temp = sam[,str_which(cname, paste0("^lambda\\.[0-1]\\.",item,"\\."))]
+  leq = seq(1,ncol(lambda_temp),2)
+lambda[[1]] = lambda_temp[,leq]
+lambda[[2]] = lambda_temp[,-leq]
+
+for (cc in 1:2) rr[[cc]] = beta[,cc] + theta[[cc]] + d_zw
+
+res = list(lambda=lambda,rr=rr,theta=theta)
+  return(res)
+}
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R
+gen_surv_item = function(out, sj) {
+rr = out$rr
+lambda = out$lambda
+time = 0 * rr[[1]]
+num_iter = nrow(time)
+time = foreach(n = 1:num_iter, .combine = 'rbind') %dopar% {
+foreach(k = 1:N, .combine = 'c') %do% {
+hh = cbind(sj, c(0,lambda[[1]][n,]*rr[[1]][n,k] + lambda[[2]][n,]*rr[[2]][n,k]))
+rchaz(hh, n = 1, cum.hazard=FALSE)[,2]
+}
+}
+
+seg_g = findInterval(time, sj)
+
+ind = (seg_g - 1) * num_iter + 1:num_iter
+
+haz = list()
+for (cc in 1:2) haz[[cc]] = lambda[[cc]][ind] * c(rr[[cc]])
+
+pp = haz[[2]] / (haz[[1]] + haz[[2]])
+
+return(list(time = time, pp = array(pp, dim = dim(time))))
+}
+
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R
+sim_data = list()
+num_iter = nrow(mylist[[1]])
+for (item in 14:I) {
+start_time = proc.time()
+stk_tt =  foreach(chain = 1:3, .combine='rbind') %dopar% {
+  out = gethaz_item(mylist[[chain]], cname, item, theta = NULL)
+  sim = gen_surv_item(out, sj)
+  cbind(sim$time,sim$pp)
+  }
+}
+sim_data[[item]] = stk_tt
+cat("\nelapsed time to simulate item",item,"\n")
+print(proc.time() - start_time)
+
+#+end_src
+
+#+begin_src R
+item = 1
+chain = 1
+
+haz_fun_item = function(sam, sj, item, N) {
+  rel = NULL
+for (k in 1:N) {
+param = getparam(sam, sj, item, k)
+dist = sqrt(rowSums((param$z - param$w)^2))
+rr = exp(param$beta + param$theta - param$gamma * dist)
+rel = rbind(rel, rr)
+}
+  haz = matrix(c(sj, 0, param$lambda[1, ], 0, param$lambda[2, ]),  length(sj), 3)
+  return(list(haz = haz, rel = rel))
+}
+#+end_src
+
+#+begin_src R
+gen_surv = function(out, sj, N) {
+time = numeric(N)
+for (k in 1:N) {
+hh = cbind(sj, out$haz[,2]*out$rel[k, 1] + out$haz[,3]*out$rel[k, 2])
+time[k] = rchaz(hh, n = 1, cum.hazard=FALSE)[,2]
+}
+
+dd = data.frame(time = time, status = rep(1,N))
+seg_temp = survSplit(formula = Surv(time, status) ~ 1, cut=sj, data=dd, episode = "seg_g")
+seg_g = seg_temp %>% filter(status == 1) %>% select(seg_g) %>% unlist()
+
+rr12 = out$haz[seg_g, 2:3] * out$rel
+pp = rr12[,2] / rowSums(rr12)
+return(list(time = time, pp = pp))
+}
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R :tangle no
+sim_data = list()
+num_iter = nrow(mylist[[1]])
+for (item in 1:I) {
+start_time = proc.time()
+stk_tt =  foreach(chain = 1:3, .combine='cbind') %dopar% {
+  foreach(ii=1:num_iter, .combine='cbind') %dopar% {
+    out = haz_fun_item(mylist[[chain]][ii,], sj, item, N)
+    sim = gen_surv(out, sj, N)
+    cbind(sim$time,sim$pp)
+  }
+}
+row.names(stk_tt) = 1:N
+sim_data[[item]] = stk_tt
+cat("\nelapsed time to simulate item",item,"\n")
+print(proc.time() - start_time)
+}
+#+end_src
+
+#+begin_src R :tangle no
+profvis({
+sim_data = list()
+num_iter = 10
+for (item in 1:1) {
+start_time = proc.time()
+stk_tt =  foreach(chain = 1:3, .combine='cbind') %do% {
+  foreach(ii=1:num_iter, .combine='cbind') %do% {
+    out = haz_fun_item(mylist[[chain]][ii,], sj, item, N)
+    sim = gen_surv(out, sj, N)
+    cbind(sim$time,sim$pp)
+  }
+}
+row.names(stk_tt) = 1:N
+cat("\nelapsed time to simulate item",item,"\n")
+print(proc.time() - start_time)
+}})
+
+#+end_src
 ** load outputs
 #+begin_src R :tangle R/load-outputs.R
 mvar = readr::read_csv(paste0(out_dir,"mvar.csv"), col_names=F) %>% as.matrix()

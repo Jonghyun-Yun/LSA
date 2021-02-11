@@ -65,6 +65,38 @@ to_chrID = function(x, tab) {
   sapply(x, function(x) tab$chr[which(tab$num == x)])
 }
 
+gethaz_item = function(sam, cname, item, theta = NULL) {
+cname = colnames(sam)
+num_iter = nrow(sam)
+
+  d_zw = matrix(0,num_iter,N)
+  for (k in 1:N){
+    ## distance calculation can be fully vectorized (and storing z), but I don't have time for this.
+z = sam[,str_which(cname, paste0("^z\\.",0,"\\.",k,"\\.[1-2]"))]
+w = sam[,str_which(cname, paste0("^w\\.",0,"\\.",item,"\\."))]
+d_zw[,k] = sqrt(rowSums((z-w)^2))
+  }
+  beta = sam[,str_which(cname, paste0("^beta\\.",item,"\\."))]
+
+if (is.null(theta)) {
+  theta_temp = sam[,str_which(cname, paste0("^theta\\."))] ## (theta.k.0 theta.k.1)
+  teq = seq(1,ncol(theta_temp),2)
+theta = lambda = rr = list()
+theta[[1]] = theta_temp[,teq]
+theta[[2]] = theta_temp[,-teq]
+}
+
+  lambda_temp = sam[,str_which(cname, paste0("^lambda\\.[0-1]\\.",item,"\\."))]
+  leq = seq(1,ncol(lambda_temp),2)
+lambda[[1]] = lambda_temp[,leq]
+lambda[[2]] = lambda_temp[,-leq]
+
+for (cc in 1:2) rr[[cc]] = beta[,cc] + theta[[cc]] + d_zw
+
+res = list(lambda=lambda,rr=rr,theta=theta)
+  return(res)
+}
+
 my_procrustes = function(Xstar, dlist, is_list = FALSE, translation = TRUE, scale = FALSE, reflect = TRUE) {
   posm = 0
   if (is_list == TRUE) {
