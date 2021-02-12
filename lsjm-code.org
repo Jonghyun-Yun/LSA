@@ -3175,18 +3175,18 @@ mv output opusIII-singleZ-singleW
 ** Using R
 #+BEGIN_SRC R :tangle R/run-analysis.R
 #!/usr/bin/env Rscript
-args = commandArgs(trailingOnly=TRUE)
+args <- commandArgs(trailingOnly=TRUE)
 # test if there is at least one argument: if not, return an error
 if (length(args)==0) {
   stop("At least one argument must be supplied (input file).n", call.=FALSE)
 } else if (length(args)==1) {
   # default output file
-  HAS_REF = 0;
-  ref_dir = ""
+  HAS_REF <- 0;
+  ref_dir <- ""
 }
-out_dir = args[1]
-num_chain = 3; double_z = 0; double_w = 0;
-## out_dir = "chessB-singleZ-singleW/"
+out_dir <- args[1]
+num_chain <- 3; double_z <- 0; double_w <- 0;
+## out_dir <- "chessB-singleZ-singleW/"
 system(paste0("rm figure/*.pdf"))
 source("R/art-analysis.R")
 system(paste0("mkdir -p ", out_dir, "figure/"))
@@ -3194,8 +3194,8 @@ system(paste0("rsync -rv figure/*.pdf ", out_dir,"figure/"))
 #+END_SRC
 
 #+BEGIN_SRC R
-out_dir = "chessB_pn/"
-num_chain = 3; double_z = 0; double_w = 0; HAS_REF = 0;
+out_dir <- "chessB_pn/"
+num_chain <- 3; double_z <- 0; double_w <- 0; HAS_REF <- 0;
 system(paste0("rm figure/*.pdf"))
 source("R/art-analysis.R")
 ## system(paste0("mkdir -p ", out_dir, "figure/"))
@@ -3203,8 +3203,8 @@ source("R/art-analysis.R")
 #+END_SRC
 
 #+BEGIN_SRC R
-out_dir = "verbal_pn/"
-num_chain = 3; double_z = 0; double_w = 0; HAS_REF = 0;
+out_dir <- "verbal_pn/"
+num_chain <- 3; double_z <- 0; double_w <- 0; HAS_REF <- 0;
 system(paste0("rm figure/*.pdf"))
 source("R/art-analysis.R")
 ## system(paste0("mkdir -p ", out_dir, "figure/"))
@@ -3212,8 +3212,8 @@ source("R/art-analysis.R")
 #+END_SRC
 
 #+BEGIN_SRC R
-out_dir = "opusIII_pn/"
-num_chain = 3; double_z = 0; double_w = 0; HAS_REF = 0;
+out_dir <- "opusIII_pn/"
+num_chain <- 3; double_z <- 0; double_w <- 0; HAS_REF <- 0;
 system(paste0("rm figure/*.pdf"))
 source("R/art-analysis.R")
 ## system(paste0("mkdir -p ", out_dir, "figure/"))
@@ -3221,39 +3221,39 @@ source("R/art-analysis.R")
 #+END_SRC
 
 #+BEGIN_SRC R
-out_dir = "pisa-KR-sci2018-singleZ-singleW/"
+out_dir <- "pisa-KR-sci2018-singleZ-singleW/"
 system(paste0("rm figure/*.pdf"))
 source("R/art-analysis.R")
 system(paste0("mkdir -p ", out_dir, "figure/"))
 system(paste0("rsync -rv figure/*.pdf ", out_dir,"figure/"))
 
-ref_dir = "pisa-singleZ-singleW/"
-HAS_REF = 1
+ref_dir <- "pisa-singleZ-singleW/"
+HAS_REF <- 1
 
-out_dir = "pisa-KR-singleZ-singleW/"
+out_dir <- "pisa-KR-singleZ-singleW/"
 system(paste0("rm figure/*.pdf"))
 source("R/art-analysis.R")
 system(paste0("mkdir -p ", out_dir, "figure/"))
 system(paste0("rsync -rv figure/*.pdf ", out_dir,"figure/"))
 
-HAS_REF = 0
+HAS_REF <- 0
 #+END_SRC
 
 #+BEGIN_SRC R
-num_chain = 3; double_z = 0; double_w = 0;
+num_chain <- 3; double_z <- 0; double_w <- 0;
 
-out_dir = "pisa-singleZ-singleW/"
+out_dir <- "pisa-singleZ-singleW/"
 system(paste0("rm figure/*.pdf"))
 source("R/art-analysis.R")
 system(paste0("mv figure/*.pdf ", out_dir,"figure/"))
 
-out_dir = "opusIII-singleZ-singleW/"
+out_dir <- "opusIII-singleZ-singleW/"
 system(paste0("rm figure/*.pdf"))
 source("R/art-analysis.R")
 system(paste0("mkdir -p ", out_dir, "figure/"))
 system(paste0("mv figure/*.pdf figure/",out_dir))
 
-out_dir = "verbal-singleZ-singleW/"
+out_dir <- "verbal-singleZ-singleW/"
 system(paste0("rm figure/*.pdf"))
 source("R/art-analysis.R")
 system(paste0("mkdir -p ", out_dir, "figure/"))
@@ -3490,11 +3490,27 @@ dev.off(which = dev.cur())
 5. repeat for all items (40)
 6. repeat for many MCMC samples (10000?)
 
-#+begin_src R :results none
-out_dir = "chessB_pn/"
-num_chain = 3; double_z = 0; double_w = 0; HAS_REF = 0;
+   #+begin_src R :tangle no
+   time = sim_data[[item]][,1:251]
+   pp = sim_data[[item]][,252:502]
 
-library(art)
+   mt = readr::read_csv(file="chessB_pn/input/mt.csv", col_names=F) %>% as.matrix()
+   mi = readr::read_csv(file="chessB_pn/input/mi.csv", col_names=F) %>% as.matrix()
+   #+end_src
+
+   ~iter~: MCMC iteration
+   ~time[iter, person]~: simulted survival time t
+   ~pp[iter, person]~: simulated conditional probabilty of correct reponse given time t
+   ~mi[item,person]~: observed response (1: correct, 0: incorrect)
+   ~mt[item,person]~: observed time
+
+#+begin_src R :results none
+out_dir <- "chessB_pn/"
+## out_dir <- "chessB_no_latent/"
+
+num_chain <- 3; double_z <- 0; double_w <- 0; HAS_REF <- 0;
+
+## library(art)
 library(coda)
 library(dplyr)
 library(stringr)
@@ -3502,129 +3518,151 @@ library(magrittr)
 library(bayesplot)
 library(foreach)
 library(doParallel)
-library(timereg)
+## library(timereg)
 ##registerDoParallel(cores = detectCores() - 1)
-registerDoParallel(3)
+registerDoParallel(2)
+## stopImplicitCluster()
 
-setwd("/Users/yunj/Dropbox/research/lsjm-art/lsjm-code")
+## setwd("/Users/yunj/Dropbox/research/lsjm-art/lsjm-code")
 
 source("R/art-functions.R")
 source("R/load-outputs.R")
 #+end_src
 
 #+begin_src R :tangle R/art-functions.R
-gethaz_item = function(sam, cname, item, theta = NULL) {
-cname = colnames(sam)
-num_iter = nrow(sam)
+gethaz_item <- function(sam, cname, item, theta = NULL) {
+  cname <- colnames(sam)
+  num_iter <- nrow(sam)
 
-  d_zw = matrix(0,num_iter,N)
+  d_zw <- matrix(0,num_iter,N)
   for (k in 1:N){
     ## distance calculation can be fully vectorized (and storing z), but I don't have time for this.
-z = sam[,str_which(cname, paste0("^z\\.",0,"\\.",k,"\\.[1-2]"))]
-w = sam[,str_which(cname, paste0("^w\\.",0,"\\.",item,"\\."))]
-d_zw[,k] = sqrt(rowSums((z-w)^2))
+    z <- sam[,str_which(cname, paste0("^z\\.",0,"\\.",k,"\\.[1-2]"))]
+    w <- sam[,str_which(cname, paste0("^w\\.",0,"\\.",item,"\\."))]
+    d_zw[,k] <- sqrt(rowSums((z-w)^2))
   }
-  beta = sam[,str_which(cname, paste0("^beta\\.",item,"\\."))]
+  beta <- sam[,str_which(cname, paste0("^beta\\.",item,"\\."))]
 
-if (is.null(theta)) {
-  theta_temp = sam[,str_which(cname, paste0("^theta\\."))] ## (theta.k.0 theta.k.1)
-  teq = seq(1,ncol(theta_temp),2)
-theta = lambda = rr = list()
-theta[[1]] = theta_temp[,teq]
-theta[[2]] = theta_temp[,-teq]
-}
+  if (is.null(theta)) {
+    theta_temp <- sam[,str_which(cname, paste0("^theta\\."))] ## (theta.k.0 theta.k.1)
+    teq <- seq(1,ncol(theta_temp),2)
+    gamma <- theta <- lambda <- rr <- list()
+    theta[[1]] <- theta_temp[,teq]
+    theta[[2]] <- theta_temp[,-teq]
+  }
 
-  lambda_temp = sam[,str_which(cname, paste0("^lambda\\.[0-1]\\.",item,"\\."))]
-  leq = seq(1,ncol(lambda_temp),2)
-lambda[[1]] = lambda_temp[,leq]
-lambda[[2]] = lambda_temp[,-leq]
+  gamma = sam[1,str_which(cname, paste0("gamma\\."))]
 
-for (cc in 1:2) rr[[cc]] = beta[,cc] + theta[[cc]] + d_zw
+  lambda_temp <- sam[,str_which(cname, paste0("^lambda\\.[0-1]\\.",item,"\\."))]
+  leq <- seq(1,ncol(lambda_temp),2)
+  lambda[[1]] <- lambda_temp[,leq]
+  lambda[[2]] <- lambda_temp[,-leq]
 
-res = list(lambda=lambda,rr=rr,theta=theta)
+  for (cc in 1:2) rr[[cc]] <- exp(beta[,cc] + theta[[cc]] - gamma[c] * d_zw)
+
+  res <- list(lambda=lambda,rr=rr,theta=theta)
   return(res)
 }
 #+end_src
 
-#+RESULTS:
+#+begin_src R :tangle R/art-functions.R
+gen_surv_time <- function(out, sj, nn) {
+rr <- out$rr
+lambda <- out$lambda
+mj = length(sj)
 
-#+begin_src R
-gen_surv_item = function(out, sj) {
-rr = out$rr
-lambda = out$lambda
-time = 0 * rr[[1]]
-num_iter = nrow(time)
-time = foreach(n = 1:num_iter, .combine = 'rbind') %dopar% {
-foreach(k = 1:N, .combine = 'c') %do% {
-hh = cbind(sj, c(0,lambda[[1]][n,]*rr[[1]][n,k] + lambda[[2]][n,]*rr[[2]][n,k]))
-rchaz(hh, n = 1, cum.hazard=FALSE)[,2]
+haz = lambda[[1]][nn,] %o% rr[[1]][nn,] + lambda[[2]][nn,] %o% rr[[2]][nn,]
+logS = -rexp(N)
+cumhaz = rbind(rep(0, N), apply(haz * H, 2,  cumsum))
+vtime <- numeric(N)
+
+for (kk in 1:N) {
+  ss = findInterval(-logS[kk], cumhaz[, kk])
+  if (ss != mj) vtime[kk] <- sj[ss] - ( logS[kk] + cumhaz[ss, kk] ) / haz[ss, kk]
+  else vtime[kk] <- sj[ss]
 }
+return(vtime)
 }
+#+end_src
 
-seg_g = findInterval(time, sj)
+#+begin_src R :tangle R/art-functions.R
+gen_surv_pp <- function(out, time, sj) {
+rr <- out$rr
+lambda <- out$lambda
+num_iter <- nrow(time)
+hr <- list()
+seg_g <- findInterval(time, sj)
+mg <- length(sj)
+seg_g[seg_g == mg] <- (mg - 1)
 
-ind = (seg_g - 1) * num_iter + 1:num_iter
+## m is the number of rows in the matrix, r and c are row and column numbers respectively, and ind the linear index:
+## ind = (c-1)*m + r
+ind <- (seg_g - 1) * num_iter + 1:num_iter
 
-haz = list()
-for (cc in 1:2) haz[[cc]] = lambda[[cc]][ind] * c(rr[[cc]])
+for (cc in 1:2) hr[[cc]] <- lambda[[cc]][ind] * c(rr[[cc]])
 
-pp = haz[[2]] / (haz[[1]] + haz[[2]])
+pp <- hr[[2]] / (hr[[1]] + hr[[2]])
 
-return(list(time = time, pp = array(pp, dim = dim(time))))
+return(pp)
 }
-
 #+end_src
 
 #+RESULTS:
 
 #+begin_src R
-sim_data = list()
+set.seed(1)
 num_iter = nrow(mylist[[1]])
-for (item in 14:I) {
-start_time = proc.time()
-stk_tt =  foreach(chain = 1:3, .combine='rbind') %dopar% {
-  out = gethaz_item(mylist[[chain]], cname, item, theta = NULL)
-  sim = gen_surv_item(out, sj)
-  cbind(sim$time,sim$pp)
+sim_data = list()
+for (item in 1:I) {
+  start_time <- proc.time()
+  stk_tt <-  foreach(chain = 1:3, .combine='rbind') %dopar% {
+    out = gethaz_item(mylist[[chain]], cname,  item)
+    time <- foreach(nn = 1:num_iter, .combine = 'rbind') %do% {
+      gen_surv_time(out, sj, nn)
+    }
+    pp <- gen_surv_pp(out, time, sj) %>% array(dim=dim(time))
+    cbind(time,pp)
   }
+  sim_data[[item]] <- stk_tt
+  cat("\nelapsed time to simulate item",item,"\n")
+  print(proc.time() - start_time)
 }
-sim_data[[item]] = stk_tt
-cat("\nelapsed time to simulate item",item,"\n")
-print(proc.time() - start_time)
 
+save(sim_data, file=paste0(out_dir,"surv_sim.RData"))
 #+end_src
 
-#+begin_src R
-item = 1
-chain = 1
-
-haz_fun_item = function(sam, sj, item, N) {
-  rel = NULL
+#+begin_src R :tangle R/art-functions.R
+## calculate baseline hazard and hazard ratio
+## slow iteration
+haz_fun_item <- function(sam, sj, item, N) {
+  rel <- NULL
 for (k in 1:N) {
-param = getparam(sam, sj, item, k)
-dist = sqrt(rowSums((param$z - param$w)^2))
-rr = exp(param$beta + param$theta - param$gamma * dist)
-rel = rbind(rel, rr)
+param <- getparam(sam, sj, item, k)
+dist <- sqrt(rowSums((param$z - param$w)^2))
+rr <- exp(param$beta + param$theta - param$gamma * dist)
+rel <- rbind(rel, rr)
 }
-  haz = matrix(c(sj, 0, param$lambda[1, ], 0, param$lambda[2, ]),  length(sj), 3)
+  haz <- matrix(c(sj, 0, param$lambda[1, ], 0, param$lambda[2, ]),  length(sj), 3)
   return(list(haz = haz, rel = rel))
 }
 #+end_src
 
-#+begin_src R
-gen_surv = function(out, sj, N) {
-time = numeric(N)
+#+begin_src R :tangle R/art-functions.R
+## simulate survival time and response
+## slow
+gen_surv <- function(out, sj, N) {
+time <- numeric(N)
 for (k in 1:N) {
-hh = cbind(sj, out$haz[,2]*out$rel[k, 1] + out$haz[,3]*out$rel[k, 2])
-time[k] = rchaz(hh, n = 1, cum.hazard=FALSE)[,2]
+hh <- cbind(sj, out$haz[,2]*out$rel[k, 1] + out$haz[,3]*out$rel[k, 2])
+time[k] <- rchaz(hh, n = 1, cum.hazard=FALSE)[,2]
 }
 
-dd = data.frame(time = time, status = rep(1,N))
-seg_temp = survSplit(formula = Surv(time, status) ~ 1, cut=sj, data=dd, episode = "seg_g")
-seg_g = seg_temp %>% filter(status == 1) %>% select(seg_g) %>% unlist()
+dd <- data.frame(time = time, status = rep(1,N))
+seg_temp <- survSplit(formula = Surv(time, status) ~ 1, cut=sj, data=dd, episode = "seg_g")
+seg_g <- seg_temp %>% filter(status == 1) %>% select(seg_g) %>% unlist()
 
-rr12 = out$haz[seg_g, 2:3] * out$rel
-pp = rr12[,2] / rowSums(rr12)
+rr12 <- out$haz[seg_g, 2:3] * out$rel
+pp <- rr12[,2] / rowSums(rr12)
 return(list(time = time, pp = pp))
 }
 #+end_src
@@ -3632,43 +3670,42 @@ return(list(time = time, pp = pp))
 #+RESULTS:
 
 #+begin_src R :tangle no
-sim_data = list()
-num_iter = nrow(mylist[[1]])
-for (item in 1:I) {
-start_time = proc.time()
-stk_tt =  foreach(chain = 1:3, .combine='cbind') %dopar% {
-  foreach(ii=1:num_iter, .combine='cbind') %dopar% {
-    out = haz_fun_item(mylist[[chain]][ii,], sj, item, N)
-    sim = gen_surv(out, sj, N)
-    cbind(sim$time,sim$pp)
+mt = readr::read_csv(file="chessB_pn/input/mt.csv", col_names=F) %>% as.matrix()
+mi = readr::read_csv(file="chessB_pn/input/mi.csv", col_names=F) %>% as.matrix()
+
+for (item in 1:I){
+time = sim_data[[item]][,1:251]
+aa = mt[item,]
+ss = 0
+for (kk in 1:N) {
+  ## print(sum(time[,kk] > aa[k]) / length(time[,kk]))
+  ss = ss + sum(time[,kk] > aa[k]) / length(time[,kk])
   }
-}
-row.names(stk_tt) = 1:N
-sim_data[[item]] = stk_tt
-cat("\nelapsed time to simulate item",item,"\n")
-print(proc.time() - start_time)
+print(ss/N)
 }
 #+end_src
 
 #+begin_src R :tangle no
-profvis({
-sim_data = list()
-num_iter = 10
-for (item in 1:1) {
-start_time = proc.time()
-stk_tt =  foreach(chain = 1:3, .combine='cbind') %do% {
-  foreach(ii=1:num_iter, .combine='cbind') %do% {
-    out = haz_fun_item(mylist[[chain]][ii,], sj, item, N)
-    sim = gen_surv(out, sj, N)
+## simluate survival time and competing events for all items and chains
+## slow
+sim_data <- list()
+num_iter <- nrow(mylist[[1]])
+for (item in 1:I) {
+start_time <- proc.time()
+stk_tt <-  foreach(chain = 1:3, .combine='cbind') %dopar% {
+  foreach(ii=1:num_iter, .combine='cbind') %dopar% {
+    out <- haz_fun_item(mylist[[chain]][ii,], sj, item, N)
+    sim <- gen_surv(out, sj, N)
     cbind(sim$time,sim$pp)
   }
 }
-row.names(stk_tt) = 1:N
+row.names(stk_tt) <- 1:N
+sim_data[[item]] <- stk_tt
 cat("\nelapsed time to simulate item",item,"\n")
 print(proc.time() - start_time)
-}})
-
+}
 #+end_src
+
 ** load outputs
 #+begin_src R :tangle R/load-outputs.R
 mvar = readr::read_csv(paste0(out_dir,"mvar.csv"), col_names=F) %>% as.matrix()

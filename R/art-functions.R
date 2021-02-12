@@ -65,36 +65,108 @@ to_chrID = function(x, tab) {
   sapply(x, function(x) tab$chr[which(tab$num == x)])
 }
 
-gethaz_item = function(sam, cname, item, theta = NULL) {
-cname = colnames(sam)
-num_iter = nrow(sam)
+gethaz_item <- function(sam, cname, item, theta = NULL) {
+  cname <- colnames(sam)
+  num_iter <- nrow(sam)
 
-  d_zw = matrix(0,num_iter,N)
+  d_zw <- matrix(0,num_iter,N)
   for (k in 1:N){
     ## distance calculation can be fully vectorized (and storing z), but I don't have time for this.
-z = sam[,str_which(cname, paste0("^z\\.",0,"\\.",k,"\\.[1-2]"))]
-w = sam[,str_which(cname, paste0("^w\\.",0,"\\.",item,"\\."))]
-d_zw[,k] = sqrt(rowSums((z-w)^2))
+    z <- sam[,str_which(cname, paste0("^z\\.",0,"\\.",k,"\\.[1-2]"))]
+    w <- sam[,str_which(cname, paste0("^w\\.",0,"\\.",item,"\\."))]
+    d_zw[,k] <- sqrt(rowSums((z-w)^2))
   }
-  beta = sam[,str_which(cname, paste0("^beta\\.",item,"\\."))]
+  beta <- sam[,str_which(cname, paste0("^beta\\.",item,"\\."))]
 
-if (is.null(theta)) {
-  theta_temp = sam[,str_which(cname, paste0("^theta\\."))] ## (theta.k.0 theta.k.1)
-  teq = seq(1,ncol(theta_temp),2)
-theta = lambda = rr = list()
-theta[[1]] = theta_temp[,teq]
-theta[[2]] = theta_temp[,-teq]
+  if (is.null(theta)) {
+    theta_temp <- sam[,str_which(cname, paste0("^theta\\."))] ## (theta.k.0 theta.k.1)
+    teq <- seq(1,ncol(theta_temp),2)
+    gamma <- theta <- lambda <- rr <- list()
+    theta[[1]] <- theta_temp[,teq]
+    theta[[2]] <- theta_temp[,-teq]
+  }
+
+  gamma = sam[1,str_which(cname, paste0("gamma\\."))]
+
+  lambda_temp <- sam[,str_which(cname, paste0("^lambda\\.[0-1]\\.",item,"\\."))]
+  leq <- seq(1,ncol(lambda_temp),2)
+  lambda[[1]] <- lambda_temp[,leq]
+  lambda[[2]] <- lambda_temp[,-leq]
+
+  for (cc in 1:2) rr[[cc]] <- exp(beta[,cc] + theta[[cc]] - gamma[c] * d_zw)
+
+  res <- list(lambda=lambda,rr=rr,theta=theta)
+  return(res)
 }
 
-  lambda_temp = sam[,str_which(cname, paste0("^lambda\\.[0-1]\\.",item,"\\."))]
-  leq = seq(1,ncol(lambda_temp),2)
-lambda[[1]] = lambda_temp[,leq]
-lambda[[2]] = lambda_temp[,-leq]
+gen_surv_time <- function(out, sj, nn) {
+rr <- out$rr
+lambda <- out$lambda
+mj = length(sj)
 
-for (cc in 1:2) rr[[cc]] = beta[,cc] + theta[[cc]] + d_zw
+haz = lambda[[1]][nn,] %o% rr[[1]][nn,] + lambda[[2]][nn,] %o% rr[[2]][nn,]
+logS = -rexp(N)
+cumhaz = rbind(rep(0, N), apply(haz * H, 2,  cumsum))
+vtime <- numeric(N)
 
-res = list(lambda=lambda,rr=rr,theta=theta)
-  return(res)
+for (kk in 1:N) {
+  ss = findInterval(-logS[kk], cumhaz[, kk])
+  if (ss != mj) vtime[kk] <- sj[ss] - ( logS[kk] + cumhaz[ss, kk] ) / haz[ss, kk]
+  else vtime[kk] <- sj[ss]
+}
+return(vtime)
+}
+
+gen_surv_pp <- function(out, time, sj) {
+rr <- out$rr
+lambda <- out$lambda
+num_iter <- nrow(time)
+hr <- list()
+seg_g <- findInterval(time, sj)
+mg <- length(sj)
+seg_g[seg_g == mg] <- (mg - 1)
+
+## m is the number of rows in the matrix, r and c are row and column numbers respectively, and ind the linear index:
+## ind = (c-1)*m + r
+ind <- (seg_g - 1) * num_iter + 1:num_iter
+
+for (cc in 1:2) hr[[cc]] <- lambda[[cc]][ind] * c(rr[[cc]])
+
+pp <- hr[[2]] / (hr[[1]] + hr[[2]])
+
+return(pp)
+}
+
+## calculate baseline hazard and hazard ratio
+## slow iteration
+haz_fun_item <- function(sam, sj, item, N) {
+  rel <- NULL
+for (k in 1:N) {
+param <- getparam(sam, sj, item, k)
+dist <- sqrt(rowSums((param$z - param$w)^2))
+rr <- exp(param$beta + param$theta - param$gamma * dist)
+rel <- rbind(rel, rr)
+}
+  haz <- matrix(c(sj, 0, param$lambda[1, ], 0, param$lambda[2, ]),  length(sj), 3)
+  return(list(haz = haz, rel = rel))
+}
+
+## simulate survival time and response
+## slow
+gen_surv <- function(out, sj, N) {
+time <- numeric(N)
+for (k in 1:N) {
+hh <- cbind(sj, out$haz[,2]*out$rel[k, 1] + out$haz[,3]*out$rel[k, 2])
+time[k] <- rchaz(hh, n = 1, cum.hazard=FALSE)[,2]
+}
+
+dd <- data.frame(time = time, status = rep(1,N))
+seg_temp <- survSplit(formula = Surv(time, status) ~ 1, cut=sj, data=dd, episode = "seg_g")
+seg_g <- seg_temp %>% filter(status == 1) %>% select(seg_g) %>% unlist()
+
+rr12 <- out$haz[seg_g, 2:3] * out$rel
+pp <- rr12[,2] / rowSums(rr12)
+return(list(time = time, pp = pp))
 }
 
 my_procrustes = function(Xstar, dlist, is_list = FALSE, translation = TRUE, scale = FALSE, reflect = TRUE) {
