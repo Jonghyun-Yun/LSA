@@ -95,8 +95,8 @@ mylist <- mcmc.list()
 for (cid in 1:num_chain) {
   for (c in 0:1) {
     for (k in 1:N) {
-      z <- mydf[[cid]][, str_which(cname, paste0("z\\.", c * double_z, "\\.", k, "\\.[1-2]"))]
-      w <- mydf[[cid]][, str_which(cname, paste0("w\\.", c * double_w, "\\.", item, "\\."))]
+      z <- mydf[[cid]][, stringr::str_which(cname, paste0("z\\.", c * double_z, "\\.", k, "\\.[1-2]"))]
+      w <- mydf[[cid]][, stringr::str_which(cname, paste0("w\\.", c * double_w, "\\.", item, "\\."))]
       mydf[[cid]][[paste0("dist_z.", c, ".", k, "_", "w.", c, ".", item)]] <- sqrt(rowSums((z - w)^2))
     }
   }

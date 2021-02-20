@@ -1,8 +1,8 @@
-pullit = function(info,cl) {
-  it = info %>% filter(Cluster_A == cl)# %>% dplyr::select(Item,Time)
-  item = pull(it,Item)
-  time = pull(it,Time)
-  return(cbind(item,time))
+pullit <- function(info, cl) {
+  it <- info %>% filter(Cluster_A == cl) # %>% dplyr::select(Item,Time)
+  item <- pull(it, Item)
+  time <- pull(it, Time)
+  return(cbind(item, time))
 }
 
 tabulate_id = function(chrid) {
@@ -19,18 +19,18 @@ to_chrID = function(x, tab) {
   sapply(x, function(x) tab$chr[which(tab$num == x)])
 }
 
-tab_sj = function(seg_g, G) {
-  res = NULL
-  for (m in 0:(G-1)) {
-    res = c(res, sum(seg_g >= m))
+tab_sj <- function(seg_g, G) {
+  res <- NULL
+  for (m in 0:(G - 1)) {
+    res <- c(res, sum(seg_g >= m))
   }
   return(res)
 }
 
-tab_IY = function(seg_g, G) {
-  res = NULL
-  for (m in 0:(G-1)) {
-    res = c(res, sum(seg_g == m))
+tab_IY <- function(seg_g, G) {
+  res <- NULL
+  for (m in 0:(G - 1)) {
+    res <- c(res, sum(seg_g == m))
   }
   return(res)
 }
@@ -72,23 +72,23 @@ gethaz_item <- function(sam, cname, item, theta = NULL) {
   d_zw <- matrix(0, num_iter, N)
   for (k in 1:N) {
     ## distance calculation can be fully vectorized (and storing z), but I don't have time for this.
-    z <- sam[, str_which(cname, paste0("^z\\.", 0, "\\.", k, "\\.[1-2]"))]
-    w <- sam[, str_which(cname, paste0("^w\\.", 0, "\\.", item, "\\."))]
+    z <- sam[, stringr::str_which(cname, paste0("^z\\.", 0, "\\.", k, "\\.[1-2]"))]
+    w <- sam[, stringr::str_which(cname, paste0("^w\\.", 0, "\\.", item, "\\."))]
     d_zw[, k] <- sqrt(rowSums((z - w)^2))
   }
-  beta <- sam[, str_which(cname, paste0("^beta\\.", item, "\\."))]
+  beta <- sam[, stringr::str_which(cname, paste0("^beta\\.", item, "\\."))]
 
   if (is.null(theta)) {
-    theta_temp <- sam[, str_which(cname, paste0("^theta\\."))] ## (theta.k.0 theta.k.1)
+    theta_temp <- sam[, stringr::str_which(cname, paste0("^theta\\."))] ## (theta.k.0 theta.k.1)
     teq <- seq(1, ncol(theta_temp), 2)
     gamma <- theta <- lambda <- rr <- list()
     theta[[1]] <- theta_temp[, teq]
     theta[[2]] <- theta_temp[, -teq]
   }
 
-  gamma <- sam[1, str_which(cname, paste0("gamma\\."))]
+  gamma <- sam[1, stringr::str_which(cname, paste0("gamma\\."))]
 
-  lambda_temp <- sam[, str_which(cname, paste0("^lambda\\.[0-1]\\.", item, "\\."))]
+  lambda_temp <- sam[, stringr::str_which(cname, paste0("^lambda\\.[0-1]\\.", item, "\\."))]
   leq <- seq(1, ncol(lambda_temp), 2)
   lambda[[1]] <- lambda_temp[, leq]
   lambda[[2]] <- lambda_temp[, -leq]
@@ -267,16 +267,16 @@ my_procrustes <- function(Xstar, dlist, is_list = FALSE, translation = TRUE, sca
 
 getparam <- function(posm, sj, i, k) {
   cname <- names(posm)
-  z <- posm[str_which(cname, paste0("z\\.[0-1]\\.", k, "\\.[1-2]"))] %>%
+  z <- posm[stringr::str_which(cname, paste0("z\\.[0-1]\\.", k, "\\.[1-2]"))] %>%
     matrix(nrow = 2, ncol = 2) %>%
     t()
-  w <- posm[str_which(cname, paste0("w\\.[0-1]\\.", i, "\\.[1-2]"))] %>%
+  w <- posm[stringr::str_which(cname, paste0("w\\.[0-1]\\.", i, "\\.[1-2]"))] %>%
     matrix(nrow = 2, ncol = 2) %>%
     t()
-  gamma <- posm[str_which(cname, paste0("gamma"))]
-  beta <- posm[str_which(cname, paste0("beta\\.", i, "\\."))]
-  theta <- posm[str_which(cname, paste0("theta\\.", k, "\\."))]
-  lambda <- posm[str_which(cname, paste0("lambda\\.[0-1]\\.", i, "\\."))] %>%
+  gamma <- posm[stringr::str_which(cname, paste0("gamma"))]
+  beta <- posm[stringr::str_which(cname, paste0("beta\\.", i, "\\."))]
+  theta <- posm[stringr::str_which(cname, paste0("theta\\.", k, "\\."))]
+  lambda <- posm[stringr::str_which(cname, paste0("lambda\\.[0-1]\\.", i, "\\."))] %>%
     matrix(ncol = 2) %>%
     t()
   H <- sj[2:(G + 1)] - sj[1:G]
@@ -292,12 +292,12 @@ getparam <- function(posm, sj, i, k) {
 }
 
 fun_hazard_surv <- function(t, i, k, posm, cname, sj) {
-  z <- posm[str_which(cname, paste0("z\\.[0-1]\\.", k, "\\.[1-2]"))] %>% matrix(ncol = 2)
-  w <- rep(posm[str_which(cname, paste0("w\\.", i, "\\."))], 2) %>% matrix(ncol = 2)
-  gamma <- posm[str_which(cname, paste0("gamma"))] %>% matrix(ncol = 2)
-  beta <- posm[str_which(cname, paste0("beta\\.", i, "\\."))] %>% matrix(ncol = 2)
-  theta <- posm[str_which(cname, paste0("theta\\.", k, "\\."))] %>% matrix(ncol = 2)
-  lambda <- posm[str_which(cname, paste0("lambda\\.[0-1]\\.", i, "\\."))] %>% matrix(ncol = 2)
+  z <- posm[stringr::str_which(cname, paste0("z\\.[0-1]\\.", k, "\\.[1-2]"))] %>% matrix(ncol = 2)
+  w <- rep(posm[stringr::str_which(cname, paste0("w\\.", i, "\\."))], 2) %>% matrix(ncol = 2)
+  gamma <- posm[stringr::str_which(cname, paste0("gamma"))] %>% matrix(ncol = 2)
+  beta <- posm[stringr::str_which(cname, paste0("beta\\.", i, "\\."))] %>% matrix(ncol = 2)
+  theta <- posm[stringr::str_which(cname, paste0("theta\\.", k, "\\."))] %>% matrix(ncol = 2)
+  lambda <- posm[stringr::str_which(cname, paste0("lambda\\.[0-1]\\.", i, "\\."))] %>% matrix(ncol = 2)
 
   G <- length(lambda[, 1])
   H <- sj[2:(G + 1)] - sj[1:G]
@@ -325,12 +325,12 @@ fun_hazard_surv <- function(t, i, k, posm, cname, sj) {
 }
 
 fun_hazard_ick <- function(t, i, c, k, posm, cname, sj) {
-  z <- posm[str_which(cname, paste0("z\\.", c, "\\.", k, "\\.[1-2]"))]
-  w <- posm[str_which(cname, paste0("w\\.", i))]
-  gamma <- posm[str_which(cname, paste0("gamma\\.", c))]
-  beta <- posm[str_which(cname, paste0("beta\\.", i, "\\.", c))]
-  theta <- posm[str_which(cname, paste0("theta\\.", k, "\\.", c))]
-  lambda <- posm[str_which(cname, paste0("lambda\\.", c, "\\.", i, "\\."))]
+  z <- posm[stringr::str_which(cname, paste0("z\\.", c, "\\.", k, "\\.[1-2]"))]
+  w <- posm[stringr::str_which(cname, paste0("w\\.", i))]
+  gamma <- posm[stringr::str_which(cname, paste0("gamma\\.", c))]
+  beta <- posm[stringr::str_which(cname, paste0("beta\\.", i, "\\.", c))]
+  theta <- posm[stringr::str_which(cname, paste0("theta\\.", k, "\\.", c))]
+  lambda <- posm[stringr::str_which(cname, paste0("lambda\\.", c, "\\.", i, "\\."))]
 
   G <- length(lambda)
   seg <- 0 * t

@@ -362,11 +362,11 @@ length(unique(df$CNTSTUID)) # unique STUID?
 #+END_SRC
 
 #+begin_src R :tangle R/art-functions.R
-pullit = function(info,cl) {
-  it = info %>% filter(Cluster_A == cl)# %>% dplyr::select(Item,Time)
-  item = pull(it,Item)
-  time = pull(it,Time)
-  return(cbind(item,time))
+pullit <- function(info, cl) {
+  it <- info %>% filter(Cluster_A == cl) # %>% dplyr::select(Item,Time)
+  item <- pull(it, Item)
+  time <- pull(it, Time)
+  return(cbind(item, time))
 }
 #+end_src
 
@@ -995,136 +995,141 @@ tmp <- survSplit(formula = Surv(time, status) ~ ., data = tdf, cut = sj, episode
 #+END_SRC
 
 #+BEGIN_SRC R :results none :tangle R/art-functions.R
-tab_sj = function(seg_g, G) {
-  res = NULL
-  for (m in 0:(G-1)) {
-    res = c(res, sum(seg_g >= m))
+tab_sj <- function(seg_g, G) {
+  res <- NULL
+  for (m in 0:(G - 1)) {
+    res <- c(res, sum(seg_g >= m))
   }
   return(res)
 }
 
-tab_IY = function(seg_g, G) {
-  res = NULL
-  for (m in 0:(G-1)) {
-    res = c(res, sum(seg_g == m))
+tab_IY <- function(seg_g, G) {
+  res <- NULL
+  for (m in 0:(G - 1)) {
+    res <- c(res, sum(seg_g == m))
   }
   return(res)
 }
 #+END_SRC
 
 #+BEGIN_SRC R :results none :tangle R/verbal-preprocess.R
-item = pull(tmp, item)
-person = pull(tmp, person)
-seg_g = pull(tmp,seg_g)
-H = pull(tmp,len)
+item <- pull(tmp, item)
+person <- pull(tmp, person)
+seg_g <- pull(tmp, seg_g)
+H <- pull(tmp, len)
 #+END_SRC
 
 #+BEGIN_SRC R :tangle R/verbal-preprocess.R
-mi = reshape2::dcast(tmp %>% select(item, person, response), item ~ person)[,-1]
-mt = reshape2::dcast(tmp %>% select(item, person, time), item ~ person)[,-1]
-mNA = mi; mNA[!is.na(mNA)] = 1;  mNA[is.na(mNA)] = 0
-mseg = reshape2::dcast(tmp %>% select(item, person, seg_g), item ~ person)[,-1]
-mh = reshape2::dcast(tmp %>% select(item, person, len), item ~ person)[,-1]
-mlen = sj[2:(ncut+1)] - sj[1:(ncut)]
+mi <- reshape2::dcast(tmp %>% select(item, person, response), item ~ person)[, -1]
+mt <- reshape2::dcast(tmp %>% select(item, person, time), item ~ person)[, -1]
+mNA <- mi
+mNA[!is.na(mNA)] <- 1
+mNA[is.na(mNA)] <- 0
+mseg <- reshape2::dcast(tmp %>% select(item, person, seg_g), item ~ person)[, -1]
+mh <- reshape2::dcast(tmp %>% select(item, person, len), item ~ person)[, -1]
+mlen <- sj[2:(ncut + 1)] - sj[1:(ncut)]
 
-mi[is.na(mi)] = -99
-mt[is.na(mt)] = -99
-mseg[is.na(mseg)] = -99
-mh[is.na(mh)] = -99
+mi[is.na(mi)] <- -99
+mt[is.na(mt)] <- -99
+mseg[is.na(mseg)] <- -99
+mh[is.na(mh)] <- -99
 #+END_SRC
 
 #+begin_src R :results none :tangle R/verbal-preprocess.R
 ## data and fixed parameters
-I = nrow(mt)
-N = ncol(mt)
-C = 2
-G = ncut #
+I <- nrow(mt)
+N <- ncol(mt)
+C <- 2
+G <- ncut #
 #+end_src
 
 #+begin_src R :results none :tangle R/verbal-preprocess.R
-readr::write_csv(data.frame(I=I, N=N, C=C, G=G), "input/mvar.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mlen),"input/mlen.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mseg),"input/mseg.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mh),"input/mh.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mt),"input/mt.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mi),"input/mi.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mNA),"input/mNA.csv", col_names = FALSE)
+readr::write_csv(data.frame(I = I, N = N, C = C, G = G), "input/mvar.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mlen), "input/mlen.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mseg), "input/mseg.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mh), "input/mh.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mt), "input/mt.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mi), "input/mi.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mNA), "input/mNA.csv", col_names = FALSE)
 #+end_src
 
 #+begin_src R :results none :tangle R/verbal-preprocess.R
-mtab_sj = t( apply(mseg, 1, function(x) tab_sj(x,G)) )
+mtab_sj <- t(apply(mseg, 1, function(x) tab_sj(x, G)))
 
-tmp_0 = mseg; tmp_0[mi==1] = -99;
-tmp_1 = mseg; tmp_1[mi==0] = -99;
+tmp_0 <- mseg
+tmp_0[mi == 1] <- -99
+tmp_1 <- mseg
+tmp_1[mi == 0] <- -99
+mIY <- rbind(t(apply(tmp_0, 1, function(x) tab_IY(x, G))), t(apply(tmp_1, 1, function(x) tab_IY(x, G))))
 
-mIY = rbind( t( apply(tmp_0, 1, function(x) tab_IY(x,G)) ), t( apply(tmp_1, 1, function(x) tab_IY(x,G)) ))
-
-readr::write_csv(as.data.frame(mtab_sj),"input/mtab_sj.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mIY),"input/mIY.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mtab_sj), "input/mtab_sj.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mIY), "input/mIY.csv", col_names = FALSE)
 #+end_src
 
 ** prior & jump
 This is to export hyper-parameters and jumping rule
 #+BEGIN_SRC R :results none :tangle R/verbal-preprocess.R
-mvar = readr::read_csv("input/mvar.csv", col_names=FALSE) %>% as.matrix()
-I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
-
+mvar <- readr::read_csv("input/mvar.csv", col_names = FALSE) %>% as.matrix()
+I <- mvar[1, 1]
+N <- mvar[1, 2]
+C <- mvar[1, 3]
+G <- mvar[1, 4]
 ## lambda
-a_lambda = matrix(0.1,I,G)
-b_lambda = matrix(0.1,I,G)
-jump_lambda = matrix(0.5,I,G)
+a_lambda <- matrix(0.1, I, G)
+b_lambda <- matrix(0.1, I, G)
+jump_lambda <- matrix(0.5, I, G)
 
-mu_beta = matrix(0.0,I,2)
-sigma_beta = matrix(sqrt(1.0),I,2)
-jump_beta = matrix(0.25,I,2)
+mu_beta <- matrix(0.0, I, 2)
+sigma_beta <- matrix(sqrt(1.0), I, 2)
+jump_beta <- matrix(0.25, I, 2)
 
-mu_theta = matrix(0.0,N,2)
-sigma_theta = matrix(sqrt(1.0),N,2)
-jump_theta = matrix(1.0,N,2)
+mu_theta <- matrix(0.0, N, 2)
+sigma_theta <- matrix(sqrt(1.0), N, 2)
+jump_theta <- matrix(1.0, N, 2)
 
-a_sigma = 1.0
-b_sigma = 1.0
+a_sigma <- 1.0
+b_sigma <- 1.0
 
-mu_gamma = matrix(0.0,1,2)
-sigma_gamma = matrix(sqrt(1.0),1,2)
-jump_gamma = matrix(1.0,1,2)
+mu_gamma <- matrix(0.0, 1, 2)
+sigma_gamma <- matrix(sqrt(1.0), 1, 2)
+jump_gamma <- matrix(1.0, 1, 2)
 
-mu_z = matrix(0.0,N,2)
-sigma_z = matrix(sqrt(1.0),N,2)
-jump_z = matrix(1.0,N,2)
+mu_z <- matrix(0.0, N, 2)
+sigma_z <- matrix(sqrt(1.0), N, 2)
+jump_z <- matrix(1.0, N, 2)
 
-mu_w = matrix(0.0,I,2)
-sigma_w = matrix(sqrt(1.0),I,2)
-jump_w = matrix(0.5,I,2)
+mu_w <- matrix(0.0, I, 2)
+sigma_w <- matrix(sqrt(1.0), I, 2)
+jump_w <- matrix(0.5, I, 2)
 #+END_SRC
 
 #+BEGIN_SRC R :results none :tangle R/verbal-preprocess.R
-readr::write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"input/pj_lambda.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"input/pj_beta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_theta,sigma_theta,jump_theta)),"input/pj_theta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(a_sigma,b_sigma)),"input/pj_sigma.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_gamma,sigma_gamma,jump_gamma)),"input/pj_gamma.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_z,sigma_z,jump_z)),"input/pj_z.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_w,sigma_w,jump_w)),"input/pj_w.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(a_lambda, b_lambda, jump_lambda)), "input/pj_lambda.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_beta, sigma_beta, jump_beta)), "input/pj_beta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_theta, sigma_theta, jump_theta)), "input/pj_theta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(a_sigma, b_sigma)), "input/pj_sigma.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_gamma, sigma_gamma, jump_gamma)), "input/pj_gamma.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_z, sigma_z, jump_z)), "input/pj_z.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_w, sigma_w, jump_w)), "input/pj_w.csv", col_names = FALSE)
 #+END_SRC
 
 ** init
 #+BEGIN_SRC R :results none :tangle R/verbal-init.R
-mvar = as.matrix( readr::read_csv("input/mvar.csv", col_names=F) )
-I = mvar[1]
-N = mvar[2]
-G = mvar[4]
+mvar <- as.matrix(readr::read_csv("input/mvar.csv", col_names = F))
+I <- mvar[1]
+N <- mvar[2]
+G <- mvar[4]
 
 set.seed(as.numeric(Sys.time()))
 
 set.seed(as.numeric(Sys.time()))
 
-init_lambda = matrix(1, nrow = 2*I, ncol = G);
-init_beta = 0*matrix(rnorm(2*I), ncol = 2);
-init_theta = 0*matrix(rnorm(2*N), ncol = 2);
-init_gamma = 1*matrix(c(1, 1), ncol = 1);
-init_w = 0*matrix(rnorm(2*2*I), ncol = 2);
-init_z = 0*matrix(rnorm(2*2*N), ncol = 2);
+init_lambda <- matrix(1, nrow = 2 * I, ncol = G)
+init_beta <- 0 * matrix(rnorm(2 * I), ncol = 2)
+init_theta <- 0 * matrix(rnorm(2 * N), ncol = 2)
+init_gamma <- 1 * matrix(c(1, 1), ncol = 1)
+init_w <- 0 * matrix(rnorm(2 * 2 * I), ncol = 2)
+init_z <- 0 * matrix(rnorm(2 * 2 * N), ncol = 2)
 #+END_SRC
 
 #+BEGIN_SRC R :results none :tangle R/verbal-init.R
@@ -1138,16 +1143,22 @@ readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
 ** boxplot
 
 #+BEGIN_SRC R :results value :tangle R/verbal-preprocess.R
-df %>% group_by(item) %>% summarise(F = sum(resp == 0), T = sum(resp == 1))
+df %>%
+  group_by(item) %>%
+  summarise(F = sum(resp == 0), T = sum(resp == 1))
 #+END_SRC
 
 [[file:figure/boxplot_ART.pdf]]
 #+BEGIN_SRC R :tangle R/verbal-preprocess.R
 pdf("figure/boxplot_ART.pdf")
-rt_boxp <- ggplot(df, aes(x=factor(resp),y=RT,fill=factor(resp)))+
-  geom_boxplot() + labs(title="RT by accuracy") + facet_wrap(~item)
-logrt_boxp <- ggplot(df, aes(x=factor(resp),y=log(RT),fill=factor(resp)))+
-  geom_boxplot() + labs(title="log RT by accuracy") + facet_wrap(~item)
+rt_boxp <- ggplot(df, aes(x = factor(resp), y = RT, fill = factor(resp))) +
+  geom_boxplot() +
+  labs(title = "RT by accuracy") +
+  facet_wrap(~item)
+logrt_boxp <- ggplot(df, aes(x = factor(resp), y = log(RT), fill = factor(resp))) +
+  geom_boxplot() +
+  labs(title = "log RT by accuracy") +
+  facet_wrap(~item)
 rt_boxp
 logrt_boxp
 dev.off(which = dev.cur())
@@ -1155,21 +1166,19 @@ dev.off(which = dev.cur())
 
 ** initialization for Gamma(0) = 1, Gamma(1) = -1
 #+BEGIN_SRC R :results none :tangle R/verbal_pn-init.R
-mvar = as.matrix( readr::read_csv("input/mvar.csv", col_names=F) )
-I = mvar[1]
-N = mvar[2]
-G = mvar[4]
+mvar <- as.matrix(readr::read_csv("input/mvar.csv", col_names = F))
+I <- mvar[1]
+N <- mvar[2]
+G <- mvar[4]
 
 set.seed(as.numeric(Sys.time()))
 
-init_lambda = matrix(1, nrow = 2*I, ncol = G);
-init_beta = 0*matrix(rnorm(2*I), ncol = 2);
-init_theta = 0*matrix(rnorm(2*N), ncol = 2);
-
-init_gamma = 1*matrix(c(1, -1), ncol = 1);
-
-init_w = 0*matrix(rnorm(2*2*I), ncol = 2);
-init_z = 0*matrix(rnorm(2*2*N), ncol = 2);
+init_lambda <- matrix(1, nrow = 2 * I, ncol = G)
+init_beta <- 0 * matrix(rnorm(2 * I), ncol = 2)
+init_theta <- 0 * matrix(rnorm(2 * N), ncol = 2)
+init_gamma <- 1 * matrix(c(1, -1), ncol = 1)
+init_w <- 0 * matrix(rnorm(2 * 2 * I), ncol = 2)
+init_z <- 0 * matrix(rnorm(2 * 2 * N), ncol = 2)
 #+END_SRC
 
 #+BEGIN_SRC R :results none :tangle R/verbal_pn-init.R
@@ -3551,23 +3560,23 @@ gethaz_item <- function(sam, cname, item, theta = NULL) {
   d_zw <- matrix(0, num_iter, N)
   for (k in 1:N) {
     ## distance calculation can be fully vectorized (and storing z), but I don't have time for this.
-    z <- sam[, str_which(cname, paste0("^z\\.", 0, "\\.", k, "\\.[1-2]"))]
-    w <- sam[, str_which(cname, paste0("^w\\.", 0, "\\.", item, "\\."))]
+    z <- sam[, stringr::str_which(cname, paste0("^z\\.", 0, "\\.", k, "\\.[1-2]"))]
+    w <- sam[, stringr::str_which(cname, paste0("^w\\.", 0, "\\.", item, "\\."))]
     d_zw[, k] <- sqrt(rowSums((z - w)^2))
   }
-  beta <- sam[, str_which(cname, paste0("^beta\\.", item, "\\."))]
+  beta <- sam[, stringr::str_which(cname, paste0("^beta\\.", item, "\\."))]
 
   if (is.null(theta)) {
-    theta_temp <- sam[, str_which(cname, paste0("^theta\\."))] ## (theta.k.0 theta.k.1)
+    theta_temp <- sam[, stringr::str_which(cname, paste0("^theta\\."))] ## (theta.k.0 theta.k.1)
     teq <- seq(1, ncol(theta_temp), 2)
     gamma <- theta <- lambda <- rr <- list()
     theta[[1]] <- theta_temp[, teq]
     theta[[2]] <- theta_temp[, -teq]
   }
 
-  gamma <- sam[1, str_which(cname, paste0("gamma\\."))]
+  gamma <- sam[1, stringr::str_which(cname, paste0("gamma\\."))]
 
-  lambda_temp <- sam[, str_which(cname, paste0("^lambda\\.[0-1]\\.", item, "\\."))]
+  lambda_temp <- sam[, stringr::str_which(cname, paste0("^lambda\\.[0-1]\\.", item, "\\."))]
   leq <- seq(1, ncol(lambda_temp), 2)
   lambda[[1]] <- lambda_temp[, leq]
   lambda[[2]] <- lambda_temp[, -leq]
@@ -3927,8 +3936,8 @@ mylist <- mcmc.list()
 for (cid in 1:num_chain) {
   for (c in 0:1) {
     for (k in 1:N) {
-      z <- mydf[[cid]][, str_which(cname, paste0("z\\.", c * double_z, "\\.", k, "\\.[1-2]"))]
-      w <- mydf[[cid]][, str_which(cname, paste0("w\\.", c * double_w, "\\.", item, "\\."))]
+      z <- mydf[[cid]][, stringr::str_which(cname, paste0("z\\.", c * double_z, "\\.", k, "\\.[1-2]"))]
+      w <- mydf[[cid]][, stringr::str_which(cname, paste0("w\\.", c * double_w, "\\.", item, "\\."))]
       mydf[[cid]][[paste0("dist_z.", c, ".", k, "_", "w.", c, ".", item)]] <- sqrt(rowSums((z - w)^2))
     }
   }
@@ -4467,16 +4476,16 @@ dev.off(which = dev.cur())
 #+BEGIN_SRC R :tangle R/art-functions.R
 getparam <- function(posm, sj, i, k) {
   cname <- names(posm)
-  z <- posm[str_which(cname, paste0("z\\.[0-1]\\.", k, "\\.[1-2]"))] %>%
+  z <- posm[stringr::str_which(cname, paste0("z\\.[0-1]\\.", k, "\\.[1-2]"))] %>%
     matrix(nrow = 2, ncol = 2) %>%
     t()
-  w <- posm[str_which(cname, paste0("w\\.[0-1]\\.", i, "\\.[1-2]"))] %>%
+  w <- posm[stringr::str_which(cname, paste0("w\\.[0-1]\\.", i, "\\.[1-2]"))] %>%
     matrix(nrow = 2, ncol = 2) %>%
     t()
-  gamma <- posm[str_which(cname, paste0("gamma"))]
-  beta <- posm[str_which(cname, paste0("beta\\.", i, "\\."))]
-  theta <- posm[str_which(cname, paste0("theta\\.", k, "\\."))]
-  lambda <- posm[str_which(cname, paste0("lambda\\.[0-1]\\.", i, "\\."))] %>%
+  gamma <- posm[stringr::str_which(cname, paste0("gamma"))]
+  beta <- posm[stringr::str_which(cname, paste0("beta\\.", i, "\\."))]
+  theta <- posm[stringr::str_which(cname, paste0("theta\\.", k, "\\."))]
+  lambda <- posm[stringr::str_which(cname, paste0("lambda\\.[0-1]\\.", i, "\\."))] %>%
     matrix(ncol = 2) %>%
     t()
   H <- sj[2:(G + 1)] - sj[1:G]
@@ -4878,12 +4887,12 @@ dev.off(which = dev.cur())
 * custom functions
 #+BEGIN_SRC R :tangle R/art-functions.R
 fun_hazard_surv <- function(t, i, k, posm, cname, sj) {
-  z <- posm[str_which(cname, paste0("z\\.[0-1]\\.", k, "\\.[1-2]"))] %>% matrix(ncol = 2)
-  w <- rep(posm[str_which(cname, paste0("w\\.", i, "\\."))], 2) %>% matrix(ncol = 2)
-  gamma <- posm[str_which(cname, paste0("gamma"))] %>% matrix(ncol = 2)
-  beta <- posm[str_which(cname, paste0("beta\\.", i, "\\."))] %>% matrix(ncol = 2)
-  theta <- posm[str_which(cname, paste0("theta\\.", k, "\\."))] %>% matrix(ncol = 2)
-  lambda <- posm[str_which(cname, paste0("lambda\\.[0-1]\\.", i, "\\."))] %>% matrix(ncol = 2)
+  z <- posm[stringr::str_which(cname, paste0("z\\.[0-1]\\.", k, "\\.[1-2]"))] %>% matrix(ncol = 2)
+  w <- rep(posm[stringr::str_which(cname, paste0("w\\.", i, "\\."))], 2) %>% matrix(ncol = 2)
+  gamma <- posm[stringr::str_which(cname, paste0("gamma"))] %>% matrix(ncol = 2)
+  beta <- posm[stringr::str_which(cname, paste0("beta\\.", i, "\\."))] %>% matrix(ncol = 2)
+  theta <- posm[stringr::str_which(cname, paste0("theta\\.", k, "\\."))] %>% matrix(ncol = 2)
+  lambda <- posm[stringr::str_which(cname, paste0("lambda\\.[0-1]\\.", i, "\\."))] %>% matrix(ncol = 2)
 
   G <- length(lambda[, 1])
   H <- sj[2:(G + 1)] - sj[1:G]
@@ -4913,12 +4922,12 @@ fun_hazard_surv <- function(t, i, k, posm, cname, sj) {
 
 #+BEGIN_SRC R :tangle R/art-functions.R
 fun_hazard_ick <- function(t, i, c, k, posm, cname, sj) {
-  z <- posm[str_which(cname, paste0("z\\.", c, "\\.", k, "\\.[1-2]"))]
-  w <- posm[str_which(cname, paste0("w\\.", i))]
-  gamma <- posm[str_which(cname, paste0("gamma\\.", c))]
-  beta <- posm[str_which(cname, paste0("beta\\.", i, "\\.", c))]
-  theta <- posm[str_which(cname, paste0("theta\\.", k, "\\.", c))]
-  lambda <- posm[str_which(cname, paste0("lambda\\.", c, "\\.", i, "\\."))]
+  z <- posm[stringr::str_which(cname, paste0("z\\.", c, "\\.", k, "\\.[1-2]"))]
+  w <- posm[stringr::str_which(cname, paste0("w\\.", i))]
+  gamma <- posm[stringr::str_which(cname, paste0("gamma\\.", c))]
+  beta <- posm[stringr::str_which(cname, paste0("beta\\.", i, "\\.", c))]
+  theta <- posm[stringr::str_which(cname, paste0("theta\\.", k, "\\.", c))]
+  lambda <- posm[stringr::str_which(cname, paste0("lambda\\.", c, "\\.", i, "\\."))]
 
   G <- length(lambda)
   seg <- 0 * t
