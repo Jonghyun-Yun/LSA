@@ -7,7 +7,7 @@
 
 #+STARTUP: overview inlineimages logdone indent
 
-# #+SETUPFILE: ~/setup/my-theme-readtheorg.setup
+#+SETUPFILE: ~/setup/my-theme-readtheorg.setup
 
 #+PROPERTY: header-args :eval never-export
 #+PROPERTY: header-args:R :session *R-Org* :exports both :noweb yes
@@ -3175,22 +3175,24 @@ mv output opusIII-singleZ-singleW
 ** Using R
 #+BEGIN_SRC R :tangle R/run-analysis.R
 #!/usr/bin/env Rscript
-args <- commandArgs(trailingOnly=TRUE)
+args <- commandArgs(trailingOnly = TRUE)
 # test if there is at least one argument: if not, return an error
-if (length(args)==0) {
-  stop("At least one argument must be supplied (input file).n", call.=FALSE)
-} else if (length(args)==1) {
+if (length(args) == 0) {
+  stop("At least one argument must be supplied (input file).n", call. = FALSE)
+} else if (length(args) == 1) {
   # default output file
-  HAS_REF <- 0;
+  HAS_REF <- 0
   ref_dir <- ""
 }
 out_dir <- args[1]
-num_chain <- 3; double_z <- 0; double_w <- 0;
+num_chain <- 3
+double_z <- 0
+double_w <- 0
 ## out_dir <- "chessB-singleZ-singleW/"
 system(paste0("rm figure/*.pdf"))
 source("R/art-analysis.R")
 system(paste0("mkdir -p ", out_dir, "figure/"))
-system(paste0("rsync -rv figure/*.pdf ", out_dir,"figure/"))
+system(paste0("rsync -rv figure/*.pdf ", out_dir, "figure/"))
 #+END_SRC
 
 #+BEGIN_SRC R
@@ -3317,9 +3319,11 @@ cat output/summary.csv
 #+END_SRC
 ** example to extract w0 and z0
 #+begin_src R
-out_dir = "chessB_pn/"
-num_chain = 3; double_z = 0; double_w = 0; HAS_REF = 0;
-
+out_dir <- "chessB_pn/"
+num_chain <- 3
+double_z <- 0
+double_w <- 0
+HAS_REF <- 0
 library(art)
 library(coda)
 library(dplyr)
@@ -3328,7 +3332,7 @@ library(magrittr)
 library(bayesplot)
 library(foreach)
 library(doParallel)
-##registerDoParallel(cores = detectCores() - 1)
+## registerDoParallel(cores = detectCores() - 1)
 registerDoParallel(6)
 
 setwd("/Users/yunj/Dropbox/research/lsjm-art/lsjm-code")
@@ -3336,8 +3340,8 @@ setwd("/Users/yunj/Dropbox/research/lsjm-art/lsjm-code")
 source("R/art-functions.R")
 source("R/load-outputs.R")
 
-z0 = matched$z0
-w0 = matched$w0
+z0 <- matched$z0
+w0 <- matched$w0
 
 readr::write_csv(as.data.frame(w0), paste0(out_dir, "w0.csv"))
 readr::write_csv(as.data.frame(z0), paste0(out_dir, "z0.csv"))
@@ -3350,9 +3354,11 @@ https://scikit-learn.org/stable/auto_examples/bicluster/plot_bicluster_newsgroup
 How to determine # of clutsers: https://scikit-learn.org/stable/auto_examples/bicluster/plot_bicluster_newsgroups.html#sphx-glr-auto-examples-bicluster-plot-bicluster-newsgroups-py
 
 #+begin_src R
-out_dir = "chessB_pn/"
-num_chain = 3; double_z = 0; double_w = 0; HAS_REF = 0;
-
+out_dir <- "chessB_pn/"
+num_chain <- 3
+double_z <- 0
+double_w <- 0
+HAS_REF <- 0
 library(art)
 library(coda)
 library(dplyr)
@@ -3361,23 +3367,24 @@ library(magrittr)
 library(bayesplot)
 library(foreach)
 library(doParallel)
-##registerDoParallel(cores = detectCores() - 1)
+## registerDoParallel(cores = detectCores() - 1)
 registerDoParallel(6)
 
 setwd("/Users/yunj/Dropbox/research/lsjm-art/lsjm-code")
 
-w0 = readr::read_csv(paste0(out_dir, "w0.csv"))
-z0 = readr::read_csv(paste0(out_dir, "z0.csv"))
+w0 <- readr::read_csv(paste0(out_dir, "w0.csv"))
+z0 <- readr::read_csv(paste0(out_dir, "z0.csv"))
 #+end_src
 
 #+begin_src R
-D = matrix(0,nrow = nrow(z0), ncol = nrow(w0))
+D <- matrix(0, nrow = nrow(z0), ncol = nrow(w0))
 for (i in 1:nrow(D)) {
-for (j in 1:ncol(D)){
-D[i,j] = sqrt(sum((z0[i,] - w0[j,])^2))
-}}
+  for (j in 1:ncol(D)) {
+    D[i, j] <- sqrt(sum((z0[i, ] - w0[j, ])^2))
+  }
+}
 
-RBF_D = exp(-1/2 * D)
+RBF_D <- exp(-1 / 2 * D)
 readr::write_csv(as.data.frame(D), paste0(out_dir, "dist_zw.csv"))
 readr::write_csv(as.data.frame(RBF_D), paste0(out_dir, "rbf_dist_zw.csv"))
 #+end_src
@@ -3396,7 +3403,7 @@ two distance function based on Euclidean dist: 1) identity 2) Gaussian kernel
 See https://scikit-learn.org/stable/modules/biclustering.html for the spectral co-clustering method we implement below: ( https://scikit-learn.org/stable/auto_examples/bicluster/plot_spectral_coclustering.html#sphx-glr-auto-examples-bicluster-plot-spectral-coclustering-py)
 
 #+NAME: 184db033-517c-4a42-b7dc-5999752f3fd6
-#+begin_src jupyter-python
+#+begin_src jupyter-python :tangle latent-biclustering.py
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -3418,7 +3425,7 @@ plt.title("Original dataset")
 :END:
 
 #+NAME: 9ec5811f-af20-43af-9d7a-b81193dd62ec
-#+begin_src jupyter-python
+#+begin_src jupyter-python :tangle latent-biclustering.py
 # row_idx = np.linspace(0,(data.shape[0]-1), num=data.shape[0]).astype(int)
 # col_idx = np.linspace(0,(data.shape[1]-1), num=data.shape[1]).astype(int)
 K = 2
@@ -3440,7 +3447,7 @@ plt.title("After biclustering; rearranged to show biclusters")
 :END:
 
 #+NAME: 8eb17f79-bd45-4d6c-bb93-9df2515a0065
-#+begin_src jupyter-python
+#+begin_src jupyter-python :tangle latent-biclustering.py
 df_row = pd.DataFrame(model.row_labels_)
 df_col = pd.DataFrame(model.column_labels_)
 
@@ -3454,22 +3461,22 @@ df_col.to_csv("chessB_pn/cl_col" + str(K) + ".csv")
 #+begin_src R
 source("R/art-functions.R")
 
-K = 2
+K <- 2
 
-w0 = readr::read_csv(paste0(out_dir, "w0.csv"))
-z0 = readr::read_csv(paste0(out_dir, "z0.csv"))
+w0 <- readr::read_csv(paste0(out_dir, "w0.csv"))
+z0 <- readr::read_csv(paste0(out_dir, "z0.csv"))
 
-cl_z = readr::read_csv(paste0(out_dir,"cl_row",K,".csv"))[,2]
-cl_w = readr::read_csv(paste0(out_dir,"cl_col",K,".csv"))[,2]
+cl_z <- readr::read_csv(paste0(out_dir, "cl_row", K, ".csv"))[, 2]
+cl_w <- readr::read_csv(paste0(out_dir, "cl_col", K, ".csv"))[, 2]
 
-xmin = min(z0[,1],w0[,1])
-ymin = min(z0[,2],w0[,2])
-xmax = max(z0[,1],w0[,1])
-ymax = max(z0[,2],w0[,2])
+xmin <- min(z0[, 1], w0[, 1])
+ymin <- min(z0[, 2], w0[, 2])
+xmax <- max(z0[, 1], w0[, 1])
+ymax <- max(z0[, 2], w0[, 2])
 
-pdf(paste0(out_dir,"spc_cl_dist_rbf",K,".pdf"))
+pdf(paste0(out_dir, "spc_cl_dist_rbf", K, ".pdf"))
 
-print(cl_lsjmplot(z0,w0,cl_z,cl_w,xlim=c(xmin,xmax),ylim=c(ymin,ymax)))
+print(cl_lsjmplot(z0, w0, cl_z, cl_w, xlim = c(xmin, xmax), ylim = c(ymin, ymax)))
 
 dev.off(which = dev.cur())
 #+end_src
@@ -3479,10 +3486,9 @@ dev.off(which = dev.cur())
 1
 #+end_src
 
-** simulation of survival times
-:PROPERTIES:
-:header-args:R: :tangle r/sim_surv_data.R
-:END:
+** WAIT simulation of survival times
+- State "WAIT"       from              [2021-02-19 Fri 03:55] \\
+  see if it can be run in another machine
 1. get break points for time
 2. fix item, get item parameters + piecewise constant rates
 3. calculate relative risk for each type (for all persons)
@@ -3490,6 +3496,8 @@ dev.off(which = dev.cur())
 5. repeat for all items (40)
 6. repeat for many MCMC samples (10000?)
 
+Run =R/sim_surv_data.R= for the simulation, and find relevant data as
+follows:
    #+begin_src R :tangle no
    time = sim_data[[item]][,1:251]
    pp = sim_data[[item]][,252:502]
@@ -3498,18 +3506,24 @@ dev.off(which = dev.cur())
    mi = readr::read_csv(file="chessB_pn/input/mi.csv", col_names=F) %>% as.matrix()
    #+end_src
 
-   ~iter~: MCMC iteration
-   ~time[iter, person]~: simulted survival time t
-   ~pp[iter, person]~: simulated conditional probabilty of correct reponse given time t
-   ~mi[item,person]~: observed response (1: correct, 0: incorrect)
-   ~mt[item,person]~: observed time
+- ~iter~: MCMC iteration
+- ~time[iter, person]~: simulated survival time t
+- ~pp[iter, person]~: simulated conditional probability of correct response given time t
+- ~mi[item,person]~: observed response (1: correct, 0: incorrect)
+- ~mi[item,person]~: observed response (1: correct, 0: incorrect)
+- ~mt[item,person]~: observed time
+
+The =RData= will be saved in =chessB_pn=. To run the simulation with no
+distance term, set =out_dir <- "chessB_no_latent/"= in =R/sim_surv_data.R=.
 
 #+begin_src R :results none
 out_dir <- "chessB_pn/"
 ## out_dir <- "chessB_no_latent/"
 
-num_chain <- 3; double_z <- 0; double_w <- 0; HAS_REF <- 0;
-
+num_chain <- 3
+double_z <- 0
+double_w <- 0
+HAS_REF <- 0
 ## library(art)
 library(coda)
 library(dplyr)
@@ -3519,7 +3533,7 @@ library(bayesplot)
 library(foreach)
 library(doParallel)
 ## library(timereg)
-##registerDoParallel(cores = detectCores() - 1)
+## registerDoParallel(cores = detectCores() - 1)
 registerDoParallel(2)
 ## stopImplicitCluster()
 
@@ -3534,76 +3548,79 @@ gethaz_item <- function(sam, cname, item, theta = NULL) {
   cname <- colnames(sam)
   num_iter <- nrow(sam)
 
-  d_zw <- matrix(0,num_iter,N)
-  for (k in 1:N){
+  d_zw <- matrix(0, num_iter, N)
+  for (k in 1:N) {
     ## distance calculation can be fully vectorized (and storing z), but I don't have time for this.
-    z <- sam[,str_which(cname, paste0("^z\\.",0,"\\.",k,"\\.[1-2]"))]
-    w <- sam[,str_which(cname, paste0("^w\\.",0,"\\.",item,"\\."))]
-    d_zw[,k] <- sqrt(rowSums((z-w)^2))
+    z <- sam[, str_which(cname, paste0("^z\\.", 0, "\\.", k, "\\.[1-2]"))]
+    w <- sam[, str_which(cname, paste0("^w\\.", 0, "\\.", item, "\\."))]
+    d_zw[, k] <- sqrt(rowSums((z - w)^2))
   }
-  beta <- sam[,str_which(cname, paste0("^beta\\.",item,"\\."))]
+  beta <- sam[, str_which(cname, paste0("^beta\\.", item, "\\."))]
 
   if (is.null(theta)) {
-    theta_temp <- sam[,str_which(cname, paste0("^theta\\."))] ## (theta.k.0 theta.k.1)
-    teq <- seq(1,ncol(theta_temp),2)
+    theta_temp <- sam[, str_which(cname, paste0("^theta\\."))] ## (theta.k.0 theta.k.1)
+    teq <- seq(1, ncol(theta_temp), 2)
     gamma <- theta <- lambda <- rr <- list()
-    theta[[1]] <- theta_temp[,teq]
-    theta[[2]] <- theta_temp[,-teq]
+    theta[[1]] <- theta_temp[, teq]
+    theta[[2]] <- theta_temp[, -teq]
   }
 
-  gamma = sam[1,str_which(cname, paste0("gamma\\."))]
+  gamma <- sam[1, str_which(cname, paste0("gamma\\."))]
 
-  lambda_temp <- sam[,str_which(cname, paste0("^lambda\\.[0-1]\\.",item,"\\."))]
-  leq <- seq(1,ncol(lambda_temp),2)
-  lambda[[1]] <- lambda_temp[,leq]
-  lambda[[2]] <- lambda_temp[,-leq]
+  lambda_temp <- sam[, str_which(cname, paste0("^lambda\\.[0-1]\\.", item, "\\."))]
+  leq <- seq(1, ncol(lambda_temp), 2)
+  lambda[[1]] <- lambda_temp[, leq]
+  lambda[[2]] <- lambda_temp[, -leq]
 
-  for (cc in 1:2) rr[[cc]] <- exp(beta[,cc] + theta[[cc]] - gamma[c] * d_zw)
+  for (cc in 1:2) rr[[cc]] <- exp(beta[, cc] + theta[[cc]] - gamma[c] * d_zw)
 
-  res <- list(lambda=lambda,rr=rr,theta=theta)
+  res <- list(lambda = lambda, rr = rr, theta = theta)
   return(res)
 }
 #+end_src
 
 #+begin_src R :tangle R/art-functions.R
 gen_surv_time <- function(out, sj, nn) {
-rr <- out$rr
-lambda <- out$lambda
-mj = length(sj)
+  rr <- out$rr
+  lambda <- out$lambda
+  mj <- length(sj)
 
-haz = lambda[[1]][nn,] %o% rr[[1]][nn,] + lambda[[2]][nn,] %o% rr[[2]][nn,]
-logS = -rexp(N)
-cumhaz = rbind(rep(0, N), apply(haz * H, 2,  cumsum))
-vtime <- numeric(N)
+  haz <- lambda[[1]][nn, ] %o% rr[[1]][nn, ] + lambda[[2]][nn, ] %o% rr[[2]][nn, ]
+  logS <- -rexp(N)
+  cumhaz <- rbind(rep(0, N), apply(haz * H, 2, cumsum))
+  vtime <- numeric(N)
 
-for (kk in 1:N) {
-  ss = findInterval(-logS[kk], cumhaz[, kk])
-  if (ss != mj) vtime[kk] <- sj[ss] - ( logS[kk] + cumhaz[ss, kk] ) / haz[ss, kk]
-  else vtime[kk] <- sj[ss]
-}
-return(vtime)
+  for (kk in 1:N) {
+    ss <- findInterval(-logS[kk], cumhaz[, kk])
+    if (ss != mj) {
+      vtime[kk] <- sj[ss] - (logS[kk] + cumhaz[ss, kk]) / haz[ss, kk]
+    } else {
+      vtime[kk] <- sj[ss]
+    }
+  }
+  return(vtime)
 }
 #+end_src
 
 #+begin_src R :tangle R/art-functions.R
 gen_surv_pp <- function(out, time, sj) {
-rr <- out$rr
-lambda <- out$lambda
-num_iter <- nrow(time)
-hr <- list()
-seg_g <- findInterval(time, sj)
-mg <- length(sj)
-seg_g[seg_g == mg] <- (mg - 1)
+  rr <- out$rr
+  lambda <- out$lambda
+  num_iter <- nrow(time)
+  hr <- list()
+  seg_g <- findInterval(time, sj)
+  mg <- length(sj)
+  seg_g[seg_g == mg] <- (mg - 1)
 
-## m is the number of rows in the matrix, r and c are row and column numbers respectively, and ind the linear index:
-## ind = (c-1)*m + r
-ind <- (seg_g - 1) * num_iter + 1:num_iter
+  ## m is the number of rows in the matrix, r and c are row and column numbers respectively, and ind the linear index:
+  ## ind = (c-1)*m + r
+  ind <- (seg_g - 1) * num_iter + 1:num_iter
 
-for (cc in 1:2) hr[[cc]] <- lambda[[cc]][ind] * c(rr[[cc]])
+  for (cc in 1:2) hr[[cc]] <- lambda[[cc]][ind] * c(rr[[cc]])
 
-pp <- hr[[2]] / (hr[[1]] + hr[[2]])
+  pp <- hr[[2]] / (hr[[1]] + hr[[2]])
 
-return(pp)
+  return(pp)
 }
 #+end_src
 
@@ -3611,24 +3628,24 @@ return(pp)
 
 #+begin_src R
 set.seed(1)
-num_iter = nrow(mylist[[1]])
-sim_data = list()
+num_iter <- nrow(mylist[[1]])
+sim_data <- list()
 for (item in 1:I) {
   start_time <- proc.time()
-  stk_tt <-  foreach(chain = 1:3, .combine='rbind') %dopar% {
-    out = gethaz_item(mylist[[chain]], cname,  item)
-    time <- foreach(nn = 1:num_iter, .combine = 'rbind') %do% {
+  stk_tt <- foreach(chain = 1:3, .combine = "rbind") %dopar% {
+    out <- gethaz_item(mylist[[chain]], cname, item)
+    time <- foreach(nn = 1:num_iter, .combine = "rbind") %do% {
       gen_surv_time(out, sj, nn)
     }
-    pp <- gen_surv_pp(out, time, sj) %>% array(dim=dim(time))
-    cbind(time,pp)
+    pp <- gen_surv_pp(out, time, sj) %>% array(dim = dim(time))
+    cbind(time, pp)
   }
   sim_data[[item]] <- stk_tt
-  cat("\nelapsed time to simulate item",item,"\n")
+  cat("\nelapsed time to simulate item", item, "\n")
   print(proc.time() - start_time)
 }
 
-save(sim_data, file=paste0(out_dir,"surv_sim.RData"))
+save(sim_data, file = paste0(out_dir, "surv_sim.RData"))
 #+end_src
 
 #+begin_src R :tangle R/art-functions.R
@@ -3636,13 +3653,13 @@ save(sim_data, file=paste0(out_dir,"surv_sim.RData"))
 ## slow iteration
 haz_fun_item <- function(sam, sj, item, N) {
   rel <- NULL
-for (k in 1:N) {
-param <- getparam(sam, sj, item, k)
-dist <- sqrt(rowSums((param$z - param$w)^2))
-rr <- exp(param$beta + param$theta - param$gamma * dist)
-rel <- rbind(rel, rr)
-}
-  haz <- matrix(c(sj, 0, param$lambda[1, ], 0, param$lambda[2, ]),  length(sj), 3)
+  for (k in 1:N) {
+    param <- getparam(sam, sj, item, k)
+    dist <- sqrt(rowSums((param$z - param$w)^2))
+    rr <- exp(param$beta + param$theta - param$gamma * dist)
+    rel <- rbind(rel, rr)
+  }
+  haz <- matrix(c(sj, 0, param$lambda[1, ], 0, param$lambda[2, ]), length(sj), 3)
   return(list(haz = haz, rel = rel))
 }
 #+end_src
@@ -3651,19 +3668,22 @@ rel <- rbind(rel, rr)
 ## simulate survival time and response
 ## slow
 gen_surv <- function(out, sj, N) {
-time <- numeric(N)
-for (k in 1:N) {
-hh <- cbind(sj, out$haz[,2]*out$rel[k, 1] + out$haz[,3]*out$rel[k, 2])
-time[k] <- rchaz(hh, n = 1, cum.hazard=FALSE)[,2]
-}
+  time <- numeric(N)
+  for (k in 1:N) {
+    hh <- cbind(sj, out$haz[, 2] * out$rel[k, 1] + out$haz[, 3] * out$rel[k, 2])
+    time[k] <- rchaz(hh, n = 1, cum.hazard = FALSE)[, 2]
+  }
 
-dd <- data.frame(time = time, status = rep(1,N))
-seg_temp <- survSplit(formula = Surv(time, status) ~ 1, cut=sj, data=dd, episode = "seg_g")
-seg_g <- seg_temp %>% filter(status == 1) %>% select(seg_g) %>% unlist()
+  dd <- data.frame(time = time, status = rep(1, N))
+  seg_temp <- survSplit(formula = Surv(time, status) ~ 1, cut = sj, data = dd, episode = "seg_g")
+  seg_g <- seg_temp %>%
+    filter(status == 1) %>%
+    select(seg_g) %>%
+    unlist()
 
-rr12 <- out$haz[seg_g, 2:3] * out$rel
-pp <- rr12[,2] / rowSums(rr12)
-return(list(time = time, pp = pp))
+  rr12 <- out$haz[seg_g, 2:3] * out$rel
+  pp <- rr12[, 2] / rowSums(rr12)
+  return(list(time = time, pp = pp))
 }
 #+end_src
 
@@ -3705,51 +3725,57 @@ cat("\nelapsed time to simulate item",item,"\n")
 print(proc.time() - start_time)
 }
 #+end_src
-
 ** load outputs
 #+begin_src R :tangle R/load-outputs.R
-mvar = readr::read_csv(paste0(out_dir,"mvar.csv"), col_names=F) %>% as.matrix()
-I = mvar[1]
-N = mvar[2]
-G = mvar[4]
+mvar <- readr::read_csv(paste0(out_dir, "mvar.csv"), col_names = F) %>% as.matrix()
+I <- mvar[1]
+N <- mvar[2]
+G <- mvar[4]
 
-sj = readr::read_csv(paste0(out_dir,"mlen.csv"),col_names=F) %>% as.matrix()
-sj = c(0, cumsum(sj))
-H = sj[2:(G+1)] - sj[1:G]
+sj <- readr::read_csv(paste0(out_dir, "mlen.csv"), col_names = F) %>% as.matrix()
+sj <- c(0, cumsum(sj))
+H <- sj[2:(G + 1)] - sj[1:G]
 
-cnames = c(".chain", ".iteration")
+cnames <- c(".chain", ".iteration")
 for (c in 0:1) {
   for (i in 1:I) {
     for (g in 1:G) {
-      cnames = c(cnames, paste0("lambda.",c,".",i,".",g))
-    }}}
+      cnames <- c(cnames, paste0("lambda.", c, ".", i, ".", g))
+    }
+  }
+}
 
 for (k in 1:N) {
   for (c in 0:1) {
-    cnames = c(cnames, paste0("theta.",k,".",c))
-  }}
+    cnames <- c(cnames, paste0("theta.", k, ".", c))
+  }
+}
 for (i in 1:I) {
   for (c in 0:1) {
-    cnames = c(cnames, paste0("beta.",i,".",c))
-  }}
+    cnames <- c(cnames, paste0("beta.", i, ".", c))
+  }
+}
 
-for(c in 0:1) {
+for (c in 0:1) {
   for (k in 1:N) {
     for (d in 1:2) {
-      cnames = c(cnames, paste0("z.",c,".",k,".",d))
-    }}
+      cnames <- c(cnames, paste0("z.", c, ".", k, ".", d))
+    }
+  }
 }
 for (c in 0:1) {
   for (i in 1:I) {
     for (d in 1:2) {
-      cnames = c(cnames, paste0("w.",c,".",i,".",d))
-    }}}
-
-for (c in 0:1) {
-  cnames = c(cnames, paste0("gamma.",c))
+      cnames <- c(cnames, paste0("w.", c, ".", i, ".", d))
+    }
+  }
 }
 
-cnames = c(cnames, "sigma", "lp_")
+for (c in 0:1) {
+  cnames <- c(cnames, paste0("gamma.", c))
+}
+
+cnames <- c(cnames, "sigma", "lp_")
 #+end_src
 
 #+BEGIN_SRC R :tangle R/load-outputs.R
@@ -3757,21 +3783,21 @@ cnames = c(cnames, "sigma", "lp_")
 ## mystart = 5001
 ## myend = 25000
 
-no_z1 = !grepl("^z\\.1\\.", cnames)
-no_w1 = !grepl("^w\\.1\\.", cnames)
+no_z1 <- !grepl("^z\\.1\\.", cnames)
+no_w1 <- !grepl("^w\\.1\\.", cnames)
 
-dlist = list()
+dlist <- list()
 for (cid in 1:num_chain) {
   ## pisa-KR KR-sci data should skip 1000
-  dlist[[cid]] = readr::read_csv(paste0(out_dir,"sample_chain",cid,".csv"), col_names=F, skip=0) %>% as.data.frame()
-  ##dlist[[cid]] = readr::read_csv(paste0(out_dir,"sample_chain",cid,".csv"), col_names=F) %>% as.data.frame()
-  colnames(dlist[[cid]]) = cnames
+  dlist[[cid]] <- readr::read_csv(paste0(out_dir, "sample_chain", cid, ".csv"), col_names = F, skip = 0) %>% as.data.frame()
+  ## dlist[[cid]] = readr::read_csv(paste0(out_dir,"sample_chain",cid,".csv"), col_names=F) %>% as.data.frame()
+  colnames(dlist[[cid]]) <- cnames
   if (!double_z && !double_w) {
-    dlist[[cid]] = dlist[[cid]][,no_z1 & no_w1] ## remove duplicates when single_z and single_w
+    dlist[[cid]] <- dlist[[cid]][, no_z1 & no_w1] ## remove duplicates when single_z and single_w
   } else if (!double_w) {
-    dlist[[cid]] = dlist[[cid]][,no_w1] ## remove duplicates when single_w
+    dlist[[cid]] <- dlist[[cid]][, no_w1] ## remove duplicates when single_w
   } else if (!double_z) {
-    dlist[[cid]] = dlist[[cid]][,no_z1] ## remove duplicates when single_z
+    dlist[[cid]] <- dlist[[cid]][, no_z1] ## remove duplicates when single_z
   }
 }
 
@@ -3780,92 +3806,100 @@ for (cid in 1:num_chain) {
 
 
 #+BEGIN_SRC R :tangle R/art-functions.R
-my_procrustes = function(Xstar, dlist, is_list = FALSE, translation = TRUE, scale = FALSE, reflect = TRUE) {
-  posm = 0
+my_procrustes <- function(Xstar, dlist, is_list = FALSE, translation = TRUE, scale = FALSE, reflect = TRUE) {
+  posm <- 0
   if (is_list == TRUE) {
-    num_chain = length(dlist)
-  } else { num_chain = 1 }
+    num_chain <- length(dlist)
+  } else {
+    num_chain <- 1
+  }
   for (i in 1:num_chain) {
-    if (is_list == TRUE) { df = dlist[[i]]
-    } else { df = dlist }
+    if (is_list == TRUE) {
+      df <- dlist[[i]]
+    } else {
+      df <- dlist
+    }
 
-    num_samples = nrow(df)
+    num_samples <- nrow(df)
 
-    z0dx = grepl("^z\\.0\\.", colnames(df))
-    z1dx = grepl("^z\\.1\\.", colnames(df))
-    w0dx = grepl("^w\\.0\\.", colnames(df))
-    w1dx = grepl("^w\\.1\\.", colnames(df))
+    z0dx <- grepl("^z\\.0\\.", colnames(df))
+    z1dx <- grepl("^z\\.1\\.", colnames(df))
+    w0dx <- grepl("^w\\.0\\.", colnames(df))
+    w1dx <- grepl("^w\\.1\\.", colnames(df))
 
-    no_z1 = sum(z1dx) == 0
-    no_w1 = sum(w1dx) == 0
+    no_z1 <- sum(z1dx) == 0
+    no_w1 <- sum(w1dx) == 0
 
-    num_w = sum(w0dx) / 2;
-    num_z = sum(z0dx) / 2;
-    w0 = aperm( array(unlist( t(df[,w0dx])), dim = c(2, num_w, num_samples)), c(2,1,3))
-    z0 = aperm( array(unlist( t(df[,z0dx])), dim = c(2, num_z, num_samples)), c(2,1,3))
+    num_w <- sum(w0dx) / 2
+    num_z <- sum(z0dx) / 2
+    w0 <- aperm(array(unlist(t(df[, w0dx])), dim = c(2, num_w, num_samples)), c(2, 1, 3))
+    z0 <- aperm(array(unlist(t(df[, z0dx])), dim = c(2, num_z, num_samples)), c(2, 1, 3))
 
-    w0star = Xstar$w.0
+    w0star <- Xstar$w.0
 
     if (no_w1) {
-      w1 = NULL
+      w1 <- NULL
     } else {
-      w1star = MCMCpack::procrustes(Xstar$w.1, w0star)$X.new
-      w1 = aperm( array(unlist( t(df[,w1dx])), dim = c(2, num_w, num_samples)), c(2,1,3))
+      w1star <- MCMCpack::procrustes(Xstar$w.1, w0star)$X.new
+      w1 <- aperm(array(unlist(t(df[, w1dx])), dim = c(2, num_w, num_samples)), c(2, 1, 3))
     }
     if (no_z1) {
-      z1 = NULL
+      z1 <- NULL
     } else {
-      z1 = aperm( array(unlist( t(df[,z1dx])), dim = c(2, num_z, num_samples)), c(2,1,3))
+      z1 <- aperm(array(unlist(t(df[, z1dx])), dim = c(2, num_z, num_samples)), c(2, 1, 3))
     }
 
-    adx = z0dx | z1dx | w0dx | w1dx
+    adx <- z0dx | z1dx | w0dx | w1dx
 
-    mm = foreach (k = 1:num_samples) %dopar% {
-      pout = MCMCpack::procrustes(w0[,,k], w0star)
-      w0[,,k] = pout$X.new
-      z0[,,k] = z0[,,k] %*% pout$R
+    mm <- foreach(k = 1:num_samples) %dopar% {
+      pout <- MCMCpack::procrustes(w0[, , k], w0star)
+      w0[, , k] <- pout$X.new
+      z0[, , k] <- z0[, , k] %*% pout$R
 
       if (!no_w1) {
-        pout = MCMCpack::procrustes(w1[,,k], w1star)
-        w1[,,k] = pout$X.new
+        pout <- MCMCpack::procrustes(w1[, , k], w1star)
+        w1[, , k] <- pout$X.new
       }
       if (!no_z1) {
-        z1[,,k] = z1[,,k] %*% pout$R
+        z1[, , k] <- z1[, , k] %*% pout$R
       }
-      rbind(z0[,,k], z1[,,k], w0[,,k], w1[,,k])
+      rbind(z0[, , k], z1[, , k], w0[, , k], w1[, , k])
     }
-    tmm = lapply(mm,t)
-    df[,adx] = t( matrix(unlist(tmm), nrow = sum(adx)) )
+    tmm <- lapply(mm, t)
+    df[, adx] <- t(matrix(unlist(tmm), nrow = sum(adx)))
 
-    posm = posm + Reduce("+",mm) / num_samples
-    if (is_list == TRUE) { dlist[[i]] = df
-    } else { dlist = df }
+    posm <- posm + Reduce("+", mm) / num_samples
+    if (is_list == TRUE) {
+      dlist[[i]] <- df
+    } else {
+      dlist <- df
+    }
   }
 
-  posm = posm / num_chain
-  z0 = posm[1:num_z,]
+  posm <- posm / num_chain
+  z0 <- posm[1:num_z, ]
   if (no_z1 && no_w1) {
-    w0 = posm[num_z + (1:num_w),]
+    w0 <- posm[num_z + (1:num_w), ]
   } else if (no_z1 && !no_w1) {
-    w0 = posm[num_z + (1:num_w),]
-    w1 = posm[num_z + num_w + (1:num_w),]
+    w0 <- posm[num_z + (1:num_w), ]
+    w1 <- posm[num_z + num_w + (1:num_w), ]
   }
 
   if (!no_z1 && no_w1) {
-    z1 = posm[num_z + (1:num_z),]
-    w0 = posm[2*num_z + (1:num_w),]
+    z1 <- posm[num_z + (1:num_z), ]
+    w0 <- posm[2 * num_z + (1:num_w), ]
   } else if (!no_z1 && !no_w1) {
-    z1 = posm[num_z + (1:num_z),]
-    w0 = posm[2*num_z + (1:num_w),]
-    w1 = posm[2*num_z + num_w + (1:num_w),]
+    z1 <- posm[num_z + (1:num_z), ]
+    w0 <- posm[2 * num_z + (1:num_w), ]
+    w1 <- posm[2 * num_z + num_w + (1:num_w), ]
   }
-  return(list(dlist = dlist, z0=z0, z1=z1, w0=w0, w1=w1))
+  return(list(dlist = dlist, z0 = z0, z1 = z1, w0 = w0, w1 = w1))
 }
 #+END_SRC
 
 #+begin_src R :results none :tangle R/load-outputs.R
 if (!HAS_REF) {
-  Xstar = find_xstar_inlist(dlist)
+  Xstar <- find_xstar_inlist(dlist)
   readr::write_csv(as.data.frame(Xstar$z.0), paste0(out_dir, "z0star.csv"), col_names = FALSE)
   readr::write_csv(as.data.frame(Xstar$w.0), paste0(out_dir, "w0star.csv"), col_names = FALSE)
 }
@@ -3873,58 +3907,59 @@ if (!HAS_REF) {
 
 #+begin_src R :results none :tangle R/load-outputs.R
 if (HAS_REF) {
-  Xstar = list()
-  Xstar$z.0 = readr::read_csv(paste0(ref_dir, "z0star.csv"), col_names = FALSE) %>% as.matrix()
-  Xstar$w.0 = readr::read_csv(paste0(ref_dir, "w0star.csv"), col_names = FALSE) %>% as.matrix()
+  Xstar <- list()
+  Xstar$z.0 <- readr::read_csv(paste0(ref_dir, "z0star.csv"), col_names = FALSE) %>% as.matrix()
+  Xstar$w.0 <- readr::read_csv(paste0(ref_dir, "w0star.csv"), col_names = FALSE) %>% as.matrix()
 }
 #+end_src
 
 #+BEGIN_SRC R :tangle R/load-outputs.R
-matched = my_procrustes(Xstar, dlist, is_list = T)
-mydf = matched$dlist
-mdf = bind_rows(matched$dlist, .id = "column_label")
+matched <- my_procrustes(Xstar, dlist, is_list = T)
+mydf <- matched$dlist
+mdf <- bind_rows(matched$dlist, .id = "column_label")
 #+END_SRC
 
 #+BEGIN_SRC R :tangle R/load-outputs.R
-mylist = mcmc.list()
-item = 1
-cname = names(mydf[[1]])
-mylist = mcmc.list()
+mylist <- mcmc.list()
+item <- 1
+cname <- names(mydf[[1]])
+mylist <- mcmc.list()
 for (cid in 1:num_chain) {
   for (c in 0:1) {
     for (k in 1:N) {
-      z = mydf[[cid]][,str_which(cname, paste0("z\\.",c * double_z,"\\.",k,"\\.[1-2]"))]
-      w = mydf[[cid]][,str_which(cname, paste0("w\\.",c * double_w,"\\.",item,"\\."))]
-      mydf[[cid]][[paste0("dist_z.",c,".",k,"_","w.",c,".",item)]] = sqrt(rowSums((z-w)^2))
-    }}
-  mylist[[cid]] = mcmc(mydf[[cid]])
+      z <- mydf[[cid]][, str_which(cname, paste0("z\\.", c * double_z, "\\.", k, "\\.[1-2]"))]
+      w <- mydf[[cid]][, str_which(cname, paste0("w\\.", c * double_w, "\\.", item, "\\."))]
+      mydf[[cid]][[paste0("dist_z.", c, ".", k, "_", "w.", c, ".", item)]] <- sqrt(rowSums((z - w)^2))
+    }
+  }
+  mylist[[cid]] <- mcmc(mydf[[cid]])
 }
 #+END_SRC
 
 The posterior means of \beta, \theta, \lambda are exported to CSV files.
 #+begin_src R :tangle R/write_summary.R
-ss = summary(mylist)
-mm = ss$statistics[,"Mean"]
-rr = c(grep("^beta",  names(mm)), grep("^theta",  names(mm)))
-dout = data.frame(vname = names(mm[rr]), mean = mm[rr])
+ss <- summary(mylist)
+mm <- ss$statistics[, "Mean"]
+rr <- c(grep("^beta", names(mm)), grep("^theta", names(mm)))
+dout <- data.frame(vname = names(mm[rr]), mean = mm[rr])
 readr::write_csv(dout, paste0(out_dir, "beta_theta_mean.csv"))
 #+end_src
 
 #+begin_src R :tangle R/write_summary.R
-rr = grep("^lambda",  names(mm))
-dout = data.frame(vname = names(mm[rr]), mean = mm[rr])
+rr <- grep("^lambda", names(mm))
+dout <- data.frame(vname = names(mm[rr]), mean = mm[rr])
 readr::write_csv(dout, paste0(out_dir, "lambda_mean.csv"))
 #+end_src
 
 #+begin_src R :tangle R/write_summary.R
-rr = grep("^^z\\.0\\.",  names(mm))
-dout = data.frame(vname = names(mm[rr]), mean = mm[rr])
+rr <- grep("^^z\\.0\\.", names(mm))
+dout <- data.frame(vname = names(mm[rr]), mean = mm[rr])
 readr::write_csv(dout, paste0(out_dir, "z0_mean.csv"))
 #+end_src
 
 #+begin_src R :tangle R/write_summary.R
-rr = grep("^^z\\.0\\.",  names(mm))
-dout = data.frame(vname = names(mm[rr]), mean = mm[rr])
+rr <- grep("^^z\\.0\\.", names(mm))
+dout <- data.frame(vname = names(mm[rr]), mean = mm[rr])
 readr::write_csv(dout, paste0(out_dir, "z0_mean.csv"))
 #+end_src
 
@@ -3950,84 +3985,90 @@ summary(mylist)
 HPD based latent plot
 [[pdf:figure/latent_space_hpd.pdf::1]]
 #+BEGIN_SRC R :tangle R/visual-latent-space-plot.R
-mcdf = mcmc(mdf[,-1])
-tn = nrow(mcdf)
-hpd = apply(HPDinterval(mcdf, prob = 1/tn), 1, median)
+mcdf <- mcmc(mdf[, -1])
+tn <- nrow(mcdf)
+hpd <- apply(HPDinterval(mcdf, prob = 1 / tn), 1, median)
 
-z0dx = grepl("^z\\.0\\.", names(hpd))
-z1dx = grepl("^z\\.1\\.", names(hpd))
-w0dx = grepl("^w\\.0\\.", names(hpd))
-w1dx = grepl("^w\\.1\\.", names(hpd))
+z0dx <- grepl("^z\\.0\\.", names(hpd))
+z1dx <- grepl("^z\\.1\\.", names(hpd))
+w0dx <- grepl("^w\\.0\\.", names(hpd))
+w1dx <- grepl("^w\\.1\\.", names(hpd))
 
-num_w = sum(w0dx) / 2;
-num_z = sum(z0dx) / 2;
-
-no_z1 = sum(z1dx) == 0
-no_w1 = sum(w1dx) == 0
-w0 = matrix(hpd[w0dx], byrow = T, nrow = num_w, ncol = 2)
+num_w <- sum(w0dx) / 2
+num_z <- sum(z0dx) / 2
+no_z1 <- sum(z1dx) == 0
+no_w1 <- sum(w1dx) == 0
+w0 <- matrix(hpd[w0dx], byrow = T, nrow = num_w, ncol = 2)
 if (no_w1) {
-  w1 = NULL
-} else w1 = matrix(hpd[w1dx], byrow = T, nrow = num_w, ncol = 2)
+  w1 <- NULL
+} else {
+  w1 <- matrix(hpd[w1dx], byrow = T, nrow = num_w, ncol = 2)
+}
 if (no_z1) {
-  z1 = NULL
-} else z1 = matrix(hpd[z1dx], byrow = T, nrow = num_z, ncol = 2)
+  z1 <- NULL
+} else {
+  z1 <- matrix(hpd[z1dx], byrow = T, nrow = num_z, ncol = 2)
+}
 
-z0 = matrix(hpd[z0dx], byrow = T, nrow = num_z, ncol = 2)
-xmin = min(z0[,1],z1[,1],w0[,1],w1[,1])
-ymin = min(z0[,2],z1[,2],w0[,2],w1[,2])
-xmax = max(z0[,1],z1[,1],w0[,1],w1[,1])
-ymax = max(z0[,2],z1[,2],w0[,2],w1[,2])
-myname = c(1:N,paste0("I.",1:I))
+z0 <- matrix(hpd[z0dx], byrow = T, nrow = num_z, ncol = 2)
+xmin <- min(z0[, 1], z1[, 1], w0[, 1], w1[, 1])
+ymin <- min(z0[, 2], z1[, 2], w0[, 2], w1[, 2])
+xmax <- max(z0[, 1], z1[, 1], w0[, 1], w1[, 1])
+ymax <- max(z0[, 2], z1[, 2], w0[, 2], w1[, 2])
+myname <- c(1:N, paste0("I.", 1:I))
 
 pdf("figure/latent_space_hpd.pdf")
-print(lsjmplot(z0,w0,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+print(lsjmplot(z0, w0, xlim = c(xmin, xmax), ylim = c(ymin, ymax), myname))
 if (double_z && !double_w) {
-  print(lsjmplot(z1,w0,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+  print(lsjmplot(z1, w0, xlim = c(xmin, xmax), ylim = c(ymin, ymax), myname))
 } else if (double_z && double_w) {
-  print(lsjmplot(z1,w1,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+  print(lsjmplot(z1, w1, xlim = c(xmin, xmax), ylim = c(ymin, ymax), myname))
 } else if (!double_z && double_w) {
-  print(lsjmplot(z0,w1,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+  print(lsjmplot(z0, w1, xlim = c(xmin, xmax), ylim = c(ymin, ymax), myname))
 }
 dev.off(which = dev.cur())
 #+END_SRC
 
 [[pdf:figure/latent_space_med.pdf::1]]
 #+BEGIN_SRC R :tangle R/visual-latent-space-plot.R
-med = apply(mdf[,-1] , 2, median)
+med <- apply(mdf[, -1], 2, median)
 
-z0dx = grepl("^z\\.0\\.", names(med))
-z1dx = grepl("^z\\.1\\.", names(med))
-w0dx = grepl("^w\\.0\\.", names(med))
-w1dx = grepl("^w\\.1\\.", names(med))
+z0dx <- grepl("^z\\.0\\.", names(med))
+z1dx <- grepl("^z\\.1\\.", names(med))
+w0dx <- grepl("^w\\.0\\.", names(med))
+w1dx <- grepl("^w\\.1\\.", names(med))
 
-num_w = sum(w0dx) / 2;
-num_z = sum(z0dx) / 2;
-
-no_z1 = sum(z1dx) == 0
-no_w1 = sum(w1dx) == 0
-w0 = matrix(med[w0dx], byrow = T, nrow = num_w, ncol = 2)
+num_w <- sum(w0dx) / 2
+num_z <- sum(z0dx) / 2
+no_z1 <- sum(z1dx) == 0
+no_w1 <- sum(w1dx) == 0
+w0 <- matrix(med[w0dx], byrow = T, nrow = num_w, ncol = 2)
 if (no_w1) {
-  w1 = NULL
-} else w1 = matrix(med[w1dx], byrow = T, nrow = num_w, ncol = 2)
+  w1 <- NULL
+} else {
+  w1 <- matrix(med[w1dx], byrow = T, nrow = num_w, ncol = 2)
+}
 if (no_z1) {
-  z1 = NULL
-} else z1 = matrix(med[z1dx], byrow = T, nrow = num_z, ncol = 2)
+  z1 <- NULL
+} else {
+  z1 <- matrix(med[z1dx], byrow = T, nrow = num_z, ncol = 2)
+}
 
-z0 = matrix(med[z0dx], byrow = T, nrow = num_z, ncol = 2)
-xmin = min(z0[,1],z1[,1],w0[,1],w1[,1])
-ymin = min(z0[,2],z1[,2],w0[,2],w1[,2])
-xmax = max(z0[,1],z1[,1],w0[,1],w1[,1])
-ymax = max(z0[,2],z1[,2],w0[,2],w1[,2])
-myname = c(1:N,paste0("I.",1:I))
+z0 <- matrix(med[z0dx], byrow = T, nrow = num_z, ncol = 2)
+xmin <- min(z0[, 1], z1[, 1], w0[, 1], w1[, 1])
+ymin <- min(z0[, 2], z1[, 2], w0[, 2], w1[, 2])
+xmax <- max(z0[, 1], z1[, 1], w0[, 1], w1[, 1])
+ymax <- max(z0[, 2], z1[, 2], w0[, 2], w1[, 2])
+myname <- c(1:N, paste0("I.", 1:I))
 
 pdf("figure/latent_space_med.pdf")
-print(lsjmplot(z0,w0,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+print(lsjmplot(z0, w0, xlim = c(xmin, xmax), ylim = c(ymin, ymax), myname))
 if (double_z && !double_w) {
-  print(lsjmplot(z1,w0,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+  print(lsjmplot(z1, w0, xlim = c(xmin, xmax), ylim = c(ymin, ymax), myname))
 } else if (double_z && double_w) {
-  print(lsjmplot(z1,w1,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+  print(lsjmplot(z1, w1, xlim = c(xmin, xmax), ylim = c(ymin, ymax), myname))
 } else if (!double_z && double_w) {
-  print(lsjmplot(z0,w1,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+  print(lsjmplot(z0, w1, xlim = c(xmin, xmax), ylim = c(ymin, ymax), myname))
 }
 dev.off(which = dev.cur())
 #+END_SRC
@@ -4036,25 +4077,25 @@ dev.off(which = dev.cur())
 [[file:figure/latent_space_mode.pdf]]
 #+BEGIN_SRC R :tangle R/visual-latent-space-plot.R
 if (!HAS_REF) {
-  z0.star = Xstar$z.0
-  z1.star = Xstar$z.1
-  w0.star = Xstar$w.0
-  w1.star = Xstar$w.1
+  z0.star <- Xstar$z.0
+  z1.star <- Xstar$z.1
+  w0.star <- Xstar$w.0
+  w1.star <- Xstar$w.1
 
-  xmin = min(z0.star[,1],z1.star[,1],w0.star[,1],w1.star[,1])
-  ymin = min(z0.star[,2],z1.star[,2],w0.star[,2],w1.star[,2])
-  xmax = max(z0.star[,1],z1.star[,1],w0.star[,1],w1.star[,1])
-  ymax = max(z0.star[,2],z1.star[,2],w0.star[,2],w1.star[,2])
+  xmin <- min(z0.star[, 1], z1.star[, 1], w0.star[, 1], w1.star[, 1])
+  ymin <- min(z0.star[, 2], z1.star[, 2], w0.star[, 2], w1.star[, 2])
+  xmax <- max(z0.star[, 1], z1.star[, 1], w0.star[, 1], w1.star[, 1])
+  ymax <- max(z0.star[, 2], z1.star[, 2], w0.star[, 2], w1.star[, 2])
 
-  myname = c(1:N,paste0("I.",1:I))
+  myname <- c(1:N, paste0("I.", 1:I))
   pdf("figure/latent_space_mode.pdf")
-  print(lsjmplot(z0.star,w0.star,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+  print(lsjmplot(z0.star, w0.star, xlim = c(xmin, xmax), ylim = c(ymin, ymax), myname))
   if (double_z && !double_w) {
-    print(lsjmplot(z1.star,w0.star,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+    print(lsjmplot(z1.star, w0.star, xlim = c(xmin, xmax), ylim = c(ymin, ymax), myname))
   } else if (double_z && double_w) {
-    print(lsjmplot(z1.star,w1.star,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+    print(lsjmplot(z1.star, w1.star, xlim = c(xmin, xmax), ylim = c(ymin, ymax), myname))
   } else if (!double_z && double_w) {
-    print(lsjmplot(z0.star,w1.star,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+    print(lsjmplot(z0.star, w1.star, xlim = c(xmin, xmax), ylim = c(ymin, ymax), myname))
   }
 
   dev.off(which = dev.cur())
@@ -4108,23 +4149,23 @@ dev.off(which = dev.cur())
 #+begin_src R :tangle R/visual-latent-space-plot.R
 pdf("figure/latent_space_mean.pdf")
 
-z0 = matched$z0
-z1 = matched$z1
-w0 = matched$w0
-w1 = matched$w1
-xmin = min(z0[,1],z1[,1],w0[,1],w1[,1])
-ymin = min(z0[,2],z1[,2],w0[,2],w1[,2])
-xmax = max(z0[,1],z1[,1],w0[,1],w1[,1])
-ymax = max(z0[,2],z1[,2],w0[,2],w1[,2])
+z0 <- matched$z0
+z1 <- matched$z1
+w0 <- matched$w0
+w1 <- matched$w1
+xmin <- min(z0[, 1], z1[, 1], w0[, 1], w1[, 1])
+ymin <- min(z0[, 2], z1[, 2], w0[, 2], w1[, 2])
+xmax <- max(z0[, 1], z1[, 1], w0[, 1], w1[, 1])
+ymax <- max(z0[, 2], z1[, 2], w0[, 2], w1[, 2])
 
-myname = c(1:N,paste0("I.",1:I))
-print(lsjmplot(z0,w0,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+myname <- c(1:N, paste0("I.", 1:I))
+print(lsjmplot(z0, w0, xlim = c(xmin, xmax), ylim = c(ymin, ymax), myname))
 if (double_z && !double_w) {
-  print(lsjmplot(z1,w0,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+  print(lsjmplot(z1, w0, xlim = c(xmin, xmax), ylim = c(ymin, ymax), myname))
 } else if (double_z && double_w) {
-  print(lsjmplot(z1,w1,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+  print(lsjmplot(z1, w1, xlim = c(xmin, xmax), ylim = c(ymin, ymax), myname))
 } else if (!double_z && double_w) {
-  print(lsjmplot(z0,w1,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+  print(lsjmplot(z0, w1, xlim = c(xmin, xmax), ylim = c(ymin, ymax), myname))
 }
 dev.off(which = dev.cur())
 #+end_src
@@ -4147,19 +4188,19 @@ readr::write_csv(data.frame(x=w0[,1], y=w0[,2]), "chessB_pn_w.csv", col_names = 
 [[file:figure/lambda_mcmc_interval_plot.pdf]]
 #+BEGIN_SRC R :tangle R/visual-trace-plot.R
 pdf("figure/lambda_mcmc_interval_plot.pdf")
-p0 = mcmc_intervals(
+p0 <- mcmc_intervals(
   mylist,
   regex_pars = "^lambda\\.0\\.1\\.",
   transformations = "log"
 )
-##mcmc_areas(
+## mcmc_areas(
 ##  lambda0.sam,
 ##  prob = 0.8, # 80% intervals
 ##  prob_outer = 0.99, # 99%
 ##  point_est = "mean"
-##)
+## )
 
-p1 = mcmc_intervals(
+p1 <- mcmc_intervals(
   mylist,
   regex_pars = "^lambda\\.1\\.1\\.",
   transformations = "log"
@@ -4172,10 +4213,11 @@ dev.off(which = dev.cur())
 [[pdf:figure/z_pairs_plot.pdf]]
 #+BEGIN_SRC R :tangle R/visual-trace-plot.R
 pdf("figure/z_pairs_plot.pdf")
-for (k in 1:min(N,50)) {
-  p = mcmc_pairs(mylist,
-                 regex_pars = paste0("^z\\.[0-1]\\.",k,"\\."),
-                 off_diag_args = list(size = 0.05))
+for (k in 1:min(N, 50)) {
+  p <- mcmc_pairs(mylist,
+    regex_pars = paste0("^z\\.[0-1]\\.", k, "\\."),
+    off_diag_args = list(size = 0.05)
+  )
   print(p)
 }
 dev.off(which = dev.cur())
@@ -4184,10 +4226,11 @@ dev.off(which = dev.cur())
 [[pdf:figure/w_pairs_plot.pdf]]
 #+BEGIN_SRC R :tangle R/visual-trace-plot.R
 pdf("figure/w_pairs_plot.pdf")
-for (i in 1:min(I,50)) {
-  p = mcmc_pairs(mylist,
-                 regex_pars = paste0("^w\\.[0-1]\\.",i,"\\."),
-                 off_diag_args = list(size = 0.05))
+for (i in 1:min(I, 50)) {
+  p <- mcmc_pairs(mylist,
+    regex_pars = paste0("^w\\.[0-1]\\.", i, "\\."),
+    off_diag_args = list(size = 0.05)
+  )
   print(p)
 }
 dev.off(which = dev.cur())
@@ -4196,8 +4239,9 @@ dev.off(which = dev.cur())
 [[file:figure/beta_parcoord.pdf]]
 #+BEGIN_SRC R :tangle R/visual-trace-plot.R
 pdf("figure/beta_parcoord.pdf")
-p = bayesplot::mcmc_parcoord(mylist,
-                             regex_pars = "^beta\\.[0-9]\\.")
+p <- bayesplot::mcmc_parcoord(mylist,
+  regex_pars = "^beta\\.[0-9]\\."
+)
 print(p)
 dev.off(which = dev.cur())
 #+END_SRC
@@ -4205,8 +4249,9 @@ dev.off(which = dev.cur())
 [[file:figure/theta_parcoord.pdf]]
 #+BEGIN_SRC R :tangle R/visual-trace-plot.R
 pdf("figure/theta_parcoord.pdf")
-p = bayesplot::mcmc_parcoord(mylist,
-                             regex_pars = "^theta\\.[0-9]\\.")
+p <- bayesplot::mcmc_parcoord(mylist,
+  regex_pars = "^theta\\.[0-9]\\."
+)
 print(p)
 dev.off(which = dev.cur())
 #+END_SRC
@@ -4214,9 +4259,10 @@ dev.off(which = dev.cur())
 [[file:figure/lambda_parcoord.pdf]]
 #+BEGIN_SRC R :tangle R/visual-trace-plot.R
 pdf("figure/lambda_parcoord.pdf")
-p = bayesplot::mcmc_parcoord(mylist,
-                             regex_pars = "^lambda\\.[0-1]\\.1\\.",
-                             transformations = "log")
+p <- bayesplot::mcmc_parcoord(mylist,
+  regex_pars = "^lambda\\.[0-1]\\.1\\.",
+  transformations = "log"
+)
 print(p)
 dev.off(which = dev.cur())
 #+END_SRC
@@ -4224,8 +4270,9 @@ dev.off(which = dev.cur())
 [[pdf:figure/w_parcoord_plot.pdf::1]]
 #+BEGIN_SRC R :tangle R/visual-trace-plot.R
 pdf("figure/w_parcoord_plot.pdf")
-p = mcmc_parcoord(mylist,
-                  regex_pars = "^w\\.[0-1]\\.[1-5]\\.")
+p <- mcmc_parcoord(mylist,
+  regex_pars = "^w\\.[0-1]\\.[1-5]\\."
+)
 print(p)
 dev.off(which = dev.cur())
 #+END_SRC
@@ -4235,19 +4282,22 @@ dev.off(which = dev.cur())
 ## mcmc_intervals(mylist, pars=c("lambda.0.1.1")
 pdf("figure/dist_mcmc_trace_plot.pdf")
 p0 <- mcmc_trace(mylist,
-                 regex_pars = "^dist_z.[0-1]\\.[0-2]_w",
-                 ##transformations = "log",
-                 facet_args = list(nrow = 2, labeller = label_parsed))
+  regex_pars = "^dist_z.[0-1]\\.[0-2]_w",
+  ## transformations = "log",
+  facet_args = list(nrow = 2, labeller = label_parsed)
+)
 print(p <- p + facet_text(size = 15))
 p <- mcmc_trace(mylist,
-                regex_pars = "^dist_z.[0-1]\\.[3-6]_w",
-                ##transformations = "log",
-                facet_args = list(nrow = 2, labeller = label_parsed))
+  regex_pars = "^dist_z.[0-1]\\.[3-6]_w",
+  ## transformations = "log",
+  facet_args = list(nrow = 2, labeller = label_parsed)
+)
 print(p <- p + facet_text(size = 15))
 p <- mcmc_trace(mylist,
-                regex_pars = "^dist_z.[0-1]\\.[7-9]_w",
-                ##transformations = "log",
-                facet_args = list(nrow = 2, labeller = label_parsed))
+  regex_pars = "^dist_z.[0-1]\\.[7-9]_w",
+  ## transformations = "log",
+  facet_args = list(nrow = 2, labeller = label_parsed)
+)
 print(p <- p + facet_text(size = 15))
 dev.off(which = dev.cur())
 #+END_SRC
@@ -4257,19 +4307,22 @@ dev.off(which = dev.cur())
 #+BEGIN_SRC R :tangle R/visual-trace-plot.R
 pdf("figure/z_mcmc_trace_plot.pdf")
 p <- mcmc_trace(mylist,
-                regex_pars = "^z.[0-1]\\.[0-2]\\.",
-                ##transformations = "log",
-                facet_args = list(nrow = 2, labeller = label_parsed))
+  regex_pars = "^z.[0-1]\\.[0-2]\\.",
+  ## transformations = "log",
+  facet_args = list(nrow = 2, labeller = label_parsed)
+)
 p + facet_text(size = 15)
 p <- mcmc_trace(mylist,
-                regex_pars = "^z.[0-1]\\.[3-6]\\.",
-                ##transformations = "log",
-                facet_args = list(nrow = 2, labeller = label_parsed))
+  regex_pars = "^z.[0-1]\\.[3-6]\\.",
+  ## transformations = "log",
+  facet_args = list(nrow = 2, labeller = label_parsed)
+)
 p + facet_text(size = 15)
 p <- mcmc_trace(mylist,
-                regex_pars = "^z.[0-1]\\.[7-9]\\.",
-                ##transformations = "log",
-                facet_args = list(nrow = 2, labeller = label_parsed))
+  regex_pars = "^z.[0-1]\\.[7-9]\\.",
+  ## transformations = "log",
+  facet_args = list(nrow = 2, labeller = label_parsed)
+)
 p + facet_text(size = 15)
 print(p)
 dev.off(which = dev.cur())
@@ -4281,9 +4334,10 @@ dev.off(which = dev.cur())
 pdf("figure/w_mcmc_trace_plot.pdf")
 for (i in 1:min(I, 40)) {
   p <- mcmc_trace(mylist,
-                  regex_pars = paste0("^w\\.[0-1]\\.",i,"\\."),
-                  ##transformations = "log",
-                  facet_args = list(nrow = 2, labeller = label_parsed))
+    regex_pars = paste0("^w\\.[0-1]\\.", i, "\\."),
+    ## transformations = "log",
+    facet_args = list(nrow = 2, labeller = label_parsed)
+  )
   print(p <- p + facet_text(size = 15))
 }
 dev.off(which = dev.cur())
@@ -4298,16 +4352,18 @@ pdf("figure/lambda_mcmc_trace_plot.pdf")
 color_scheme_set("mix-blue-pink")
 for (item in 1:I) {
   p <- mcmc_trace(mylist,
-                  regex_pars = paste0("^lambda\\.0\\.",item,"\\."),
-                  transformations = "log",
-                  facet_args = list(nrow = 2, labeller = label_parsed))
-  print(p <- p + facet_text(size = 15) + ggtitle(paste0("lambda.1 trace for item ",item,".")))
+    regex_pars = paste0("^lambda\\.0\\.", item, "\\."),
+    transformations = "log",
+    facet_args = list(nrow = 2, labeller = label_parsed)
+  )
+  print(p <- p + facet_text(size = 15) + ggtitle(paste0("lambda.1 trace for item ", item, ".")))
 
   p <- mcmc_trace(mylist,
-                  regex_pars = paste0("^lambda\\.1\\.",item,"\\."),
-                  transformations = "log",
-                  facet_args = list(nrow = 2, labeller = label_parsed))
-  print(p <- p + facet_text(size = 15) + ggtitle(paste0("lambda.1 trace for item ",item,".")))
+    regex_pars = paste0("^lambda\\.1\\.", item, "\\."),
+    transformations = "log",
+    facet_args = list(nrow = 2, labeller = label_parsed)
+  )
+  print(p <- p + facet_text(size = 15) + ggtitle(paste0("lambda.1 trace for item ", item, ".")))
 }
 dev.off(which = dev.cur())
 #+END_SRC
@@ -4318,8 +4374,9 @@ pdf("figure/beta_mcmc_trace_plot.pdf")
 for (i in 1:I) {
   color_scheme_set("mix-blue-pink")
   p <- mcmc_trace(mylist,
-                  regex_pars = paste0("^beta\\.",i,"\\."),
-                  facet_args = list(nrow = 2, labeller = label_parsed))
+    regex_pars = paste0("^beta\\.", i, "\\."),
+    facet_args = list(nrow = 2, labeller = label_parsed)
+  )
   p + facet_text(size = 15)
   print(p <- p + facet_text(size = 15))
 }
@@ -4332,8 +4389,9 @@ pdf("figure/theta_mcmc_trace_plot.pdf")
 color_scheme_set("mix-blue-pink")
 for (k in 1:10) {
   p <- mcmc_trace(mylist,
-                  regex_pars = paste0("^theta\\.",k,"\\."),
-                  facet_args = list(nrow = 2, labeller = label_parsed))
+    regex_pars = paste0("^theta\\.", k, "\\."),
+    facet_args = list(nrow = 2, labeller = label_parsed)
+  )
   print(p <- p + facet_text(size = 15))
 }
 dev.off(which = dev.cur())
@@ -4344,8 +4402,9 @@ dev.off(which = dev.cur())
 pdf("figure/gamma_mcmc_trace_plot.pdf")
 color_scheme_set("mix-blue-pink")
 p <- mcmc_trace(mylist,
-                regex_pars = "^gamma\\.",
-                facet_args = list(nrow = 2, labeller = label_parsed))
+  regex_pars = "^gamma\\.",
+  facet_args = list(nrow = 2, labeller = label_parsed)
+)
 print(p <- p + facet_text(size = 15))
 dev.off(which = dev.cur())
 #+END_SRC
@@ -4355,8 +4414,9 @@ dev.off(which = dev.cur())
 pdf("figure/lp_sigma_mcmc_trace_plot.pdf")
 color_scheme_set("mix-blue-pink")
 p <- mcmc_trace(mylist,
-                pars = c("sigma", "lp_"),
-                facet_args = list(nrow = 2, labeller = label_parsed))
+  pars = c("sigma", "lp_"),
+  facet_args = list(nrow = 2, labeller = label_parsed)
+)
 print(p <- p + facet_text(size = 15))
 dev.off(which = dev.cur())
 #+END_SRC
@@ -4364,17 +4424,16 @@ dev.off(which = dev.cur())
 ** output analysis
 
 #+BEGIN_SRC R :tangle R/CIF_posm.R
-tmp = foreach(v=1:num_chain, .combine='rbind') %dopar% apply(mydf[[v]], 2, mean)
+tmp <- foreach(v = 1:num_chain, .combine = "rbind") %dopar% apply(mydf[[v]], 2, mean)
 if (num_chain > 1) {
-  tmp = tmp[,1:( which( colnames(mydf[[1]]) == "lp_") )]
-  posm = apply(tmp, 2, mean)
+  tmp <- tmp[, 1:(which(colnames(mydf[[1]]) == "lp_"))]
+  posm <- apply(tmp, 2, mean)
 } else {
-  posm = tmp[1:( which( colnames(mydf[[1]]) == "lp_") )]
+  posm <- tmp[1:(which(colnames(mydf[[1]]) == "lp_"))]
 }
 
-cname = names(posm)
-param = getparam(posm,sj,i,k)
-
+cname <- names(posm)
+param <- getparam(posm, sj, i, k)
 #+END_SRC
 
 [[file:figure/tradeoff.pdf]]
@@ -4382,23 +4441,22 @@ param = getparam(posm,sj,i,k)
 ## accuracy = foreach(k=1:N, .combine='rbind') %dopar% fun_accuracy_ick(t,i,k,posm,cname,sj)
 pdf(paste0("figure/tradeoff.pdf"))
 for (item in 1:I) {
-  time = 1:(sj[G] + 10)
-  accuracy = foreach(k=1:N, .combine='rbind') %dopar%
-    {
-      param = getparam(posm,sj,item,k)
-      eval_accuracy(param, time)
-    }
+  time <- 1:(sj[G] + 10)
+  accuracy <- foreach(k = 1:N, .combine = "rbind") %dopar% {
+    param <- getparam(posm, sj, item, k)
+    eval_accuracy(param, time)
+  }
 
-  plotdf = reshape::melt(accuracy, id.vars=c("time"))
-  colnames(plotdf) = c("person", "time", "accuracy")
+  plotdf <- reshape::melt(accuracy, id.vars = c("time"))
+  colnames(plotdf) <- c("person", "time", "accuracy")
 
-  p = ggplot(data=plotdf, aes(x=time, y=accuracy, group=person)) +
-    geom_line(aes(color=factor(person)), show.legend=FALSE) +
-    ylim(0,1) +
+  p <- ggplot(data = plotdf, aes(x = time, y = accuracy, group = person)) +
+    geom_line(aes(color = factor(person)), show.legend = FALSE) +
+    ylim(0, 1) +
     ## geom_line(group="3", col="red") +
-    ##scale_colour_grey() +
+    ## scale_colour_grey() +
     theme_bw() +
-    ggtitle(paste0("Plot of speed-accuracy tradeoff for item ",item,"."))
+    ggtitle(paste0("Plot of speed-accuracy tradeoff for item ", item, "."))
   print(p)
 }
 dev.off(which = dev.cur())
@@ -4407,21 +4465,30 @@ dev.off(which = dev.cur())
 #+END_SRC
 
 #+BEGIN_SRC R :tangle R/art-functions.R
-getparam = function(posm, sj, i, k) {
-  cname = names(posm)
-  z = posm[str_which(cname, paste0("z\\.[0-1]\\.",k,"\\.[1-2]"))] %>% matrix(nrow = 2, ncol = 2) %>% t()
-  w = posm[str_which(cname, paste0("w\\.[0-1]\\.",i,"\\.[1-2]"))] %>% matrix(nrow = 2, ncol = 2) %>% t()
-  gamma = posm[str_which(cname, paste0("gamma"))]
-  beta = posm[str_which(cname, paste0("beta\\.",i,"\\."))]
-  theta = posm[str_which(cname, paste0("theta\\.",k,"\\."))]
-  lambda = posm[str_which(cname, paste0("lambda\\.[0-1]\\.",i,"\\."))] %>% matrix(ncol = 2) %>% t()
-  H = sj[2:(G+1)] - sj[1:G]
-  res = list(lambda=lambda,beta=beta,theta=theta,gamma=gamma,z=z,w=w,sj=sj,H=H)
+getparam <- function(posm, sj, i, k) {
+  cname <- names(posm)
+  z <- posm[str_which(cname, paste0("z\\.[0-1]\\.", k, "\\.[1-2]"))] %>%
+    matrix(nrow = 2, ncol = 2) %>%
+    t()
+  w <- posm[str_which(cname, paste0("w\\.[0-1]\\.", i, "\\.[1-2]"))] %>%
+    matrix(nrow = 2, ncol = 2) %>%
+    t()
+  gamma <- posm[str_which(cname, paste0("gamma"))]
+  beta <- posm[str_which(cname, paste0("beta\\.", i, "\\."))]
+  theta <- posm[str_which(cname, paste0("theta\\.", k, "\\."))]
+  lambda <- posm[str_which(cname, paste0("lambda\\.[0-1]\\.", i, "\\."))] %>%
+    matrix(ncol = 2) %>%
+    t()
+  H <- sj[2:(G + 1)] - sj[1:G]
+  res <- list(lambda = lambda, beta = beta, theta = theta, gamma = gamma, z = z, w = w, sj = sj, H = H)
   if (any(unlist(lapply(res, is.na)))) stop("Index out of range")
   ## should if be G+1? or G?
   ## if (ncol(lambda) != (G+1)) stop("ncol(lambda) != G+1")
-  if (ncol(lambda) != (G)) stop("ncol(lambda) != G")
-  else return(res)
+  if (ncol(lambda) != (G)) {
+    stop("ncol(lambda) != G")
+  } else {
+    return(res)
+  }
 }
 #+END_SRC
 
@@ -4449,46 +4516,45 @@ cumcifun(param, 1, ll, uu);
 
 [[pdf:figure/CIF.pdf::1]]
 #+BEGIN_SRC R :tangle R/CIF.R
-myN = min(100, N)
-maxt = sj[G+1] + 10
-num_seg = 100
-time = seq(0, maxt, (maxt) / num_seg)
+myN <- min(100, N)
+maxt <- sj[G + 1] + 10
+num_seg <- 100
+time <- seq(0, maxt, (maxt) / num_seg)
 
 pdf(paste0("figure/CIF.pdf"))
 
 for (item in 1:I) {
-
-  CIF_T = foreach (k=1:myN, .combine='rbind') %do% {
-    c(0,cumcicurve(getparam(posm, sj, item, k), 1, 0, maxt, num_seg))
+  CIF_T <- foreach(k = 1:myN, .combine = "rbind") %do% {
+    c(0, cumcicurve(getparam(posm, sj, item, k), 1, 0, maxt, num_seg))
   }
 
-  CIF_F = foreach (k=1:myN, .combine='rbind') %dopar% {
-    c(0,cumcicurve(getparam(posm, sj, item, k), 0, 0, maxt, num_seg))
+  CIF_F <- foreach(k = 1:myN, .combine = "rbind") %dopar% {
+    c(0, cumcicurve(getparam(posm, sj, item, k), 0, 0, maxt, num_seg))
   }
 
-  CIF_T = data.frame(t(CIF_T), time)
-  CIF_F = data.frame(t(CIF_F), time)
-  plot_T <- reshape::melt(CIF_T, id.vars="time")
-  colnames(plot_T) = c("time", "person", "CIF")
-  p = ggplot(data=plot_T, aes(x=time, y=CIF, group=person)) +
-    geom_line(aes(color=factor(person)), show.legend=FALSE) +
-    ylim(0,1) +
-    ## geom_line(group="3", col="red") +
-    ##scale_colour_grey() +
-    theme_bw() +
-    ggtitle(paste0("Cumulative incidence function for TRUE response (item ",item,")."))
-  print(p)
-
-  plot_F <- reshape::melt(CIF_F, id.vars=c("time"))
-  colnames(plot_F) = c("time", "person", "CIF")
-  p = ggplot(data=plot_F, aes(x=time, y=CIF, group=person)) +
-    geom_line(aes(color=factor(person)), show.legend=FALSE) +
-    ylim(0,1) +
+  CIF_T <- data.frame(t(CIF_T), time)
+  CIF_F <- data.frame(t(CIF_F), time)
+  plot_T <- reshape::melt(CIF_T, id.vars = "time")
+  colnames(plot_T) <- c("time", "person", "CIF")
+  p <- ggplot(data = plot_T, aes(x = time, y = CIF, group = person)) +
+    geom_line(aes(color = factor(person)), show.legend = FALSE) +
+    ylim(0, 1) +
     ## geom_line(group="3", col="red") +
     ## scale_colour_grey() +
     theme_bw() +
-    ggtitle(paste0("Cumulative incidence function for FALSE response (item ",item,")."))
-  print (p)
+    ggtitle(paste0("Cumulative incidence function for TRUE response (item ", item, ")."))
+  print(p)
+
+  plot_F <- reshape::melt(CIF_F, id.vars = c("time"))
+  colnames(plot_F) <- c("time", "person", "CIF")
+  p <- ggplot(data = plot_F, aes(x = time, y = CIF, group = person)) +
+    geom_line(aes(color = factor(person)), show.legend = FALSE) +
+    ylim(0, 1) +
+    ## geom_line(group="3", col="red") +
+    ## scale_colour_grey() +
+    theme_bw() +
+    ggtitle(paste0("Cumulative incidence function for FALSE response (item ", item, ")."))
+  print(p)
 }
 dev.off(which = dev.cur())
 #+END_SRC
@@ -4496,96 +4562,104 @@ dev.off(which = dev.cur())
 [[pdf:figure/CIF_person.pdf::1]]
 #+BEGIN_SRC R :tangle R/CIF_person.R
 ## choose a few people adn items from latent space
-z0 = matched$z0
-w0 = matched$w0
+z0 <- matched$z0
+w0 <- matched$w0
 ## myI = sort(c(35,7,6,24,28,29,8,27,13,15)) ## opus
 ## myI = sort(c(32,24,30,8,2,15,6,12,5,20,7,26,21,31)) ## verbal
 ## myI = sort(c(17,14,3,2,15,9,10,13,11)) ## pisa
 ## myI = sort(c(8,9,5,4,13,2,3,15)) ## pisa KR sci
-myI = sort(c(8,12,14,17,1,6,13,18)) ## pisa KR
+myI <- sort(c(8, 12, 14, 17, 1, 6, 13, 18)) ## pisa KR
 
-which_z = function(w, z) {
+which_z <- function(w, z) {
   which.min(colSums((t(z) - w)^2))
 }
 
-myN = NULL
+myN <- NULL
 for (i in 1:length(myI)) {
-  myN = c(myN, which_z(w0[myI[i],],z0))
+  myN <- c(myN, which_z(w0[myI[i], ], z0))
 }
-myN = c(myN, which.min(rowSums(z0^2)), which.max(rowSums(z0^2)))
+myN <- c(myN, which.min(rowSums(z0^2)), which.max(rowSums(z0^2)))
 
-maxt = sj[G+1] + 10
-num_seg = 100
-time = seq(0, maxt, (maxt) / num_seg)
+maxt <- sj[G + 1] + 10
+num_seg <- 100
+time <- seq(0, maxt, (maxt) / num_seg)
 
 pdf(paste0("figure/CIF_person.pdf"))
 
 for (k in myN) {
-
-  CIF_T = foreach (item=myI, .combine='rbind') %do% {
-    c(0,cumcicurve(getparam(posm, sj, item, k), 1, 0, maxt, num_seg))
+  CIF_T <- foreach(item = myI, .combine = "rbind") %do% {
+    c(0, cumcicurve(getparam(posm, sj, item, k), 1, 0, maxt, num_seg))
   }
 
-  CIF_F = foreach (item=myI, .combine='rbind') %dopar% {
-    c(0,cumcicurve(getparam(posm, sj, item, k), 0, 0, maxt, num_seg))
+  CIF_F <- foreach(item = myI, .combine = "rbind") %dopar% {
+    c(0, cumcicurve(getparam(posm, sj, item, k), 0, 0, maxt, num_seg))
   }
 
-  CIF_T = data.frame(t(CIF_T), c(time))
-  colnames(CIF_T) = c(paste0("I",myI),"time")
+  CIF_T <- data.frame(t(CIF_T), c(time))
+  colnames(CIF_T) <- c(paste0("I", myI), "time")
 
-  plot_T <- reshape2::melt(CIF_T, id.vars="time")
-  colnames(plot_T) = c("time", "item", "CIF")
+  plot_T <- reshape2::melt(CIF_T, id.vars = "time")
+  colnames(plot_T) <- c("time", "item", "CIF")
 
-  p = ggplot(data=plot_T, aes(x=time, y=CIF, group=item)) +
-    geom_line(aes(color=factor(item)), show.legend=TRUE) +
-    ylim(0,1) +
-    ## geom_line(group="3", col="red") +
-    ##scale_colour_grey() +
-    theme_bw() +
-    ggtitle(paste0("Cumulative incidence function for TRUE response (person ",k,")."))
-  print(p)
-
-  CIF_F = data.frame(t(CIF_F), c(time))
-  colnames(CIF_F) = c(paste0("I",myI),"time")
-
-  plot_F <- reshape2::melt(CIF_F, id.vars=c("time"))
-  colnames(plot_F) = c("time", "item", "CIF")
-
-  p = ggplot(data=plot_F, aes(x=time, y=CIF, group=item)) +
-    geom_line(aes(color=factor(item)), show.legend=TRUE) +
-    ylim(0,1) +
+  p <- ggplot(data = plot_T, aes(x = time, y = CIF, group = item)) +
+    geom_line(aes(color = factor(item)), show.legend = TRUE) +
+    ylim(0, 1) +
     ## geom_line(group="3", col="red") +
     ## scale_colour_grey() +
     theme_bw() +
-    ggtitle(paste0("Cumulative incidence function for FALSE response (person ",k,")."))
-  print (p)
+    ggtitle(paste0("Cumulative incidence function for TRUE response (person ", k, ")."))
+  print(p)
 
+  CIF_F <- data.frame(t(CIF_F), c(time))
+  colnames(CIF_F) <- c(paste0("I", myI), "time")
+
+  plot_F <- reshape2::melt(CIF_F, id.vars = c("time"))
+  colnames(plot_F) <- c("time", "item", "CIF")
+
+  p <- ggplot(data = plot_F, aes(x = time, y = CIF, group = item)) +
+    geom_line(aes(color = factor(item)), show.legend = TRUE) +
+    ylim(0, 1) +
+    ## geom_line(group="3", col="red") +
+    ## scale_colour_grey() +
+    theme_bw() +
+    ggtitle(paste0("Cumulative incidence function for FALSE response (person ", k, ")."))
+  print(p)
 }
 dev.off(which = dev.cur())
 #+END_SRC
+
+#+RESULTS:
+: Error: object 'matched' not found
+: Error: object 'matched' not found
+: Error in which_z(w0[myI[i], ], z0) : object 'z0' not found
+: Error in is.data.frame(x) : object 'z0' not found
+: Error: object 'sj' not found
+: Error in seq.default(0, maxt, (maxt)/num_seg) : object 'maxt' not found
+: null device
+:           1
 
 [[pdf:figure/latent_space_person.pdf]]
 #+begin_src R :tangle R/CIF_person.R
 pdf("figure/latent_space_person.pdf")
 
-z1 = matched$z1
-w1 = matched$w1
-z0 = matched$z0[myN,]
-w0 = matched$w0[myI,]
+z1 <- matched$z1
+w1 <- matched$w1
+z0 <- matched$z0[myN, ]
+w0 <- matched$w0[myI, ]
 
-xmin = min(z0[,1],z1[,1],w0[,1],w1[,1])
-ymin = min(z0[,2],z1[,2],w0[,2],w1[,2])
-xmax = max(z0[,1],z1[,1],w0[,1],w1[,1])
-ymax = max(z0[,2],z1[,2],w0[,2],w1[,2])
+xmin <- min(z0[, 1], z1[, 1], w0[, 1], w1[, 1])
+ymin <- min(z0[, 2], z1[, 2], w0[, 2], w1[, 2])
+xmax <- max(z0[, 1], z1[, 1], w0[, 1], w1[, 1])
+ymax <- max(z0[, 2], z1[, 2], w0[, 2], w1[, 2])
 
-myname = c(myN,paste0("I.",myI))
-print(lsjmplot(z0,w0,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+myname <- c(myN, paste0("I.", myI))
+print(lsjmplot(z0, w0, xlim = c(xmin, xmax), ylim = c(ymin, ymax), myname))
 if (double_z && !double_w) {
-  print(lsjmplot(z1,w0,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+  print(lsjmplot(z1, w0, xlim = c(xmin, xmax), ylim = c(ymin, ymax), myname))
 } else if (double_z && double_w) {
-  print(lsjmplot(z1,w1,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+  print(lsjmplot(z1, w1, xlim = c(xmin, xmax), ylim = c(ymin, ymax), myname))
 } else if (!double_z && double_w) {
-  print(lsjmplot(z0,w1,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+  print(lsjmplot(z0, w1, xlim = c(xmin, xmax), ylim = c(ymin, ymax), myname))
 }
 dev.off(which = dev.cur())
 #+end_src
@@ -4613,27 +4687,27 @@ pdf("figure/latent_space_cl1.pdf")
 ## myN = c(518, 584, 370, 418, 79, 276, 572, 358, 73, 274) ## pisa
 ## myI = 1:I # pisa
 
-myN = c(270,367,712,17,615,265,653,484,155,290) ## pisa KR sci
-myI = 1:I # pisa KR sci
+myN <- c(270, 367, 712, 17, 615, 265, 653, 484, 155, 290) ## pisa KR sci
+myI <- 1:I # pisa KR sci
 
-z1 = matched$z1
-w1 = matched$w1
-z0 = matched$z0[myN,]
-w0 = matched$w0[myI,]
+z1 <- matched$z1
+w1 <- matched$w1
+z0 <- matched$z0[myN, ]
+w0 <- matched$w0[myI, ]
 
-xmin = min(z0[,1],z1[,1],w0[,1],w1[,1])
-ymin = min(z0[,2],z1[,2],w0[,2],w1[,2])
-xmax = max(z0[,1],z1[,1],w0[,1],w1[,1])
-ymax = max(z0[,2],z1[,2],w0[,2],w1[,2])
+xmin <- min(z0[, 1], z1[, 1], w0[, 1], w1[, 1])
+ymin <- min(z0[, 2], z1[, 2], w0[, 2], w1[, 2])
+xmax <- max(z0[, 1], z1[, 1], w0[, 1], w1[, 1])
+ymax <- max(z0[, 2], z1[, 2], w0[, 2], w1[, 2])
 
-myname = c(myN,paste0("I.",myI))
-print(lsjmplot(z0,w0,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+myname <- c(myN, paste0("I.", myI))
+print(lsjmplot(z0, w0, xlim = c(xmin, xmax), ylim = c(ymin, ymax), myname))
 if (double_z && !double_w) {
-  print(lsjmplot(z1,w0,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+  print(lsjmplot(z1, w0, xlim = c(xmin, xmax), ylim = c(ymin, ymax), myname))
 } else if (double_z && double_w) {
-  print(lsjmplot(z1,w1,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+  print(lsjmplot(z1, w1, xlim = c(xmin, xmax), ylim = c(ymin, ymax), myname))
 } else if (!double_z && double_w) {
-  print(lsjmplot(z0,w1,xlim=c(xmin,xmax),ylim=c(ymin,ymax),myname))
+  print(lsjmplot(z0, w1, xlim = c(xmin, xmax), ylim = c(ymin, ymax), myname))
 }
 dev.off(which = dev.cur())
 #+end_src
@@ -4642,7 +4716,7 @@ dev.off(which = dev.cur())
 #+BEGIN_SRC R :tangle R/CIF_cl1.R
 ## choose a few people adn items from latent space
 
-which_z = function(w, z) {
+which_z <- function(w, z) {
   which.min(colSums((t(z) - w)^2))
 }
 
@@ -4652,52 +4726,50 @@ which_z = function(w, z) {
 ## }
 ## myN = c(myN, which.min(rowSums(z0^2)), which.max(rowSums(z0^2)))
 
-maxt = sj[G] + 500
-num_seg = 100
-time = seq(0, maxt, (maxt) / num_seg)
+maxt <- sj[G] + 500
+num_seg <- 100
+time <- seq(0, maxt, (maxt) / num_seg)
 
 pdf(paste0("figure/CIF_cl1.pdf"))
 
 for (item in myI) {
-
-  CIF_T = foreach (k = myN, .combine='rbind') %dopar% {
-    c(0,cumcicurve(getparam(posm, sj, item, k), 1, 0, maxt, num_seg))
+  CIF_T <- foreach(k = myN, .combine = "rbind") %dopar% {
+    c(0, cumcicurve(getparam(posm, sj, item, k), 1, 0, maxt, num_seg))
   }
 
-  CIF_F = foreach (k = myN, .combine='rbind') %dopar% {
-    c(0,cumcicurve(getparam(posm, sj, item, k), 0, 0, maxt, num_seg))
+  CIF_F <- foreach(k = myN, .combine = "rbind") %dopar% {
+    c(0, cumcicurve(getparam(posm, sj, item, k), 0, 0, maxt, num_seg))
   }
 
-  CIF_T = data.frame(t(CIF_T), c(time))
-  colnames(CIF_T) = c(myN,"time")
+  CIF_T <- data.frame(t(CIF_T), c(time))
+  colnames(CIF_T) <- c(myN, "time")
 
-  plot_T <- reshape2::melt(CIF_T, id.vars="time")
-  colnames(plot_T) = c("time", "person", "CIF")
+  plot_T <- reshape2::melt(CIF_T, id.vars = "time")
+  colnames(plot_T) <- c("time", "person", "CIF")
 
-  p = ggplot(data=plot_T, aes(x=time, y=CIF, group=person)) +
-    geom_line(aes(color=factor(person)), show.legend=TRUE) +
-    ylim(0,1) +
-    ## geom_line(group="3", col="red") +
-    ##scale_colour_grey() +
-    theme_bw() +
-    ggtitle(paste0("Cumulative incidence function for TRUE response (item ",item,")."))
-  print(p)
-
-  CIF_F = data.frame(t(CIF_F), c(time))
-  colnames(CIF_F) = c(myN,"time")
-
-  plot_F <- reshape2::melt(CIF_F, id.vars=c("time"))
-  colnames(plot_F) = c("time", "person", "CIF")
-
-  p = ggplot(data=plot_F, aes(x=time, y=CIF, group=person)) +
-    geom_line(aes(color=factor(person)), show.legend=TRUE) +
-    ylim(0,1) +
+  p <- ggplot(data = plot_T, aes(x = time, y = CIF, group = person)) +
+    geom_line(aes(color = factor(person)), show.legend = TRUE) +
+    ylim(0, 1) +
     ## geom_line(group="3", col="red") +
     ## scale_colour_grey() +
     theme_bw() +
-    ggtitle(paste0("Cumulative incidence function for FALSE response (item ",item,")."))
-  print (p)
+    ggtitle(paste0("Cumulative incidence function for TRUE response (item ", item, ")."))
+  print(p)
 
+  CIF_F <- data.frame(t(CIF_F), c(time))
+  colnames(CIF_F) <- c(myN, "time")
+
+  plot_F <- reshape2::melt(CIF_F, id.vars = c("time"))
+  colnames(plot_F) <- c("time", "person", "CIF")
+
+  p <- ggplot(data = plot_F, aes(x = time, y = CIF, group = person)) +
+    geom_line(aes(color = factor(person)), show.legend = TRUE) +
+    ylim(0, 1) +
+    ## geom_line(group="3", col="red") +
+    ## scale_colour_grey() +
+    theme_bw() +
+    ggtitle(paste0("Cumulative incidence function for FALSE response (item ", item, ")."))
+  print(p)
 }
 dev.off(which = dev.cur())
 #+END_SRC
@@ -4805,60 +4877,63 @@ dev.off(which = dev.cur())
 
 * custom functions
 #+BEGIN_SRC R :tangle R/art-functions.R
-fun_hazard_surv = function(t,i,k,posm,cname,sj) {
-  z = posm[str_which(cname, paste0("z\\.[0-1]\\.",k,"\\.[1-2]"))] %>% matrix(ncol = 2)
-  w = rep(posm[str_which(cname, paste0("w\\.",i,"\\."))], 2)  %>% matrix(ncol = 2)
-  gamma = posm[str_which(cname, paste0("gamma"))] %>% matrix(ncol = 2)
-  beta = posm[str_which(cname, paste0("beta\\.",i,"\\."))] %>% matrix(ncol = 2)
-  theta = posm[str_which(cname, paste0("theta\\.",k,"\\."))] %>% matrix(ncol = 2)
-  lambda = posm[str_which(cname, paste0("lambda\\.[0-1]\\.",i,"\\."))] %>% matrix(ncol = 2)
+fun_hazard_surv <- function(t, i, k, posm, cname, sj) {
+  z <- posm[str_which(cname, paste0("z\\.[0-1]\\.", k, "\\.[1-2]"))] %>% matrix(ncol = 2)
+  w <- rep(posm[str_which(cname, paste0("w\\.", i, "\\."))], 2) %>% matrix(ncol = 2)
+  gamma <- posm[str_which(cname, paste0("gamma"))] %>% matrix(ncol = 2)
+  beta <- posm[str_which(cname, paste0("beta\\.", i, "\\."))] %>% matrix(ncol = 2)
+  theta <- posm[str_which(cname, paste0("theta\\.", k, "\\."))] %>% matrix(ncol = 2)
+  lambda <- posm[str_which(cname, paste0("lambda\\.[0-1]\\.", i, "\\."))] %>% matrix(ncol = 2)
 
-  G = length(lambda[,1])
-  H = sj[2:(G+1)] - sj[1:G]
+  G <- length(lambda[, 1])
+  H <- sj[2:(G + 1)] - sj[1:G]
 
-  seg = 0
+  seg <- 0
   for (g in 1:G) {
-    seg = seg + 1 * (t > sj[g])
+    seg <- seg + 1 * (t > sj[g])
   }
-  out = lambda[seg,2] * exp(beta[,2] + theta[,2] - gamma[,2] * sqrt(sum((z[,2]-w[,2])^2)))
+  out <- lambda[seg, 2] * exp(beta[, 2] + theta[, 2] - gamma[, 2] * sqrt(sum((z[, 2] - w[, 2])^2)))
   if (seg == 1) {
     for (c in 1:2) {
-      out = out * exp(
-                    - ((t - sj[seg]) *lambda[seg,c]) * exp(beta[,c] + theta[,c] - gamma[,c] * sqrt( sum((z[,c]-w[,c])^2))))
+      out <- out * exp(
+        -((t - sj[seg]) * lambda[seg, c]) * exp(beta[, c] + theta[, c] - gamma[, c] * sqrt(sum((z[, c] - w[, c])^2)))
+      )
     }
   } else {
     for (c in 1:2) {
-      out = out * exp(
-                    - ((t - sj[seg]) *lambda[seg,c] + sum(H[1:(seg-1)] * lambda[1:(seg-1),c])) * exp(beta[,c] + theta[,c] - gamma[,c] * sqrt(sum((z[,c]-w[,c])^2))))
+      out <- out * exp(
+        -((t - sj[seg]) * lambda[seg, c] + sum(H[1:(seg - 1)] * lambda[1:(seg - 1), c])) * exp(beta[, c] + theta[, c] - gamma[, c] * sqrt(sum((z[, c] - w[, c])^2)))
+      )
     }
   }
-  names(out) = NULL
+  names(out) <- NULL
   return(out)
 }
 #+END_SRC
 
 #+BEGIN_SRC R :tangle R/art-functions.R
-fun_hazard_ick = function(t,i,c,k,posm,cname,sj) {
-  z = posm[str_which(cname, paste0("z\\.",c,"\\.",k,"\\.[1-2]"))]
-  w = posm[str_which(cname, paste0("w\\.",i))]
-  gamma = posm[str_which(cname, paste0("gamma\\.",c))]
-  beta = posm[str_which(cname, paste0("beta\\.",i,"\\.",c))]
-  theta = posm[str_which(cname, paste0("theta\\.",k,"\\.",c))]
-  lambda = posm[str_which(cname, paste0("lambda\\.",c,"\\.",i,"\\."))]
+fun_hazard_ick <- function(t, i, c, k, posm, cname, sj) {
+  z <- posm[str_which(cname, paste0("z\\.", c, "\\.", k, "\\.[1-2]"))]
+  w <- posm[str_which(cname, paste0("w\\.", i))]
+  gamma <- posm[str_which(cname, paste0("gamma\\.", c))]
+  beta <- posm[str_which(cname, paste0("beta\\.", i, "\\.", c))]
+  theta <- posm[str_which(cname, paste0("theta\\.", k, "\\.", c))]
+  lambda <- posm[str_which(cname, paste0("lambda\\.", c, "\\.", i, "\\."))]
 
-  G = length(lambda)
-  seg = 0 * t
-  for (g in 1:G)
-    seg = seg + 1 * (t > sj[g])
-  hazard = lambda[seg] * exp(beta + theta - gamma * sum((z-w)^2))
-  names(hazard) = NULL
+  G <- length(lambda)
+  seg <- 0 * t
+  for (g in 1:G) {
+    seg <- seg + 1 * (t > sj[g])
+  }
+  hazard <- lambda[seg] * exp(beta + theta - gamma * sum((z - w)^2))
+  names(hazard) <- NULL
   return(hazard)
 }
 #+END_SRC
 
 #+BEGIN_SRC R :tangle R/art-functions.R
-fun_accuracy_ick = function(t,i,k,posm,cname,sj) {
-  fun_hazard_ick(t,i,1,k,posm,cname,sj) / (fun_hazard_ick(t,i,1,k,posm,cname,sj) + fun_hazard_ick(t,i,0,k,posm,cname,sj))
+fun_accuracy_ick <- function(t, i, k, posm, cname, sj) {
+  fun_hazard_ick(t, i, 1, k, posm, cname, sj) / (fun_hazard_ick(t, i, 1, k, posm, cname, sj) + fun_hazard_ick(t, i, 0, k, posm, cname, sj))
 }
 #+END_SRC
 
@@ -4867,56 +4942,63 @@ fun_accuracy_ick = function(t,i,k,posm,cname,sj) {
 library(ggplot2)
 library(ggrepel)
 
-lsjmplot <- function( z, w, myname = NULL, xlim=NA, ylim=NA, lab = "Coordinate") {
+lsjmplot <- function(z, w, myname = NULL, xlim = NA, ylim = NA, lab = "Coordinate") {
 
   ## extract objects
 
-  x = rbind(z,w)
-  idx = rep("w", nrow(x))
-  idx[1:nrow(z)] = "z"
+  x <- rbind(z, w)
+  idx <- rep("w", nrow(x))
+  idx[1:nrow(z)] <- "z"
   position <- as.data.frame(x)
   ndim <- dim(x)[2]
 
-  colnames(position) <- paste("position",1:ndim,sep="")
+  colnames(position) <- paste("position", 1:ndim, sep = "")
 
-  padding = 1.05
+  padding <- 1.05
   if (any(is.na(xlim))) {
-    x1 <- -max(abs(position[,1]))*padding
-    x2 <- max(abs(position[,1]))*padding
+    x1 <- -max(abs(position[, 1])) * padding
+    x2 <- max(abs(position[, 1])) * padding
   } else {
     x1 <- xlim[1]
     x2 <- xlim[2]
   }
   if (any(is.na(ylim))) {
-    y1 <- -max(abs(position[,2]))*padding
-    y2 <- max(abs(position[,2]))*padding
+    y1 <- -max(abs(position[, 2])) * padding
+    y2 <- max(abs(position[, 2])) * padding
   } else {
     y1 <- ylim[1]
     y2 <- ylim[2]
   }
 
-  mytheme = theme(axis.line = element_line(colour = "black"),
-                  ##panel.grid.major = element_blank(),
-                  panel.grid.minor = element_blank(),
-                  ##panel.border = element_blank(),
-                  panel.background = element_blank()
-                  )
+  mytheme <- theme(
+    axis.line = element_line(colour = "black"),
+    ## panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    ## panel.border = element_blank(),
+    panel.background = element_blank()
+  )
 
   ## plot
-  pp = ggplot(position,aes(x=position1,y=position2,colour=idx)) +
-    theme(text=element_text(size=20)) +
+  pp <- ggplot(position, aes(x = position1, y = position2, colour = idx)) +
+    theme(text = element_text(size = 20)) +
     ## geom_point()+
-    xlim(x1,x2) + ylim(y1,y2) +
-    xlab(paste(lab," 1",sep="")) + ylab(paste(lab," 2",sep="")) +
-    ##xlab("Position 1") + ylab("Position 2") +
-    geom_hline(yintercept = 0, color = "gray70", linetype=2) +
-    geom_vline(xintercept = 0, color = "gray70", linetype=2)
+    xlim(x1, x2) +
+    ylim(y1, y2) +
+    xlab(paste(lab, " 1", sep = "")) +
+    ylab(paste(lab, " 2", sep = "")) +
+    ## xlab("Position 1") + ylab("Position 2") +
+    geom_hline(yintercept = 0, color = "gray70", linetype = 2) +
+    geom_vline(xintercept = 0, color = "gray70", linetype = 2)
   ##  pp = pp + geom_text_repel(label=rownames(position), segment.color = "grey50", size=6)
   if (!is.null(myname)) {
-    pp = pp + geom_text(label=myname,
-                        ## segment.color = "grey50",
-                        check_overlap = FALSE, show.legend=FALSE,size = 2)
-  } else pp = pp + geom_point()
+    pp <- pp + geom_text(
+      label = myname,
+      ## segment.color = "grey50",
+      check_overlap = FALSE, show.legend = FALSE, size = 2
+    )
+  } else {
+    pp <- pp + geom_point()
+  }
   pp + mytheme
 }
 #+END_SRC
@@ -4925,128 +5007,141 @@ lsjmplot <- function( z, w, myname = NULL, xlim=NA, ylim=NA, lab = "Coordinate")
 library(ggplot2)
 library(ggrepel)
 
-cl_lsjmplot <- function( z, w, cl_z, cl_w, myname = NULL, xlim=NA, ylim=NA, lab = "Coordinate") {
+cl_lsjmplot <- function(z, w, cl_z, cl_w, myname = NULL, xlim = NA, ylim = NA, lab = "Coordinate") {
 
   ## extract objects
-  n_z = nrow(z)
-  n_w = nrow(w)
+  n_z <- nrow(z)
+  n_w <- nrow(w)
 
-  cl = rbind(cl_z, cl_w)[[1]]
-  cl = as.factor(cl)
-  cl_z = cl[1:n_z]
-  cl_w = cl[(n_z+1):length(cl)]
-  x = rbind(z,w)
-  idx = rep("w", nrow(x))
-  idx[1:nrow(z)] = "z"
+  cl <- rbind(cl_z, cl_w)[[1]]
+  cl <- as.factor(cl)
+  cl_z <- cl[1:n_z]
+  cl_w <- cl[(n_z + 1):length(cl)]
+  x <- rbind(z, w)
+  idx <- rep("w", nrow(x))
+  idx[1:nrow(z)] <- "z"
   position <- as.data.frame(x)
   ndim <- dim(x)[2]
 
-  colnames(position) <- paste("position",1:ndim,sep="")
+  colnames(position) <- paste("position", 1:ndim, sep = "")
 
-  padding = 1.05
+  padding <- 1.05
   if (any(is.na(xlim))) {
-    x1 <- -max(abs(position[,1]))*padding
-    x2 <- max(abs(position[,1]))*padding
+    x1 <- -max(abs(position[, 1])) * padding
+    x2 <- max(abs(position[, 1])) * padding
   } else {
     x1 <- xlim[1]
     x2 <- xlim[2]
   }
   if (any(is.na(ylim))) {
-    y1 <- -max(abs(position[,2]))*padding
-    y2 <- max(abs(position[,2]))*padding
+    y1 <- -max(abs(position[, 2])) * padding
+    y2 <- max(abs(position[, 2])) * padding
   } else {
     y1 <- ylim[1]
     y2 <- ylim[2]
   }
 
-  mytheme = theme(axis.line = element_line(colour = "black"),
-                  ##panel.grid.major = element_blank(),
-                  panel.grid.minor = element_blank(),
-                  ##panel.border = element_blank(),
-                  panel.background = element_blank()
-                  )
+  mytheme <- theme(
+    axis.line = element_line(colour = "black"),
+    ## panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    ## panel.border = element_blank(),
+    panel.background = element_blank()
+  )
 
-  position$idx = idx
+  position$idx <- idx
 
   ## plot
-  pp = ggplot(subset(position,idx=="z"),aes(x=position1,y=position2,colour=cl_z)) +
-    ##theme(text=element_text(size=20)) +
+  pp <- ggplot(subset(position, idx == "z"), aes(x = position1, y = position2, colour = cl_z)) +
+    ## theme(text=element_text(size=20)) +
     ## geom_point()+
-    xlim(x1,x2) + ylim(y1,y2) +
-    xlab(paste(lab," 1",sep="")) + ylab(paste(lab," 2",sep="")) +
-    ##xlab("Position 1") + ylab("Position 2") +
-    geom_hline(yintercept = 0, color = "gray70", linetype=2) +
-    geom_vline(xintercept = 0, color = "gray70", linetype=2) + mytheme
-  pp = pp + geom_point()
+    xlim(x1, x2) +
+    ylim(y1, y2) +
+    xlab(paste(lab, " 1", sep = "")) +
+    ylab(paste(lab, " 2", sep = "")) +
+    ## xlab("Position 1") + ylab("Position 2") +
+    geom_hline(yintercept = 0, color = "gray70", linetype = 2) +
+    geom_vline(xintercept = 0, color = "gray70", linetype = 2) +
+    mytheme
+  pp <- pp + geom_point()
   pp +
-    geom_text(data = subset(position, idx == "w"), aes(x=position1,y=position2,label=(1:n_w),colour=cl_w),
-                         ## segment.color = "grey50",
-                         check_overlap = FALSE, show.legend=FALSE,size = 4)
+    geom_text(
+      data = subset(position, idx == "w"), aes(x = position1, y = position2, label = (1:n_w), colour = cl_w),
+      ## segment.color = "grey50",
+      check_overlap = FALSE, show.legend = FALSE, size = 4
+    )
 }
 #+END_SRC
 
 #+BEGIN_SRC R :tangle R/art-functions.R
-find_xstar = function(df) {
-  num_samples = nrow(df)
+find_xstar <- function(df) {
+  num_samples <- nrow(df)
 
-  z0dx = grepl("^z\\.0\\.", colnames(df))
-  z1dx = grepl("^z\\.1\\.", colnames(df))
-  w0dx = grepl("^w\\.0\\.", colnames(df))
-  w1dx = grepl("^w\\.1\\.", colnames(df))
-  adx = z0dx | z1dx | w0dx | w1dx
+  z0dx <- grepl("^z\\.0\\.", colnames(df))
+  z1dx <- grepl("^z\\.1\\.", colnames(df))
+  w0dx <- grepl("^w\\.0\\.", colnames(df))
+  w1dx <- grepl("^w\\.1\\.", colnames(df))
+  adx <- z0dx | z1dx | w0dx | w1dx
 
-  mlp_ = max(df$lp_)
-  star = min(which.max(df$lp_))
-  lpos = df[,adx]
-  Xstar = list()
-  Xstar$z.0 = matrix(unlist(df[star,z0dx]), byrow = T, ncol = 2)
+  mlp_ <- max(df$lp_)
+  star <- min(which.max(df$lp_))
+  lpos <- df[, adx]
+  Xstar <- list()
+  Xstar$z.0 <- matrix(unlist(df[star, z0dx]), byrow = T, ncol = 2)
   if (sum(z1dx) == 0) {
-    Xstar$z.1 = NULL
+    Xstar$z.1 <- NULL
   } else {
-    Xstar$z.1 = matrix(unlist(df[star,z1dx]), byrow = T, ncol = 2)
+    Xstar$z.1 <- matrix(unlist(df[star, z1dx]), byrow = T, ncol = 2)
   }
   if (sum(w1dx) == 0) {
-    Xstar$w.1 = NULL
+    Xstar$w.1 <- NULL
   } else {
-    Xstar$w.1 = matrix(unlist(df[star,w1dx]), byrow = T, ncol = 2)
+    Xstar$w.1 <- matrix(unlist(df[star, w1dx]), byrow = T, ncol = 2)
   }
-  Xstar$w.0 = matrix(unlist(df[star,w0dx]), byrow = T, ncol = 2)
-  return(list(lp_ = mlp_, Xstar=Xstar))}
+  Xstar$w.0 <- matrix(unlist(df[star, w0dx]), byrow = T, ncol = 2)
+  return(list(lp_ = mlp_, Xstar = Xstar))
+}
 #+END_SRC
 
 #+BEGIN_SRC R :tangle R/art-functions.R
-find_xstar_inlist = function(mydf) {
-  num_chain = length(mydf)
-  mlp = -Inf
+find_xstar_inlist <- function(mydf) {
+  num_chain <- length(mydf)
+  mlp <- -Inf
   for (i in 1:num_chain) {
-    slist = find_xstar(mydf[[i]])
-    if (slist$lp_ > mlp) Xstar = slist$Xstar
+    slist <- find_xstar(mydf[[i]])
+    if (slist$lp_ > mlp) Xstar <- slist$Xstar
   }
-  return(Xstar)}
+  return(Xstar)
+}
 #+END_SRC
 
 #+BEGIN_SRC R :tangle R/art-functions.R
-do_procrustes = function(Xstar, mydf, is_list = FALSE, translation = TRUE, scale = FALSE, reflect = TRUE) {
-  posm = 0
+do_procrustes <- function(Xstar, mydf, is_list = FALSE, translation = TRUE, scale = FALSE, reflect = TRUE) {
+  posm <- 0
   if (is_list == TRUE) {
-    num_chain = length(mydf)
-  } else { num_chain = 1 }
+    num_chain <- length(mydf)
+  } else {
+    num_chain <- 1
+  }
   for (i in 1:num_chain) {
-    if (is_list == TRUE) { df = mydf[[i]]
-    } else { df = mydf }
+    if (is_list == TRUE) {
+      df <- mydf[[i]]
+    } else {
+      df <- mydf
+    }
 
-    num_samples = nrow(df)
+    num_samples <- nrow(df)
 
-    z0dx = grepl("^z\\.0\\.", colnames(df))
-    z1dx = grepl("^z\\.1\\.", colnames(df))
-    wdx = grepl("^w", colnames(df))
-    adx = z0dx | z1dx | wdx
-    N = sum(z0dx) / 2
-    nall = sum(adx)/2
+    z0dx <- grepl("^z\\.0\\.", colnames(df))
+    z1dx <- grepl("^z\\.1\\.", colnames(df))
+    wdx <- grepl("^w", colnames(df))
+    adx <- z0dx | z1dx | wdx
+    N <- sum(z0dx) / 2
+    nall <- sum(adx) / 2
 
-    mlp_ = max(df$lp_)
-    star = min(which.max(df$lp_))
-    lpos = df[,adx]
+    mlp_ <- max(df$lp_)
+    star <- min(which.max(df$lp_))
+    lpos <- df[, adx]
 
     ## mm = list()
     ## for (k in 1:num_samples) {
@@ -5056,36 +5151,48 @@ do_procrustes = function(Xstar, mydf, is_list = FALSE, translation = TRUE, scale
     ##   df[k,adx] = mm[[k]] %>% t() %>% c()
     ## }
 
-    mm = foreach (k = 1:num_samples) %dopar% {
+    mm <- foreach(k = 1:num_samples) %dopar% {
       ## X = matrix(unlist(lpos[k,]), nrow = 2) %>% t()
       ## mm[[k]] = MCMCpack::procrustes(X, Xstar, translation, dilation = scale)$X.new #MCMCpack
       ## vegan::procrustes(Xstar, t( matrix(unlist(lpos[k,]), nrow = 2) ), scale = scale)$Yrot #vegan
-      shapes::procOPA(Xstar, t( matrix(unlist(lpos[k,]), nrow = 2)) , scale = scale, reflect = reflect)$Bhat #shapes
+      shapes::procOPA(Xstar, t(matrix(unlist(lpos[k, ]), nrow = 2)), scale = scale, reflect = reflect)$Bhat # shapes
     }
-    tmm = lapply(mm,t)
-    df[,adx] = t( matrix(unlist(tmm), nrow = sum(adx)) )
+    tmm <- lapply(mm, t)
+    df[, adx] <- t(matrix(unlist(tmm), nrow = sum(adx)))
 
 
-    posm = posm + Reduce("+",mm) / num_samples
-    if (is_list == TRUE) { mydf[[i]] = df
-    } else { mydf = df }
+    posm <- posm + Reduce("+", mm) / num_samples
+    if (is_list == TRUE) {
+      mydf[[i]] <- df
+    } else {
+      mydf <- df
+    }
   }
 
-  posm = posm / num_chain
-  z0= posm[1:N,]
+  posm <- posm / num_chain
+  z0 <- posm[1:N, ]
   if (sum(z1dx) == 0) {
-    w = posm[-(1:N),]
-    z1 = NULL
+    w <- posm[-(1:N), ]
+    z1 <- NULL
   } else {
-    z1 = posm[(N + 1):(2*N),]
-    w = posm[-(1:(2*N)),]
+    z1 <- posm[(N + 1):(2 * N), ]
+    w <- posm[-(1:(2 * N)), ]
   }
-  return(list(mydf = mydf, z0=z0, z1=z1, w=w))
+  return(list(mydf = mydf, z0 = z0, z1 = z1, w = w))
 }
 #+END_SRC
 
+* lintr
+#+begin_src emacs-lisp
+(setq flycheck-checker-error-threshold 500)
+#+end_src
+
+#+RESULTS:
+: 500
+
 * COMMENT Local Variables
 # Local Variables:
-# eval: (flyspell-mode -1)
 # org-babel-default-header-args:R: ((:session . "*R-Org*") (:export . "both") (:results . "output replace"))
+# eval: (flyspell-mode -1)
+# eval: (spell-fu-mode-disable)
 # End:
