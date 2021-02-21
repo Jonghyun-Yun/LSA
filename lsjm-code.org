@@ -319,6 +319,38 @@ target: $\prod_{k,c} N(\theta_{kc}|0,\sigma^{2}) inv-gamma(\sigma^{2}|a,b)$ -> n
 \begin{aligned} \pi\left(\beta_{i}\right) & \sim \mathrm{N}\left(0, \tau_{\beta}^{2}\right) \\ \pi\left(\theta_{j} | \sigma^{2}\right) & \sim \mathrm{N}\left(0, \sigma^{2}\right) \\ \pi\left(\sigma^{2}\right) & \sim \operatorname{lnv}-\operatorname{Gamma}\left(a_{\sigma}, b_{\sigma}\right) \\ \pi\left(\mathbf{z}_{j}\right) & \sim \mathrm{MVN}_{d}\left(0, I_{d}\right) \\ \pi\left(\mathbf{w}_{i}\right) & \sim \mathrm{MVN}_{d}\left(0, I_{d}\right) \\ \log \pi(\gamma) & \sim \mathrm{N}\left(\mu_{\gamma}, \tau_{\gamma}^{2}\right) \end{aligned}
 
 \[\sigma^{2}=4, \tau_{\beta}^{2}=1, a_{\sigma}=1, b_{\sigma}=1, \mu_{\gamma}=0, \text { and } \tau_{\gamma}^{2}=1\]
+* prerequisite
+:PROPERTIES:
+:header-args:R:          :tangle R/prerequisite.R
+:END:
+#+begin_src R
+require(magrittr)
+require(dplyr)
+#+end_src
+
+#+RESULTS:
+: Loading required package: magrittr
+
+#+begin_src R :tangle R/art-functions.R
+source("R/prerequisite.R")
+#+end_src
+
+#+RESULTS:
+#+begin_example
+Loading required package: magrittr
+Loading required package: dplyr
+
+Attaching package: 'dplyr'
+
+The following objects are masked from 'package:stats':
+
+    filter, lag
+
+The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union
+#+end_example
+
 * PISA2015 data
 ** pisa2015/README.txt
 - pisa2015: math
@@ -423,7 +455,7 @@ dev.off(which = dev.cur())
 tabulate_id = function(chrid) {
   ## reference table of charactor and numeric id
   chr = sort(unique(chrid))
-  out = data.frame(chr = chr, num = 1:length(chr))
+  out = data.frame(chr = chr, num = seq_len(length(chr)))
   return(out)
 }
 to_numID = function(x, tab) {
@@ -2275,18 +2307,18 @@ tmp <- survSplit(formula = Surv(time, status) ~ ., data = tdf, cut = sj, episode
 #+END_SRC
 
 #+BEGIN_SRC R :results none :tangle R/art-functions.R
-tab_sj = function(seg_g, G) {
-  res = NULL
-  for (m in 0:(G-1)) {
-    res = c(res, sum(seg_g >= m))
+tab_sj <- function(seg_g, G) {
+  res <- NULL
+  for (m in 0:(G - 1)) {
+    res <- c(res, sum(seg_g >= m))
   }
   return(res)
 }
 
-tab_IY = function(seg_g, G) {
-  res = NULL
-  for (m in 0:(G-1)) {
-    res = c(res, sum(seg_g == m))
+tab_IY <- function(seg_g, G) {
+  res <- NULL
+  for (m in 0:(G - 1)) {
+    res <- c(res, sum(seg_g == m))
   }
   return(res)
 }
@@ -2514,17 +2546,17 @@ di01[is.na(di01)] = 999
 
 ** numeric ID
 #+BEGIN_SRC R :tangle R/art-functions.R
-tabulate_id = function(chrid) {
+tabulate_id <- function(chrid) {
   ## reference table of charactor and numeric id
-  chr = sort(unique(chrid))
-  out = data.frame(chr = chr, num = 1:length(chr))
+  chr <- sort(unique(chrid))
+  out <- data.frame(chr = chr, num = seq_len(length(chr)))
   return(out)
 }
-to_numID = function(x, tab) {
+to_numID <- function(x, tab) {
   sapply(x, function(x) tab$num[which(tab$chr == x)])
 }
 
-to_chrID = function(x, tab) {
+to_chrID <- function(x, tab) {
   sapply(x, function(x) tab$chr[which(tab$num == x)])
 }
 #+END_SRC
@@ -3362,7 +3394,7 @@ Code: https://scikit-learn.org/stable/modules/biclustering.html
 https://scikit-learn.org/stable/auto_examples/bicluster/plot_bicluster_newsgroups.html#sphx-glr-auto-examples-bicluster-plot-bicluster-newsgroups-py
 How to determine # of clutsers: https://scikit-learn.org/stable/auto_examples/bicluster/plot_bicluster_newsgroups.html#sphx-glr-auto-examples-bicluster-plot-bicluster-newsgroups-py
 
-#+begin_src R
+#+begin_src R :results none
 out_dir <- "chessB_pn/"
 num_chain <- 3
 double_z <- 0
@@ -3467,7 +3499,7 @@ df_col.to_csv("chessB_pn/cl_col" + str(K) + ".csv")
 
 #+RESULTS: 8eb17f79-bd45-4d6c-bb93-9df2515a0065
 
-#+begin_src R
+#+begin_src R :results none
 source("R/art-functions.R")
 
 K <- 2
@@ -3490,12 +3522,10 @@ print(cl_lsjmplot(z0, w0, cl_z, cl_w, xlim = c(xmin, xmax), ylim = c(ymin, ymax)
 dev.off(which = dev.cur())
 #+end_src
 
-#+RESULTS:
-#+begin_src R
-1
-#+end_src
-
 ** WAIT simulation of survival times
+:PROPERTIES:
+:header-args:R: :tangle R/sim_surv_data.R
+:END:
 - State "WAIT"       from              [2021-02-19 Fri 03:55] \\
   see if it can be run in another machine
 1. get break points for time
@@ -3553,11 +3583,10 @@ source("R/load-outputs.R")
 #+end_src
 
 #+begin_src R :tangle R/art-functions.R
-gethaz_item <- function(sam, cname, item, theta = NULL) {
-  cname <- colnames(sam)
+gethaz_item <- function(sam, cname, item, N, theta = NULL) {
   num_iter <- nrow(sam)
-
   d_zw <- matrix(0, num_iter, N)
+
   for (k in 1:N) {
     ## distance calculation can be fully vectorized (and storing z), but I don't have time for this.
     z <- sam[, stringr::str_which(cname, paste0("^z\\.", 0, "\\.", k, "\\.[1-2]"))]
@@ -3589,7 +3618,7 @@ gethaz_item <- function(sam, cname, item, theta = NULL) {
 #+end_src
 
 #+begin_src R :tangle R/art-functions.R
-gen_surv_time <- function(out, sj, nn) {
+gen_surv_time <- function(out, sj, H, N, nn) {
   rr <- out$rr
   lambda <- out$lambda
   mj <- length(sj)
@@ -3642,9 +3671,9 @@ sim_data <- list()
 for (item in 1:I) {
   start_time <- proc.time()
   stk_tt <- foreach(chain = 1:3, .combine = "rbind") %dopar% {
-    out <- gethaz_item(mylist[[chain]], cname, item)
+    out <- gethaz_item(mylist[[chain]], cname, item, N)
     time <- foreach(nn = 1:num_iter, .combine = "rbind") %do% {
-      gen_surv_time(out, sj, nn)
+      gen_surv_time(out, sj, H, N, nn)
     }
     pp <- gen_surv_pp(out, time, sj) %>% array(dim = dim(time))
     cbind(time, pp)
@@ -3680,7 +3709,7 @@ gen_surv <- function(out, sj, N) {
   time <- numeric(N)
   for (k in 1:N) {
     hh <- cbind(sj, out$haz[, 2] * out$rel[k, 1] + out$haz[, 3] * out$rel[k, 2])
-    time[k] <- rchaz(hh, n = 1, cum.hazard = FALSE)[, 2]
+    time[k] <- timereg::rchaz(hh, n = 1, cum.hazard = FALSE)[, 2]
   }
 
   dd <- data.frame(time = time, status = rep(1, N))
@@ -4905,13 +4934,13 @@ fun_hazard_surv <- function(t, i, k, posm, cname, sj) {
   if (seg == 1) {
     for (c in 1:2) {
       out <- out * exp(
-        -((t - sj[seg]) * lambda[seg, c]) * exp(beta[, c] + theta[, c] - gamma[, c] * sqrt(sum((z[, c] - w[, c])^2)))
+        -( (t - sj[seg]) * lambda[seg, c]) * exp(beta[, c] + theta[, c] - gamma[, c] * sqrt(sum((z[, c] - w[, c])^2)))
       )
     }
   } else {
     for (c in 1:2) {
       out <- out * exp(
-        -((t - sj[seg]) * lambda[seg, c] + sum(H[1:(seg - 1)] * lambda[1:(seg - 1), c])) * exp(beta[, c] + theta[, c] - gamma[, c] * sqrt(sum((z[, c] - w[, c])^2)))
+        -( (t - sj[seg]) * lambda[seg, c] + sum(H[1:(seg - 1)] * lambda[1:(seg - 1), c])) * exp(beta[, c] + theta[, c] - gamma[, c] * sqrt(sum((z[, c] - w[, c])^2)))
       )
     }
   }
@@ -4957,7 +4986,7 @@ lsjmplot <- function(z, w, myname = NULL, xlim = NA, ylim = NA, lab = "Coordinat
 
   x <- rbind(z, w)
   idx <- rep("w", nrow(x))
-  idx[1:nrow(z)] <- "z"
+  idx[seq_len(nrow(z))] <- "z"
   position <- as.data.frame(x)
   ndim <- dim(x)[2]
 
@@ -5028,7 +5057,7 @@ cl_lsjmplot <- function(z, w, cl_z, cl_w, myname = NULL, xlim = NA, ylim = NA, l
   cl_w <- cl[(n_z + 1):length(cl)]
   x <- rbind(z, w)
   idx <- rep("w", nrow(x))
-  idx[1:nrow(z)] <- "z"
+  idx[seq_len(nrow(z))] <- "z"
   position <- as.data.frame(x)
   ndim <- dim(x)[2]
 
@@ -5196,12 +5225,14 @@ do_procrustes <- function(Xstar, mydf, is_list = FALSE, translation = TRUE, scal
 (setq flycheck-checker-error-threshold 500)
 #+end_src
 
-#+RESULTS:
-: 500
+#+begin_src sh :eval no :tangle .lintr
+linters: with_defaults(line_length_linter(120), assignment_linter = NULL, object_name_linter = NULL)
+#+end_src
+
 
 * COMMENT Local Variables
 # Local Variables:
 # org-babel-default-header-args:R: ((:session . "*R-Org*") (:export . "both") (:results . "output replace"))
 # eval: (flyspell-mode -1)
-# eval: (spell-fu-mode-disable)
+# eval: (spell-fu-mode -1)
 # End:

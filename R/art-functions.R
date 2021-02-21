@@ -1,3 +1,5 @@
+source("R/prerequisite.R")
+
 pullit <- function(info, cl) {
   it <- info %>% filter(Cluster_A == cl) # %>% dplyr::select(Item,Time)
   item <- pull(it, Item)
@@ -8,7 +10,7 @@ pullit <- function(info, cl) {
 tabulate_id = function(chrid) {
   ## reference table of charactor and numeric id
   chr = sort(unique(chrid))
-  out = data.frame(chr = chr, num = 1:length(chr))
+  out = data.frame(chr = chr, num = seq_len(length(chr)))
   return(out)
 }
 to_numID = function(x, tab) {
@@ -35,41 +37,40 @@ tab_IY <- function(seg_g, G) {
   return(res)
 }
 
-tab_sj = function(seg_g, G) {
-  res = NULL
-  for (m in 0:(G-1)) {
-    res = c(res, sum(seg_g >= m))
+tab_sj <- function(seg_g, G) {
+  res <- NULL
+  for (m in 0:(G - 1)) {
+    res <- c(res, sum(seg_g >= m))
   }
   return(res)
 }
 
-tab_IY = function(seg_g, G) {
-  res = NULL
-  for (m in 0:(G-1)) {
-    res = c(res, sum(seg_g == m))
+tab_IY <- function(seg_g, G) {
+  res <- NULL
+  for (m in 0:(G - 1)) {
+    res <- c(res, sum(seg_g == m))
   }
   return(res)
 }
 
-tabulate_id = function(chrid) {
+tabulate_id <- function(chrid) {
   ## reference table of charactor and numeric id
-  chr = sort(unique(chrid))
-  out = data.frame(chr = chr, num = 1:length(chr))
+  chr <- sort(unique(chrid))
+  out <- data.frame(chr = chr, num = seq_len(length(chr)))
   return(out)
 }
-to_numID = function(x, tab) {
+to_numID <- function(x, tab) {
   sapply(x, function(x) tab$num[which(tab$chr == x)])
 }
 
-to_chrID = function(x, tab) {
+to_chrID <- function(x, tab) {
   sapply(x, function(x) tab$chr[which(tab$num == x)])
 }
 
-gethaz_item <- function(sam, cname, item, theta = NULL) {
-  cname <- colnames(sam)
+gethaz_item <- function(sam, cname, item, N, theta = NULL) {
   num_iter <- nrow(sam)
-
   d_zw <- matrix(0, num_iter, N)
+
   for (k in 1:N) {
     ## distance calculation can be fully vectorized (and storing z), but I don't have time for this.
     z <- sam[, stringr::str_which(cname, paste0("^z\\.", 0, "\\.", k, "\\.[1-2]"))]
@@ -99,7 +100,7 @@ gethaz_item <- function(sam, cname, item, theta = NULL) {
   return(res)
 }
 
-gen_surv_time <- function(out, sj, nn) {
+gen_surv_time <- function(out, sj, H, N, nn) {
   rr <- out$rr
   lambda <- out$lambda
   mj <- length(sj)
@@ -160,7 +161,7 @@ gen_surv <- function(out, sj, N) {
   time <- numeric(N)
   for (k in 1:N) {
     hh <- cbind(sj, out$haz[, 2] * out$rel[k, 1] + out$haz[, 3] * out$rel[k, 2])
-    time[k] <- rchaz(hh, n = 1, cum.hazard = FALSE)[, 2]
+    time[k] <- timereg::rchaz(hh, n = 1, cum.hazard = FALSE)[, 2]
   }
 
   dd <- data.frame(time = time, status = rep(1, N))
@@ -310,13 +311,13 @@ fun_hazard_surv <- function(t, i, k, posm, cname, sj) {
   if (seg == 1) {
     for (c in 1:2) {
       out <- out * exp(
-        -((t - sj[seg]) * lambda[seg, c]) * exp(beta[, c] + theta[, c] - gamma[, c] * sqrt(sum((z[, c] - w[, c])^2)))
+        -( (t - sj[seg]) * lambda[seg, c]) * exp(beta[, c] + theta[, c] - gamma[, c] * sqrt(sum((z[, c] - w[, c])^2)))
       )
     }
   } else {
     for (c in 1:2) {
       out <- out * exp(
-        -((t - sj[seg]) * lambda[seg, c] + sum(H[1:(seg - 1)] * lambda[1:(seg - 1), c])) * exp(beta[, c] + theta[, c] - gamma[, c] * sqrt(sum((z[, c] - w[, c])^2)))
+        -( (t - sj[seg]) * lambda[seg, c] + sum(H[1:(seg - 1)] * lambda[1:(seg - 1), c])) * exp(beta[, c] + theta[, c] - gamma[, c] * sqrt(sum((z[, c] - w[, c])^2)))
       )
     }
   }
@@ -355,7 +356,7 @@ lsjmplot <- function(z, w, myname = NULL, xlim = NA, ylim = NA, lab = "Coordinat
 
   x <- rbind(z, w)
   idx <- rep("w", nrow(x))
-  idx[1:nrow(z)] <- "z"
+  idx[seq_len(nrow(z))] <- "z"
   position <- as.data.frame(x)
   ndim <- dim(x)[2]
 
@@ -424,7 +425,7 @@ cl_lsjmplot <- function(z, w, cl_z, cl_w, myname = NULL, xlim = NA, ylim = NA, l
   cl_w <- cl[(n_z + 1):length(cl)]
   x <- rbind(z, w)
   idx <- rep("w", nrow(x))
-  idx[1:nrow(z)] <- "z"
+  idx[seq_len(nrow(z))] <- "z"
   position <- as.data.frame(x)
   ndim <- dim(x)[2]
 
