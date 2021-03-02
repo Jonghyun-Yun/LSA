@@ -2,10 +2,147 @@
 #+TITLE: [2021-03-02 Tue]  Summary: simulated survival time and log-loss
 #+AUTHOR: Jonghyun Yun
 
+# https://orgmode.org/manual/Export-Settings.html#Export-Settings
+#+OPTIONS: H:4 num:nil toc:nil pri:t ::t |:t f:t <:t -:t \n:nil ':t ^:nil
+#+OPTIONS: d:nil todo:t tags:not-in-toc tex:t
 
+#+STARTUP: overview inlineimages logdone indent noalign
+# noindent
+
+# comment out for reveal.js
 #+SETUPFILE: ~/setup/my-theme-readtheorg.setup
-#+PROPERTY: header-args :eval yes
 
+#+PROPERTY: header-args :tangle
+# #+PROPERTY: header-args :eval never-export
+#+PROPERTY: header-args:R :session *R-Org* :exports both :results output :noweb yes :eval t
+* OrgMode                                                          :noexport:
+#+INFOJS_OPT: view:nil toc:t ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+
+** Reveal
+#+REVEAL_ROOT: https://cdn.jsdelivr.net/npm/reveal.js
+# slide/none/fade/convex/concave/zoom
+#+REVEAL_TRANS: slide
+# solarized/black/white/league/sky/beige/simple/serif/blood/night/moon
+#+REVEAL_THEME: solarized
+#+REVEAL_HLEVEL: 2
+#+REVEAL_PLUGINS: (highlight search zoom)
+#+REVEAL_EXTRA_CSS: ./reveal_firago.css
+
+#+OPTIONS: reveal_history:t reveal_fragmentinurl:t
+#+OPTIONS: reveal_mousewheel:t reveal_inter_presentation_links:t
+#+OPTIONS: reveal_width:1400 reveal_height:1000
+#+REVEAL_TITLE_SLIDE: <h2 class="title">%t</h2><h4 class="subtitle">%s</h4><h3 class="author">%a</h3><h3 class="date">%d</h3>
+
+** Hugo
+#+HUGO_BASE_DIR: ~/website
+#+HUGO_AUTO_SET_LASTMOD: t
+#+HUGO_DATE_FORMAT: %Y-%m-%dT%T%z
+#+HUGO_FRONT_MATTER_FORMAT: toml
+
+#+HUGO_SECTION:
+#+HUGO_BUNDLE:
+#+HUGO_CATEGORIES:
+
+#+HUGO_EXPORT_RMARKDOWN:
+
+** HTML
+#+OPTIONS: html-link-use-abs-url:nil html-postamble:nil html-preamble:t
+#+OPTIONS: html-scripts:t html-style:t html5-fancy:t
+
+# #+HTML_MATHJAX: align: left indent: 5em tagside: right
+# #+HTML_MATHJAX: scale: 85 font: Asana-Math
+# MATHJAX font: MathJax TeX (default) Asana-Math Neo-Euler Latin-Modern Gyre-Pagella Gyre-Termes
+# #+OPTIONS: tex:dvipng tex:dvisvgm # use LaTeX to generate images for equations
+
+#+HTML_HEAD:  <!-- Global site tag (gtag.js) - Google Analytics -->
+#+HTML_HEAD:<script async src="https://www.googletagmanager.com/gtag/js?id=UA-128966866-1"></script>
+#+HTML_HEAD:<script>
+#+HTML_HEAD:  window.dataLayer = window.dataLayer || [];
+#+HTML_HEAD:  function gtag(){dataLayer.push(arguments);}
+#+HTML_HEAD:  gtag('js', new Date());
+#+HTML_HEAD:
+#+HTML_HEAD:  gtag('config', 'UA-128966866-1');
+#+HTML_HEAD:</script>
+
+# #+HTML_LINK_HOME: http://wweb.uta.edu/faculty/yunj/index.html
+# #+HTML_LINK_UP: http://wweb.uta.edu/faculty/yunj/index.html
+
+# https://scripter.co/latex-in-html/
+#+macro: latex @@html:<span class="latex">L<sup>a</sup>T<sub>e</sub>X</span>@@
+
+#+BEGIN_SRC emacs-lisp :eval no :results silent :exports none :tangle no
+(setq org-html-htmlize-output-type 'css)
+(setq org-html-htmlize-output-type 'inline-css)
+#+END_SRC
+
+#+begin_src emacs-lisp ::eval no results silent :exports none :tangle no
+(add-hook 'org-babel-after-execute-hook 'org-display-inline-images)
+(add-hook 'org-mode-hook 'org-display-inline-images)
+#+end_src
+
+* LaTeX Header                                                     :noexport:
+#+LATEX_CLASS: article
+#+LATEX_CLASS_OPTIONS: [letterpaper,12pt]
+
+#+LATEX_COMPILER: xelatex
+
+#+LATEX_HEADER: %% Graphics
+#+LATEX_HEADER: \usepackage{graphicx}
+#+LATEX_HEADER: \usepackage{subfigure}
+#+LATEX_HEADER: %% \usepackage{grffile} % Extended file name support for graphics (legacy package)
+#+LATEX_HEADER: \usepackage{float} % Fix figures and tables by [H]
+
+#+LATEX_HEADER: %% Margins
+#+LATEX_HEADER: \usepackage{geometry}
+#+LATEX_HEADER: \geometry{verbose,margin=1.0in}
+#+LATEX_HEADER: \setlength\parindent{0pt}
+#+LATEX_HEADER: \linespread{1.5}
+
+#+LATEX_HEADER: %% Typesetting
+#+LATEX_HEADER: \usepackage[stretch=10,babel=true]{microtype} % better typesetting. works w/ pdftex, not latex.
+#+LATEX_HEADER: %% \usepackage[english]{babel} % manages hyphenation patterns
+#+LATEX_HEADER: %% \usepackage{polyglossia} \setdefaultlanguage{english} % babel replacement for XeLaTex.
+#+LATEX_HEADER: \usepackage{csquotes} % Context sensitive quotation facilities
+
+#+LaTeX_HEADER: %% Biblio
+#+LATEX_HEADER: \usepackage[natbib=true, sorting=ynt, backend=biber, minbibnames=3, maxbibnames=3, doi=false, isbn=false, style=authoryear]{biblatex}
+#+LATEX_HEADER: \addbibresource{~/Zotero/myref.bib}
+#+LATEX_HEADER: \AtEveryBibitem{\clearfield{note}}
+#+LATEX_HEADER: \AtEveryBibitem{\clearfield{month}}
+#+LATEX_HEADER: \AtEveryBibitem{\clearfield{day}}
+#+LATEX_HEADER: \AtEveryBibitem{\clearfield{eprint}}
+
+#+LATEX_HEADER: %% Math
+#+LATEX_HEADER: \usepackage{amsmath} % \declareMathOperator
+# #+LATEX_HEADER: \usepackage{mathabx} % \widebar
+# #+LATEX_HEADER: \usepackage{amssymb}
+# #+LATEX_HEADER: \usepackage{amsbsy}  %\boldsymbol %\pbm (faked bold)
+# #+LATEX_HEADER: \usepackage{wasysym}
+#+LATEX_HEADER: \usepackage[mathbf=sym]{unicode-math}
+#+LATEX_HEADER: %% \usepackage{cool} % for math operators & symbols e.g. partial diff
+#+LATEX_HEADER: \usepackage{mathtools} % for math aligning & spacing
+#+LATEX_HEADER: \usepackage{physics} % derivative, dx, operators
+#+LATEX_HEADER: \usepackage{cancel}
+#+LATEX_HEADER: \allowdisplaybreaks % Allow new page within align
+
+#+LATEX_HEADER: %% Font
+# #+LATEX_HEADER: \usepackage{lmodern}
+# #+LATEX_HEADER: \setmathfont{latinmodern-math.otf}
+#+LATEX_HEADER: \setmainfont{XITS}
+#+LATEX_HEADER: \setmathfont{XITS Math} % \boldsymbol works
+#+LATEX_HEADER: \setmathfont[range={\mathcal,\mathbfcal},StylisticSet=1]{XITS Math}
+
+#+LATEX_HEADER: \usepackage{xcolor}
+#+LATEX_HEADER: \usepackage[unicode,colorlinks]{hyperref}
+# #+LATEX_HEADER: \PassOptionsToPackage{unicode,colorlinks}{hyperref}
+
+# #+LATEX_HEADER: \usepackage[unicode]{hyperref}
+# #+LATEX_HEADER: \hypersetup{
+# #+LATEX_HEADER:     colorlinks,
+# #+LATEX_HEADER:     linkcolor={red!50!black},
+# #+LATEX_HEADER:     citecolor={blue!50!black},
+# #+LATEX_HEADER:     urlcolor={blue!80!black}}
+* Intro
 This article provides analysis of the issue in the posterior predictive checking we discussed in [2021-03-01 Mon] meeting.
 
 * TL;DR
@@ -27,9 +164,9 @@ h_{i0}(t) &= \lambda_{i0}(t) \exp(\beta_{i0} + \theta_{k0} - ||z_{k} - w_{i}||) 
 \end{align*}
 
 * Histogram of survival times
-You need to open this document in Github using the web browser to see PDF files. The simulated times are divided into two panes based on the observed response type. The (-,+) model didn't have the issue of simulating the max survival time (31).
+You need to open this document in Github using the web browser to see PDF files. The simulated times are divided into two panes based on the observed response type. The (-,+) model didn't have the issue of simulating the max survival time (=31).
 
-- [[file:./chessB_pn/hist_time.pdf][(-,+) model]]
+- [[file:chessB_pn/hist_time.pdf][(-,+) model]]
 - [[file:./chessB_pn/hist_time.pdf][(+,-) model]]
 - [[file:./chessB_no_latent/hist_time.pdf][baseline model]]
 
@@ -55,27 +192,25 @@ The simulated survival time is used in the 1st PDF, and the observed survival ti
 
 Furthermore, tables for means and standard errors for the differences (with simulated survival time) are listed as the following:
 ** Log loss differences
-#+begin_src R :exports none :results org
+#+begin_src R :exports none :results drawer
 library(magrittr)
 out_dir = "chessB_np/"
-prin = readr::read_csv(file = paste0(out_dir, "logloss_diff.csv"))
-##round(prin,3) %>% knitr::kable()
-names(prin)
-print(round(prin,3) )
+prin = readr::read_csv(file = paste0(out_dir, "logloss_diff.csv")) %>% as.data.frame
+round(prin,3) %>% knitr::kable()
 #+end_src
 
 | item | pos_neg | se_pn | neg_pos | se_np |
 |------+---------+-------+---------+-------|
 |    1 |  -0.935 | 0.039 |   0.692 | 0.041 |
-|    2 |  -0.944 | 0.038 |   0.636 |  0.04 |
-|    3 |  -0.892 |  0.04 |    0.46 |  0.04 |
-|    4 |  -0.938 | 0.038 |   0.511 |  0.04 |
-|    5 |  -0.919 | 0.039 |    0.54 |  0.04 |
-|    6 |  -0.882 |  0.04 |   0.326 | 0.038 |
+|    2 |  -0.944 | 0.038 |   0.636 | 0.040 |
+|    3 |  -0.892 | 0.040 |   0.460 | 0.040 |
+|    4 |  -0.938 | 0.038 |   0.511 | 0.040 |
+|    5 |  -0.919 | 0.039 |   0.540 | 0.040 |
+|    6 |  -0.882 | 0.040 |   0.326 | 0.038 |
 |    7 |  -0.888 | 0.039 |   0.331 | 0.037 |
 |    8 |  -0.854 | 0.041 |   0.221 | 0.035 |
 |    9 |  -0.613 | 0.045 |   0.059 | 0.029 |
-|   10 |  -0.771 | 0.043 |    0.35 |  0.04 |
+|   10 |  -0.771 | 0.043 |   0.350 | 0.040 |
 |   11 |  -0.747 | 0.043 |   0.089 | 0.031 |
 |   12 |  -0.606 | 0.045 |   0.034 | 0.026 |
 |   13 |  -0.659 | 0.043 |   0.165 | 0.033 |
@@ -83,36 +218,37 @@ print(round(prin,3) )
 |   15 |  -0.814 | 0.042 |   0.178 | 0.033 |
 |   16 |  -0.328 | 0.043 |  -0.013 | 0.024 |
 |   17 |  -0.413 | 0.045 |   0.118 | 0.032 |
-|   18 |  -0.289 | 0.042 |    0.12 | 0.031 |
+|   18 |  -0.289 | 0.042 |   0.120 | 0.031 |
 |   19 |  -0.412 | 0.044 |   0.087 | 0.029 |
-|   20 |    -0.1 | 0.038 |   0.048 | 0.028 |
+|   20 |  -0.100 | 0.038 |   0.048 | 0.028 |
 |   21 |  -0.942 | 0.038 |   0.575 | 0.039 |
 |   22 |  -0.838 | 0.041 |   0.374 | 0.038 |
-|   23 |    -0.8 | 0.041 |   0.349 | 0.038 |
-|   24 |   -0.32 | 0.043 |   0.021 | 0.026 |
+|   23 |  -0.800 | 0.041 |   0.349 | 0.038 |
+|   24 |  -0.320 | 0.043 |   0.021 | 0.026 |
 |   25 |  -0.768 | 0.041 |   0.331 | 0.038 |
 |   26 |  -0.316 | 0.044 |  -0.017 | 0.023 |
 |   27 |  -0.066 | 0.033 |   0.026 | 0.025 |
-|   28 |  -0.267 | 0.044 |   0.095 |  0.03 |
+|   28 |  -0.267 | 0.044 |   0.095 | 0.030 |
 |   29 |  -0.501 | 0.044 |   0.096 | 0.031 |
 |   30 |  -0.046 | 0.033 |   0.137 | 0.032 |
 |   31 |  -0.955 | 0.038 |   0.711 | 0.041 |
-|   32 |  -0.933 | 0.038 |   0.643 |  0.04 |
-|   33 |   -0.92 | 0.039 |   0.432 | 0.039 |
+|   32 |  -0.933 | 0.038 |   0.643 | 0.040 |
+|   33 |  -0.920 | 0.039 |   0.432 | 0.039 |
 |   34 |  -0.425 | 0.044 |  -0.009 | 0.024 |
-|   35 |   -0.51 | 0.043 |   0.065 | 0.028 |
-|   36 |  -0.473 | 0.043 |     0.1 |  0.03 |
+|   35 |  -0.510 | 0.043 |   0.065 | 0.028 |
+|   36 |  -0.473 | 0.043 |   0.100 | 0.030 |
 |   37 |  -0.135 | 0.038 |   0.008 | 0.025 |
-|   38 |  -0.257 |  0.04 |  -0.005 | 0.024 |
+|   38 |  -0.257 | 0.040 |  -0.005 | 0.024 |
 |   39 |  -0.383 | 0.044 |   0.043 | 0.027 |
 |   40 |  -0.125 | 0.037 |   0.167 | 0.033 |
+:end:
 
 ** Log loss differences by response type
-#+begin_src R :exports none :results output
+#+begin_src R :exports none :results drawer
 library(magrittr)
 out_dir = "chessB_np/"
 prin_by = readr::read_csv(file = paste0(out_dir, "logloss_diff_by.csv"))
-cbind(prin_by[,2], round(prin_by[,-2],3))  %>% knitr::kable()
+cbind(prin_by[,2], round(prin_by[,-2],3)) %>% knitr::kable()
 #+end_src
 
 | res       | item | pos_neg | se_pn | neg_pos | se_np |
@@ -197,3 +333,4 @@ cbind(prin_by[,2], round(prin_by[,-2],3))  %>% knitr::kable()
 | correct   |   39 |  -1.318 | 0.035 |   0.331 | 0.024 |
 | incorrect |   40 |   0.072 | 0.023 |   0.038 | 0.026 |
 | correct   |   40 |  -0.961 | 0.041 |   0.712 | 0.039 |
+:end:
