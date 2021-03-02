@@ -1,6 +1,7 @@
 # Created 2021-03-02 Tue 09:18
 #+TITLE: [2021-03-02 Tue]  Summary: simulated survival time and log-loss
 #+AUTHOR: Jonghyun Yun
+#+DATE: 
 
 # https://orgmode.org/manual/Export-Settings.html#Export-Settings
 #+OPTIONS: H:4 num:nil toc:nil pri:t ::t |:t f:t <:t -:t \n:nil ':t ^:nil
@@ -13,7 +14,7 @@
 #+SETUPFILE: ~/setup/my-theme-readtheorg.setup
 
 #+PROPERTY: header-args :tangle
-# #+PROPERTY: header-args :eval never-export
+#+PROPERTY: header-args :eval never-export
 #+PROPERTY: header-args:R :session *R-Org* :exports both :results output :noweb yes :eval t
 * OrgMode                                                          :noexport:
 #+INFOJS_OPT: view:nil toc:t ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
@@ -81,22 +82,22 @@
 #+end_src
 
 * LaTeX Header                                                     :noexport:
-#+LATEX_CLASS: article
-#+LATEX_CLASS_OPTIONS: [letterpaper,12pt]
+#+LATEX_CLASS: no-article
+#+LATEX_CLASS_OPTIONS: [letterpaper,11pt]
 
 #+LATEX_COMPILER: xelatex
 
 #+LATEX_HEADER: %% Graphics
-#+LATEX_HEADER: \usepackage{graphicx}
+# #+LATEX_HEADER: \usepackage{graphicx}
 #+LATEX_HEADER: \usepackage{subfigure}
 #+LATEX_HEADER: %% \usepackage{grffile} % Extended file name support for graphics (legacy package)
 #+LATEX_HEADER: \usepackage{float} % Fix figures and tables by [H]
 
 #+LATEX_HEADER: %% Margins
 #+LATEX_HEADER: \usepackage{geometry}
-#+LATEX_HEADER: \geometry{verbose,margin=1.0in}
+#+LATEX_HEADER: \geometry{verbose,margin=1.5in}
 #+LATEX_HEADER: \setlength\parindent{0pt}
-#+LATEX_HEADER: \linespread{1.5}
+#+LATEX_HEADER: \linespread{1.1}
 
 #+LATEX_HEADER: %% Typesetting
 #+LATEX_HEADER: \usepackage[stretch=10,babel=true]{microtype} % better typesetting. works w/ pdftex, not latex.
@@ -133,12 +134,19 @@
 #+LATEX_HEADER: \setmathfont[range={\mathcal,\mathbfcal},StylisticSet=1]{XITS Math}
 
 #+LATEX_HEADER: \usepackage{xcolor}
+#+LATEX_HEADER: \usepackage{grffile}
+#+LATEX_HEADER: \usepackage{longtable}
+#+LATEX_HEADER: \usepackage{wrapfig}
+#+LATEX_HEADER: \usepackage{rotating}
+#+LATEX_HEADER: \usepackage[normalem]{ulem}
+#+LATEX_HEADER: \usepackage{textcomp}
+#+LATEX_HEADER: \usepackage{capt-of}
 #+LATEX_HEADER: \usepackage[unicode,colorlinks]{hyperref}
-# #+LATEX_HEADER: \PassOptionsToPackage{unicode,colorlinks}{hyperref}
+# #+LATEX_HEADER: \PassOptionsToPackage{unicode,colorlinks=true}{hyperref}
 
 # #+LATEX_HEADER: \usepackage[unicode]{hyperref}
-# #+LATEX_HEADER: \hypersetup{
-# #+LATEX_HEADER:     colorlinks,
+# #+LATEX_HEADER: \PassOptionsToPackage{unicode}{hyperref}
+# #+LATEX_HEADER: \hypersetup{colorlinks = true}
 # #+LATEX_HEADER:     linkcolor={red!50!black},
 # #+LATEX_HEADER:     citecolor={blue!50!black},
 # #+LATEX_HEADER:     urlcolor={blue!80!black}}
@@ -146,52 +154,53 @@
 This article provides analysis of the issue in the posterior predictive checking we discussed in [2021-03-01 Mon] meeting.
 
 * TL;DR
-It is advised to switch signs of the latent distance terms. A new model gives acceptable results for posterior predictive checking of the response type. The computational method I implemented doesn't seem to be wrong. So the issue might be coming from the statistical model itself.
+It is advised to switch signs of the latent distance terms. A new model gives acceptable results for posterior predictive checking of the response type. We may not want to report separate results for each response type.
+The computational method I implemented doesn't seem to be wrong. So the issue might be coming from the statistical model itself.
 
 * Models
-The below is a list of models in consideration. They differ by the sign of the latent distance term. A baseline model is one with no latent distance term.
+The below is a list of models in consideration. They differ by the sign of the latent distance term. A baseline (=base=) model is one with no latent distance term.
 
-(-,+): (correct,incorrect)
+=np= model: (-,+) = (correct,incorrect)
 \begin{align*}
 h_{i1}(t) &= \lambda_{i1}(t) \exp(\beta_{i1} + \theta_{k1} - ||z_{k} - w_{i}||) \\
 h_{i0}(t) &= \lambda_{i0}(t) \exp(\beta_{i0} + \theta_{k0} + ||z_{k} - w_{i}||) \\
 \end{align*}
 
-(+,-): (correct,incorrect)
+=pn= model: (+,-) = (correct,incorrect)
 \begin{align*}
 h_{i1}(t) &= \lambda_{i1}(t) \exp(\beta_{i1} + \theta_{k1} + ||z_{k} - w_{i}||) \\
 h_{i0}(t) &= \lambda_{i0}(t) \exp(\beta_{i0} + \theta_{k0} - ||z_{k} - w_{i}||) \\
 \end{align*}
 
 * Histogram of survival times
-You need to open this document in Github using the web browser to see PDF files. The simulated times are divided into two panes based on the observed response type. The (-,+) model didn't have the issue of simulating the max survival time (=31).
+You need to open this document in Github using the web browser to see PDF files. The simulated times are divided into two panes based on the observed response type. The =np= model didn't have the issue of simulating the max survival time (=31).
 
-- [[file:chessB_pn/hist_time.pdf][(-,+) model]]
-- [[file:./chessB_pn/hist_time.pdf][(+,-) model]]
-- [[file:./chessB_no_latent/hist_time.pdf][baseline model]]
+- [[file:chessB_pn/hist_time.pdf][=np= model]]
+- [[file:./chessB_pn/hist_time.pdf][=pn= model]]
+- [[file:./chessB_no_latent/hist_time.pdf][=base= model]]
 
-* Log Loss
-Given the survival time and MCMC samples, the conditional probability of "correct" response is estimated as
+* Log-loss
+Given the survival time $t$ and MCMC samples, the conditional probability of "correct" response is estimated as
 \[
 \hat p_{ik}^{(l)}(t) = \frac{h_{i1}^{(l)}(t)}{h_{i1}^{(l)}(t) + h_{i0}^{(l)}(t)},
 \]
 where $(l)$ denote the index of MCMC sample used to calculate the quantity.
 We use $Y_{ik} =
-1$ to denote a correct response, and $Y_{ik} = 0$ an incorrect response. Then, $p_{i}^{(l)}(t)$ can be served as the prediction probability of $Y_{ik}$, which allows using classification performance metrics. For easiness of evaluation, we use the log loss (over respondent and item)
+1$ to denote a correct response, and $Y_{ik} = 0$ an incorrect response. Then, $p_{ik}^{(l)}(t)$ can be served as the prediction probability of $Y_{ik}$, which allows using classification performance metrics. For easiness of evaluation, we use the log-loss (over respondent and item)
 \[
+-\frac{1}{L}
 \sum_{l=1} ^{L}\left\{ y_{ik} \log \hat p_{ik}^{(l)}(t) + (1-y_{ik}) \log (1 - \hat p_{ik}^{(l)})\right\}.
 \]
 
-The log loss are concatenated over respondents for each item. Then, we calculated differences of concatenated log loss: 1) baseline - (-,+) log loss and 2) baseline - (+,-) log loss. So, the larger is the better. We provide a series of box plots for the differences over all items.
+The log-loss are concatenated over respondents for each item. On average, the =np= model gives smaller log-losses than the baseline for all correct responses, but the =pn= model fails to do so for both response types. In terms of "posterior density" and "likelihood", these two models have similar fit, and they have better fit than the baseline model.
 
-On average, the (-,+) model gives smaller log losses than the baseline for all correct responses, but and the (+,-) model fails to do so for both response types. In terms of "posterior density" and "likelihood", these two models give similar fit, and also they show better fit than the baseline model.
-The simulated survival time is used in the 1st PDF, and the observed survival time is used in the 2nd PDF. They show similar patterns (the results is a bit more promising with the simulation though), so the simulation is not likely to be a "culprit". I also didn't find any error in the MCMC sampler. Perhaps, this could be what we get from switching signs of the latent distance.
+We calculated differences of concatenated log-loss: 1) =base= - =np= log-loss and 2) =base= - =pn= log-loss. So, the larger is the better. We provide a series of box plots for the differences over all items. The simulated survival time is used to predict the response in the 1st PDF. On the otherhand, the observed survival time is used in the 2nd PDF. They show similar patterns (the results is a bit more promising with the simulation though), so the simulation is not likely to be a "culprit". I also didn't find any error in the MCMC sampler. Perhaps, this could be what we get from switching signs of the latent distance.
 
 - [[file:sim_logLoss_diff_by.pdf][With simulated survival time]]
 - [[file:LogLoss_diff_by.pdf][With observed survival time]]
 
-Furthermore, tables for means and standard errors for the differences (with simulated survival time) are listed as the following:
-** Log loss differences
+Furthermore, tables for means and standard errors for the differences (with simulated survival time) are listed below. =pos_neg= and =se_pn= denote mean and standard error of =base= - =pn= log-loss. =neg_pos= and =np= denote those of =base= - =np= log-loss.
+** Log-loss differences
 #+begin_src R :exports none :results drawer
 library(magrittr)
 out_dir = "chessB_np/"
@@ -199,6 +208,7 @@ prin = readr::read_csv(file = paste0(out_dir, "logloss_diff.csv")) %>% as.data.f
 round(prin,3) %>% knitr::kable()
 #+end_src
 
+#+ATTR_LATEX: :environment longtable :align crrrr
 | item | pos_neg | se_pn | neg_pos | se_np |
 |------+---------+-------+---------+-------|
 |    1 |  -0.935 | 0.039 |   0.692 | 0.041 |
@@ -243,7 +253,7 @@ round(prin,3) %>% knitr::kable()
 |   40 |  -0.125 | 0.037 |   0.167 | 0.033 |
 :end:
 
-** Log loss differences by response type
+** Log-loss differences by response type
 #+begin_src R :exports none :results drawer
 library(magrittr)
 out_dir = "chessB_np/"
@@ -251,6 +261,7 @@ prin_by = readr::read_csv(file = paste0(out_dir, "logloss_diff_by.csv"))
 cbind(prin_by[,2], round(prin_by[,-2],3)) %>% knitr::kable()
 #+end_src
 
+#+ATTR_LATEX: :environment longtable :align rcrrrr
 | res       | item | pos_neg | se_pn | neg_pos | se_np |
 |-----------+------+---------+-------+---------+-------|
 | incorrect |    1 |  -0.083 | 0.014 |  -0.126 | 0.018 |
@@ -333,4 +344,3 @@ cbind(prin_by[,2], round(prin_by[,-2],3)) %>% knitr::kable()
 | correct   |   39 |  -1.318 | 0.035 |   0.331 | 0.024 |
 | incorrect |   40 |   0.072 | 0.023 |   0.038 | 0.026 |
 | correct   |   40 |  -0.961 | 0.041 |   0.712 | 0.039 |
-:end:
