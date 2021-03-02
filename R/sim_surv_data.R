@@ -1,5 +1,6 @@
-out_dir <- "chessB_pn/"
-## out_dir <- "chessB_no_latent/"
+## out_dir <- "chessB_pn/"
+## out_dir <- "chessB_np/"
+out_dir <- "chessB_no_latent/"
 
 num_chain <- 3
 double_z <- 0
