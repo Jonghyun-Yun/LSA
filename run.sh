@@ -1,28 +1,15 @@
 #!/usr/bin/env bash
-export STAN_NUM_THREADS=6
+export STAN_NUM_THREADS=2
 mkdir -p output
 rm output/*
-Rscript "R/opusIII-preprocess.R"
+Rscript "R/chessB-preprocess.R"
 cp input/{mvar,mlen}.csv output/
 cp run.sh output/
 
 for v in {1..3}
 do
-    Rscript "R/opusIII_pn-init.R"
-    ./main initialize parallel single_w single_z sparse latent no_gamma true $v 10000 10000 10
+    Rscript "R/chessB-init.R"
+    ./main initialize parallel double_w double_z full latent no_gamma true $v 10000 10000 10
 done
-mv output opusIII_pn
-Rscript R/run-analysis.R opusIII_pn/
-
-rm output/*
-Rscript "R/verbal-preprocess.R"
-cp input/{mvar,mlen}.csv output/
-cp run.sh output/
-
-for v in {1..3}
-do
-    Rscript "R/verbal_pn-init.R"
-    ./main initialize parallel single_w single_z sparse latent no_gamma true $v 10000 10000 10
-done
-mv output verbal_pn
-Rscript R/run-analysis.R verbal_pn/
+mv output chessB_dd
+Rscript R/run-analysis.R chessB_dd/

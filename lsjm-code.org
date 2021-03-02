@@ -3027,21 +3027,8 @@ Rscript R/run-analysis.R verbal_pn/
 
 #+begin_src sh :tangle run.sh
 #!/usr/bin/env bash
-export STAN_NUM_THREADS=3
+export STAN_NUM_THREADS=2
 mkdir -p output
-# rm output/*
-# Rscript "R/chessB-preprocess.R"
-# cp input/{mvar,mlen}.csv output/
-# cp run.sh output/
-
-# for v in {1..3}
-# do
-#     Rscript "R/chessB_pn-init.R"
-#     ./main initialize parallel single_w single_z full latent no_gamma true $v 10000 10000 10
-# done
-# mv output chessB_pn
-# Rscript R/run-analysis.R chessB_pn/
-
 rm output/*
 Rscript "R/chessB-preprocess.R"
 cp input/{mvar,mlen}.csv output/
@@ -3049,10 +3036,41 @@ cp run.sh output/
 
 for v in {1..3}
 do
-    Rscript "R/chessB_no_latent-init.R"
+    Rscript "R/chessB-init.R"
+    ./main initialize parallel double_w double_z full latent no_gamma true $v 10000 10000 10
+done
+mv output chessB_dd
+Rscript R/run-analysis.R chessB_dd/
+#+end_src
+
+#+begin_src sh :tangle run.sh
+#!/usr/bin/env bash
+export STAN_NUM_THREADS=2
+mkdir -p output
+rm output/*
+Rscript "R/chessB-preprocess.R"
+cp input/{mvar,mlen}.csv output/
+cp run.sh output/
+
+for v in {1..3}
+do
+    Rscript "R/chessB_np-init.R"
     ./main initialize parallel single_w single_z full latent no_gamma true $v 10000 10000 10
 done
-mv output chessB_no_latent
+mv output chessB_np
+Rscript R/run-analysis.R chessB_np/
+
+# rm output/*
+# Rscript "R/chessB-preprocess.R"
+# cp input/{mvar,mlen}.csv output/
+# cp run.sh output/
+
+# for v in {1..3}
+# do
+#     Rscript "R/chessB_no_latent-init.R"
+#     ./main initialize parallel single_w single_z full latent no_gamma true $v 10000 10000 10
+# done
+# mv output chessB_no_latent
 
 #+END_SRC
 
@@ -3237,12 +3255,12 @@ system(paste0("rsync -rv figure/*.pdf ", out_dir, "figure/"))
 #+END_SRC
 
 #+BEGIN_SRC R
-out_dir <- "chessB_pn/"
+out_dir <- "chessB_no_latent/"
 num_chain <- 3; double_z <- 0; double_w <- 0; HAS_REF <- 0;
 system(paste0("rm figure/*.pdf"))
 source("R/art-analysis.R")
-## system(paste0("mkdir -p ", out_dir, "figure/"))
-## system(paste0("rsync -rv figure/*.pdf ", out_dir,"figure/"))
+system(paste0("mkdir -p ", out_dir, "figure/"))
+system(paste0("rsync -rv figure/*.pdf ", out_dir,"figure/"))
 #+END_SRC
 
 #+BEGIN_SRC R
@@ -3556,8 +3574,9 @@ The =RData= will be saved in =chessB_pn=. To run the simulation with no
 distance term, set =out_dir <- "chessB_no_latent/"= in =R/sim_surv_data.R=.
 
 #+begin_src R :results none
-out_dir <- "chessB_pn/"
-## out_dir <- "chessB_no_latent/"
+## out_dir <- "chessB_pn/"
+## out_dir <- "chessB_np/"
+out_dir <- "chessB_no_latent/"
 
 num_chain <- 3
 double_z <- 0
@@ -4913,6 +4932,340 @@ plot(fdmeans,col=1:max(res$cls),lwd=2)
 dev.off(which = dev.cur())
 #+end_src
 
+* posterior checking
+Rcpp probability distribution: https://teuder.github.io/rcpp4everyone_en/220_dpqr_functions.html
+to test my code
+1. Use the observed response time. See if the latent model has higher hazard for the true response on average. If not, possible errors in hazard calculation...
+conclusion: =chessB_pn= works poor. =chessB_np= works a bit ok.
+
+** with *no* time simulation
+#+begin_src R :results none :tangle R/test_simcode.R
+out_dir <- "chessB_pn/"
+## out_dir <- "chessB_no_latent/"
+## out_dir <- "chessB_np/"
+
+mt = readr::read_csv(file="chessB_pn/input/mt.csv", col_names=F) %>% as.matrix()
+mi = readr::read_csv(file="chessB_pn/input/mi.csv", col_names=F) %>% as.matrix()
+
+num_chain <- 3
+double_z <- 0
+double_w <- 0
+HAS_REF <- 0
+## library(art)
+library(coda)
+library(dplyr)
+library(stringr)
+library(magrittr)
+library(bayesplot)
+library(foreach)
+library(doParallel)
+## library(timereg)
+## registerDoParallel(cores = detectCores() - 1)
+registerDoParallel(2)
+## stopImplicitCluster()
+
+## setwd("/Users/yunj/Dropbox/research/lsjm-art/lsjm-code")
+
+source("R/art-functions.R")
+source("R/load-outputs.R")
+
+## save(mylist, file = paste0(out_dir,"mylist"))
+#+end_src
+
+#+begin_src R :results none :tangle R/test_simcode.R
+set.seed(1)
+num_iter <- nrow(mylist[[1]])
+sim_data <- list()
+mll  <- 99 * mi
+
+for (item in 1:I) {
+  start_time <- proc.time()
+  stk_tt <- foreach(chain = 1:1, .combine = "rbind") %do% {
+    out <- gethaz_item(mylist[[chain]], cname, item, N)
+    time <- matrix(mt[item, ], nrow = num_iter, ncol = N, byrow=T)
+    pp <- gen_surv_pp(out, time, sj) %>% array(dim = dim(time))
+    ## cbind(time, pp)
+
+  for (k in 1:N) {
+    mll[item, k] = MLmetrics::LogLoss(pp[, k], mi[item, k])
+    }
+
+  }
+  sim_data[[item]] <- stk_tt
+  cat("\nelapsed time to simulate item", item, "\n")
+  print(proc.time() - start_time)
+}
+
+save(mll,file = paste0(out_dir,"mll.RData"))
+#+end_src
+
+[[pdf:chessB_pn/LogLoss.pdf::1]]
+[[pdf:chessB_np/LogLoss.pdf::1]]
+[[pdf:chessB_np/LogLoss_by.pdf::1]]
+[[pdf:chessB_no_latent/LogLoss.pdf::1]]
+[[pdf:chessB_no_latent/LogLoss_by.pdf::1]]
+
+
+#+begin_src R :tangle R/test_simcode.R
+dll = t(mll)
+colnames(dll) = row.names(mi) = 1:I
+row.names(dll) = colnames(mi) = 1:N
+d_long <- reshape2::melt(dll)
+mi_long <- reshape2::melt(t(mi))
+d_long = plyr::join(d_long, mi_long, by = c("Var1","Var2"))
+names(d_long) = c("person","item","LogLoss","res")
+d_long$res = factor(d_long$res, labels=c("incorrect","correct"))
+ll_boxp <- ggplot(d_long, aes(x=item,y=LogLoss,fill=factor(item))) +  facet_wrap(~res) +
+  geom_boxplot() + theme(legend.position = "none") + ylim(0, 10.5)
+
+pdf(paste0(out_dir,"LogLoss_by.pdf"))
+print(ll_boxp)
+dev.off()
+#+end_src
+
+#+RESULTS:
+: quartz
+:      2
+[[pdf:LogLoss_diff.pdf::1]]
+[[pdf:LogLoss_diff_by.pdf::1]]
+#+begin_src R
+fname = "simall.RData"
+pname = "sim_logloss_diff_by"
+#+end_src
+
+#+begin_src R :tangle R/draw_logloss_diff_by.r
+out_dir = "chessB_np/"
+load(paste0(out_dir,fname))
+dll = t(mll)
+colnames(dll) = row.names(mi) = 1:I
+row.names(dll) = colnames(mi) = 1:N
+d_long <- reshape2::melt(dll)
+mi_long <- reshape2::melt(t(mi))
+d_long = plyr::join(d_long, mi_long, by = c("Var1","Var2"))
+
+out_dir = "chessB_no_latent/"
+load(paste0(out_dir,fname))
+dll = t(mll)
+colnames(dll) = 1:I
+row.names(dll) = 1:N
+no_long <- reshape2::melt(dll)
+d_long = plyr::join(d_long, no_long, by = c("Var1","Var2"))
+
+out_dir = "chessB_pn/"
+load(paste0(out_dir,fname))
+dll = t(mll)
+colnames(dll) = 1:I
+row.names(dll) = 1:N
+np_long <- reshape2::melt(dll)
+d_long = plyr::join(d_long, np_long, by = c("Var1","Var2"))
+
+names(d_long) = c("person","item","LogLoss_np","res", "LogLoss_no", "LogLoss_pn")
+d_long$LogLoss_diff_np = d_long$LogLoss_no - d_long$LogLoss_np
+d_long$LogLoss_diff_pn = d_long$LogLoss_no - d_long$LogLoss_pn
+
+d_long$res = factor(d_long$res, labels=c("incorrect","correct"))
+ll_boxp_np_by <- ggplot(d_long, aes(x=item,y=LogLoss_diff_np,fill=factor(item))) + facet_wrap(~res) +
+  geom_boxplot() + theme(legend.position = "none") + ggtitle("baseline - (-,+) log loss")+
+  ylab("Difference in LogLoss")
+
+ll_boxp_pn_by <- ggplot(d_long, aes(x=item,y=LogLoss_diff_pn,fill=factor(item))) + facet_wrap(~res) +
+  geom_boxplot() + theme(legend.position = "none") + ggtitle("baseline - (+,-) log loss") +
+    ylab("Difference in LogLoss")
+
+ll_boxp_np <- ggplot(d_long, aes(x=item,y=LogLoss_diff_np,fill=factor(item))) +
+  geom_boxplot() + theme(legend.position = "none") + ggtitle("baseline - (-,+) log loss")+
+  ylab("Difference in LogLoss")
+
+ll_boxp_pn <- ggplot(d_long, aes(x=item,y=LogLoss_diff_pn,fill=factor(item))) +
+  geom_boxplot() + theme(legend.position = "none") + ggtitle("baseline - (+,-) log loss") +
+    ylab("Difference in LogLoss")
+
+pdf(pname)
+print(ll_boxp_np_by)
+print(ll_boxp_pn_by)
+print(ll_boxp_np)
+print(ll_boxp_pn)
+dev.off()
+#+end_src
+
+#+begin_src R
+out_dir = "chessB_np/"
+
+dd_se = function(x) sd(x) / sqrt(N)
+dd = d_long %>% group_by(item)
+dif = dd %>% summarise_at(vars(LogLoss_diff_pn, LogLoss_diff_np),list(mean = mean, se = dd_se ))
+prin = dif[,c(1,2,4,3,5)]
+names(prin) = c("item", "pos_neg", "se_pn", "neg_pos",  "se_np")
+round(prin,3) %>% knitr::kable()
+readr::write_csv(prin, file = paste0(out_dir, "logloss_diff.csv"))
+#+end_src
+
+#+begin_src R
+dd = d_long %>% group_by(item,res)
+dif = dd %>% summarise_at(vars(LogLoss_diff_pn, LogLoss_diff_np),list(mean = mean, se = dd_se ))
+prin_by = dif[,c(1,2,3,5,4,6)]
+names(prin_by) = c("item", "res", "pos_neg", "se_pn", "neg_pos",  "se_np")
+cbind(prin_by[,2], round(prin_by[,-2],3)) %>% knitr::kable()
+
+readr::write_csv(prin_by, file = paste0(out_dir, "logloss_diff_by.csv"))
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R
+out <- gethaz_item(mylist[[chain]], cname, item, N)
+
+sam = mylist[[chain]]
+#+end_src
+
+*** [2021-03-01 Mon] histogram of simulated survival time (correct vs incorrect)
+
+[[pdf:chessB_no_latent/hist_time.pdf::1]]
+#+begin_src R
+load(paste0(out_dir, "surv_sim.RData"))
+
+pdf(paste0(out_dir,"hist_time.pdf"))
+for (i in 1:I) {
+ time = sim_data[[i]][, 1:251]
+ time_cor = time[,mi[i,] == 1]
+ time_incor = time[,mi[i,] == 0]
+ par(mfrow = c(1,2))
+ hist(time_cor,main=paste0("correct_item",i))
+ hist(time_incor,main=paste0("incorrect_item",i))
+ }
+dev.off()
+#+end_src
+
+#+RESULTS:
+: Error in paste0(out_dir, "surv_sim.RData") : object 'out_dir' not found
+: Error in paste0(out_dir, "hist.pdf") : object 'out_dir' not found
+: Error in 1:I : NA/NaN argument
+: Error in dev.off() : cannot shut down device 1 (the null device)
+
+*** TODO found discrepancy b/w log-likelihood. see if the diffence is consistent
+#+begin_src R
+num_iter <- nrow(mylist[[1]])
+ll <- rep(0, num_iter)
+for (nn in 1:3) {
+  for (item in 1:I) {
+    for (k in 1:N) {
+      ll[nn] <- ll[nn] + eval_log_like(getparam(mylist[[1]][nn, ], sj, item, k), mi[item, k], mt[item, k])
+    }
+  }
+}
+
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R
+mylist[[1]][1:5,"lp_"] %>% diff()
+ll[1:5] %>% diff()
+#+end_src
+
+#+RESULTS:
+: [1]  31.5 -57.8  62.9 -21.5
+: [1]    22.80881   -30.98535 33521.58194     0.00000
+** with simulated time
+#+begin_src R :results none :tangle R/test_simcode.R
+out_dir <- "chessB_pn/"
+## out_dir <- "chessB_no_latent/"
+## out_dir <- "chessB_np/"
+
+mt = readr::read_csv(file="chessB_pn/input/mt.csv", col_names=F) %>% as.matrix()
+mi = readr::read_csv(file="chessB_pn/input/mi.csv", col_names=F) %>% as.matrix()
+
+num_chain <- 3
+double_z <- 0
+double_w <- 0
+HAS_REF <- 0
+## library(art)
+library(coda)
+library(dplyr)
+library(stringr)
+library(magrittr)
+library(bayesplot)
+library(foreach)
+library(doParallel)
+## library(timereg)
+## registerDoParallel(cores = detectCores() - 1)
+stopImplicitCluster()
+registerDoParallel(2)
+
+## setwd("/Users/yunj/Dropbox/research/lsjm-art/lsjm-code")
+
+source("R/art-functions.R")
+## source("R/load-outputs.R")
+
+## save(mylist, file = paste0(out_dir,"mylist"))
+#+end_src
+
+#+begin_src R :results none :tangle R/test_simcode.R
+out_dir = "chessB_np/"
+## out_dir = "chessB_pn/"
+## out_dir = "chessB_no_latent/"
+
+
+## log loss using simulated time
+simll  <- 99 * mi
+
+load(paste0(out_dir, "surv_sim.RData"))
+
+
+for (item in 1:I) {
+  pp = sim_data[[i]][, (N+1): (2*N)]
+  for (k in 1:N) {
+    simll[item, k] = MLmetrics::LogLoss(pp[, k], mi[item, k])
+    }
+  }
+
+save(simll,file = paste0(out_dir,"simll.RData"))
+#+end_src
+
+#+begin_src R
+fname = "simall.RData"
+pname = "sim_logloss_diff_by"
+source("R/draw_logloss_diff_by.R")
+#+end_src
+
+** [2021-03-02 Tue] Summary: simulated survival time and log-loss
+
+*** TL;DR
+
+*** Models
+The below is a list of models in consideration. They differ by the sign of the latent distance term. A baseline model is one with no latent distance term.
+
+(-,+): (correct,incorrect)
+\begin{align*}
+h_{i1}(t) &= \lambda_{i1}(t) \exp(\beta_{i1} + \theta_{k1} - ||z_{k} - w_{i}||) \\
+h_{i0}(t) &= \lambda_{i0}(t) \exp(\beta_{i0} + \theta_{k0} + ||z_{k} - w_{i}||) \\
+\end{align*}
+
+(+,-): (correct,incorrect)
+\begin{align*}
+h_{i1}(t) &= \lambda_{i1}(t) \exp(\beta_{i1} + \theta_{k1} + ||z_{k} - w_{i}||) \\
+h_{i0}(t) &= \lambda_{i0}(t) \exp(\beta_{i0} + \theta_{k0} - ||z_{k} - w_{i}||) \\
+\end{align*}
+
+*** Log Loss
+Given the survival time and MCMC samples, the conditional probability of "correct" response is estimated as
+\[
+\hat p_{ik}^{(l)}(t) = \frac{h_{i1}^{(l)}(t)}{h_{i1}^{(l)}(t) + h_{i0}^{(l)}(t)},
+\]
+where $(l)$ denote the index of MCMC sample used to calulate the quantity.
+We use $Y_{ik} =
+1$ to denote a correct response, and $Y_{ik} = 0$ an incorrect response. Then, $p_{i}^{(l)}(t)$ can be served as the prediction probability of $Y_{ik}$, which allows to use performace metrics in the classification problem. For easiness of evaluation, we use the log loss (over respondent and item)
+\[
+\sum_{l=1} ^{L}\left\{ y_{ik} \log \hat p_{ik}^{(l)}(t) + (1-y_{ik}) \log (1 - \hat p_{ik}^{(l)})\right\}.
+\]
+
+*** Histogram of survival times
+You need to open this document in Github using the web browser to see PDF files.
+
+- [[./chessB_pn/hist_time.pdf][(-,+) model]]
+- [[./chessB_pn/hist_time.pdf][(+,-) model]]
+- [[./chessB_no_latent/hist_time.pdf][baseline model]]
+
 * custom functions
 #+BEGIN_SRC R :tangle R/art-functions.R
 fun_hazard_surv <- function(t, i, k, posm, cname, sj) {
@@ -5222,13 +5575,413 @@ do_procrustes <- function(Xstar, mydf, is_list = FALSE, translation = TRUE, scal
 
 * lintr
 #+begin_src emacs-lisp
-(setq flycheck-checker-error-threshold 500)
+(setq flycheck-checker-error-threshold 700)
 #+end_src
+
+#+RESULTS:
+: 700
 
 #+begin_src sh :eval no :tangle .lintr
 linters: with_defaults(line_length_linter(120), assignment_linter = NULL, object_name_linter = NULL)
 #+end_src
 
+* build R package
+#+begin_src R
+devtools::build('~/Dropbox/research/lsjm-art/lsjm-code/art')
+#+end_src
+
+#+begin_src R
+install.packages("art_1.0.tar.gz", repos = NULL, type="source")
+library(art)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+Installing package into '/usr/local/lib/R/4.0/site-library'
+(as 'lib' is unspecified)
+Using libraries at paths:
+- /usr/local/lib/R/4.0/site-library
+- /usr/local/Cellar/r/4.0.3/lib/R/library
+,* installing *source* package 'art' ...
+,** using staged installation
+,** libs
+Using libraries at paths:
+- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
+- /usr/local/lib/R/4.0/site-library
+- /usr/local/Cellar/r/4.0.3/lib/R/library
+Using libraries at paths:
+- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
+- /usr/local/lib/R/4.0/site-library
+- /usr/local/Cellar/r/4.0.3/lib/R/library
+Using libraries at paths:
+- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
+- /usr/local/lib/R/4.0/site-library
+- /usr/local/Cellar/r/4.0.3/lib/R/library
+
+
+/usr/local/bin/ccache /usr/local/opt/llvm/bin/clang++ -std=c++14 -I"/usr/local/Cellar/r/4.0.3/lib/R/include" -DNDEBUG  -I'/usr/local/lib/R/4.0/site-library/Rcpp/include' -I'/usr/local/lib/R/4.0/site-library/RcppEigen/include' -I'/usr/local/lib/R/4.0/site-library/RcppNumerical/include' -I'/usr/local/lib/R/4.0/site-library/RcppParallel/include' -I'/usr/local/lib/R/4.0/site-library/StanHeaders/include' -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -I/usr/local/include -I/usr/local/opt/llvm/include -I/usr/local/opt/openssl/include -I/usr/local/opt/gettext/include	-I/usr/local/opt/tcl-tk/include   -I'/usr/local/lib/R/4.0/site-library/RcppParallel/include' -D_REENTRANT -DSTAN_THREADS   -I"/usr/local/lib/R/4.0/site-library/StanHeaders/include/src" -fPIC  -g -O3 -Wall -pedantic -mtune=native -pipe -c RcppExports.cpp -o RcppExports.o
+In file included from RcppExports.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:1:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Core:535:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from RcppExports.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:2:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/LU:47:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from RcppExports.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:3:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Cholesky:12:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Jacobi:29:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from RcppExports.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:3:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Cholesky:43:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from RcppExports.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/QR:17:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Householder:27:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from RcppExports.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:5:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/SVD:48:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from RcppExports.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:6:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Geometry:58:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from RcppExports.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:7:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Eigenvalues:58:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from RcppExports.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:31:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Sparse:26:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/SparseCore:66:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from RcppExports.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:31:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Sparse:27:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/OrderingMethods:71:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from RcppExports.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:31:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Sparse:29:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/SparseCholesky:43:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from RcppExports.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:31:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Sparse:32:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/SparseQR:35:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from RcppExports.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:31:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Sparse:33:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/IterativeLinearSolvers:46:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from RcppExports.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:32:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/CholmodSupport:45:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from RcppExports.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:35:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/unsupported/Eigen/KroneckerProduct:34:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/unsupported/Eigen/../../Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from RcppExports.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:39:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/unsupported/Eigen/Polynomials:135:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/unsupported/Eigen/../../Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from RcppExports.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:40:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/unsupported/Eigen/SparseExtra:51:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/unsupported/Eigen/../../Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from RcppExports.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:26:
+In file included from /usr/local/lib/R/4.0/site-library/Rcpp/include/Rcpp.h:57:
+/usr/local/lib/R/4.0/site-library/Rcpp/include/Rcpp/DataFrame.h:136:18: warning: unused variable 'data' [-Wunused-variable]
+            SEXP data = Parent::get__();
+                 ^
+18 warnings generated.
+Using libraries at paths:
+- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
+- /usr/local/lib/R/4.0/site-library
+- /usr/local/Cellar/r/4.0.3/lib/R/library
+Using libraries at paths:
+- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
+- /usr/local/lib/R/4.0/site-library
+- /usr/local/Cellar/r/4.0.3/lib/R/library
+Using libraries at paths:
+- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
+- /usr/local/lib/R/4.0/site-library
+- /usr/local/Cellar/r/4.0.3/lib/R/library
+
+
+/usr/local/bin/ccache /usr/local/opt/llvm/bin/clang++ -std=c++14 -I"/usr/local/Cellar/r/4.0.3/lib/R/include" -DNDEBUG  -I'/usr/local/lib/R/4.0/site-library/Rcpp/include' -I'/usr/local/lib/R/4.0/site-library/RcppEigen/include' -I'/usr/local/lib/R/4.0/site-library/RcppNumerical/include' -I'/usr/local/lib/R/4.0/site-library/RcppParallel/include' -I'/usr/local/lib/R/4.0/site-library/StanHeaders/include' -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -I/usr/local/include -I/usr/local/opt/llvm/include -I/usr/local/opt/openssl/include -I/usr/local/opt/gettext/include	-I/usr/local/opt/tcl-tk/include   -I'/usr/local/lib/R/4.0/site-library/RcppParallel/include' -D_REENTRANT -DSTAN_THREADS   -I"/usr/local/lib/R/4.0/site-library/StanHeaders/include/src" -fPIC  -g -O3 -Wall -pedantic -mtune=native -pipe -c comprisk.cpp -o comprisk.o
+In file included from comprisk.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:1:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Core:535:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from comprisk.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:2:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/LU:47:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from comprisk.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:3:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Cholesky:12:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Jacobi:29:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from comprisk.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:3:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Cholesky:43:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from comprisk.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/QR:17:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Householder:27:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from comprisk.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:5:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/SVD:48:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from comprisk.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:6:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Geometry:58:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from comprisk.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:7:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Eigenvalues:58:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from comprisk.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:31:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Sparse:26:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/SparseCore:66:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from comprisk.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:31:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Sparse:27:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/OrderingMethods:71:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from comprisk.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:31:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Sparse:29:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/SparseCholesky:43:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from comprisk.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:31:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Sparse:32:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/SparseQR:35:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from comprisk.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:31:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Sparse:33:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/IterativeLinearSolvers:46:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from comprisk.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:32:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/CholmodSupport:45:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from comprisk.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:35:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/unsupported/Eigen/KroneckerProduct:34:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/unsupported/Eigen/../../Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from comprisk.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:39:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/unsupported/Eigen/Polynomials:135:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/unsupported/Eigen/../../Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from comprisk.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:40:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/unsupported/Eigen/SparseExtra:51:
+/usr/local/lib/R/4.0/site-library/RcppEigen/include/unsupported/Eigen/../../Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from comprisk.cpp:4:
+In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
+In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:26:
+In file included from /usr/local/lib/R/4.0/site-library/Rcpp/include/Rcpp.h:57:
+/usr/local/lib/R/4.0/site-library/Rcpp/include/Rcpp/DataFrame.h:136:18: warning: unused variable 'data' [-Wunused-variable]
+            SEXP data = Parent::get__();
+                 ^
+18 warnings generated.
+/usr/local/bin/ccache /usr/local/opt/llvm/bin/clang -I"/usr/local/Cellar/r/4.0.3/lib/R/include" -DNDEBUG  -I'/usr/local/lib/R/4.0/site-library/Rcpp/include' -I'/usr/local/lib/R/4.0/site-library/RcppEigen/include' -I'/usr/local/lib/R/4.0/site-library/RcppNumerical/include' -I'/usr/local/lib/R/4.0/site-library/RcppParallel/include' -I'/usr/local/lib/R/4.0/site-library/StanHeaders/include' -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -I/usr/local/include -I/usr/local/opt/llvm/include -I/usr/local/opt/openssl/include -I/usr/local/opt/gettext/include	-I/usr/local/opt/tcl-tk/include   -fPIC  -g -O3 -Wall -pedantic -mtune=native -pipe -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -c init.c -o init.o
+init.c:1:1: warning: ISO C requires a translation unit to contain at least one declaration [-Wempty-translation-unit]
+1 warning generated.
+Using libraries at paths:
+- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
+- /usr/local/lib/R/4.0/site-library
+- /usr/local/Cellar/r/4.0.3/lib/R/library
+Using libraries at paths:
+- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
+- /usr/local/lib/R/4.0/site-library
+- /usr/local/Cellar/r/4.0.3/lib/R/library
+Using libraries at paths:
+- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
+- /usr/local/lib/R/4.0/site-library
+- /usr/local/Cellar/r/4.0.3/lib/R/library
+Using libraries at paths:
+- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
+- /usr/local/lib/R/4.0/site-library
+- /usr/local/Cellar/r/4.0.3/lib/R/library
+/usr/local/bin/ccache /usr/local/opt/llvm/bin/clang++ -std=c++14 -dynamiclib -Wl,-headerpad_max_install_names -undefined dynamic_lookup -single_module -multiply_defined suppress -L/usr/local/Cellar/r/4.0.3/lib/R/lib -L/usr/local/opt/gettext/lib -L/usr/local/opt/readline/lib -L/usr/local/lib -L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib -o art.so RcppExports.o comprisk.o init.o -L/usr/local/lib/R/4.0/site-library/RcppParallel/lib/ -Wl,-rpath,/usr/local/lib/R/4.0/site-library/RcppParallel/lib/ -ltbb -ltbbmalloc -L/usr/local/Cellar/r/4.0.3/lib/R/lib -lR -lintl -Wl,-framework -Wl,CoreFoundation
+installing to /usr/local/lib/R/4.0/site-library/00LOCK-art/00new/art/libs
+,** R
+,** byte-compile and prepare package for lazy loading
+Using libraries at paths:
+- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
+- /usr/local/lib/R/4.0/site-library
+- /usr/local/Cellar/r/4.0.3/lib/R/library
+,** help
+,*** installing help indices
+,** building package indices
+Using libraries at paths:
+- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
+- /usr/local/lib/R/4.0/site-library
+- /usr/local/Cellar/r/4.0.3/lib/R/library
+,** testing if installed package can be loaded from temporary location
+Using libraries at paths:
+- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
+- /usr/local/lib/R/4.0/site-library
+- /usr/local/Cellar/r/4.0.3/lib/R/library
+,** checking absolute paths in shared objects and dynamic libraries
+,** testing if installed package can be loaded from final location
+Using libraries at paths:
+- /usr/local/lib/R/4.0/site-library
+- /usr/local/Cellar/r/4.0.3/lib/R/library
+,** testing if installed package keeps a record of temporary installation path
+,* DONE (art)
+#+end_example
 
 * COMMENT Local Variables
 # Local Variables:

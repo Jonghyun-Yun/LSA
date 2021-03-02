@@ -1,0 +1,63 @@
+# Created 2021-03-02 Tue 09:18
+#+TITLE: [2021-03-02 Tue]  Summary: simulated survival time and log-loss
+#+AUTHOR: Jonghyun Yun
+
+This article provides analysis of the issue in the posterior predictive checking we discussed in [2021-03-01 Mon] meeting.
+
+* TL;DR
+It is advised to switch signs of the latent distance terms. A new model gives acceptable results for posterior predictive checking of the response type. The computational method I implemented doesn't seem to be wrong. So the issue might be coming from the statistical model itself.
+
+* Models
+The below is a list of models in consideration. They differ by the sign of the latent distance term. A baseline model is one with no latent distance term.
+
+(-,+): (correct,incorrect)
+\begin{align*}
+h_{i1}(t) &= \lambda_{i1}(t) \exp(\beta_{i1} + \theta_{k1} - ||z_{k} - w_{i}||) \\
+h_{i0}(t) &= \lambda_{i0}(t) \exp(\beta_{i0} + \theta_{k0} + ||z_{k} - w_{i}||) \\
+\end{align*}
+
+(+,-): (correct,incorrect)
+\begin{align*}
+h_{i1}(t) &= \lambda_{i1}(t) \exp(\beta_{i1} + \theta_{k1} + ||z_{k} - w_{i}||) \\
+h_{i0}(t) &= \lambda_{i0}(t) \exp(\beta_{i0} + \theta_{k0} - ||z_{k} - w_{i}||) \\
+\end{align*}
+
+* Histogram of survival times
+You need to open this document in Github using the web browser to see PDF files. The simulated times are divided into two panes based on the observed response type. The (-,+) model didn't have the issue of simulating the max survival time (31).
+
+- [[file:./chessB_pn/hist_time.pdf][(-,+) model]]
+- [[file:./chessB_pn/hist_time.pdf][(+,-) model]]
+- [[file:./chessB_no_latent/hist_time.pdf][baseline model]]
+
+* Log Loss
+Given the survival time and MCMC samples, the conditional probability of "correct" response is estimated as
+\[
+\hat p_{ik}^{(l)}(t) = \frac{h_{i1}^{(l)}(t)}{h_{i1}^{(l)}(t) + h_{i0}^{(l)}(t)},
+\]
+where $(l)$ denote the index of MCMC sample used to calculate the quantity.
+We use $Y_{ik} =
+1$ to denote a correct response, and $Y_{ik} = 0$ an incorrect response. Then, $p_{i}^{(l)}(t)$ can be served as the prediction probability of $Y_{ik}$, which allows using classification performance metrics. For easiness of evaluation, we use the log loss (over respondent and item)
+\[
+\sum_{l=1} ^{L}\left\{ y_{ik} \log \hat p_{ik}^{(l)}(t) + (1-y_{ik}) \log (1 - \hat p_{ik}^{(l)})\right\}.
+\]
+
+The log loss are concatenated over respondents for each item. Then, we calculated differences of concatenated log loss: 1) baseline - (-,+) log loss and 2) baseline - (+,-) log loss. So, the larger is the better. We provide a series of box plots for the differences over all items.
+
+On average, the (-,+) model gives smaller log losses than the baseline for all correct responses, but and the (+,-) model fails to do so for both response types. In terms of "posterior density" and "likelihood", these two models give similar fit, and also they show better fit than the baseline model.
+The simulated survival time is used in the 1st PDF, and the observed survival time is used in the 2nd PDF. They show similar patterns (the results is a bit more promising with the simulation though), so the simulation is not likely to be a "culprit". I also didn't find any error in the MCMC sampler. Perhaps, this could be what we get from switching signs of the latent distance.
+
+[[file:sim_logLoss_diff_by.pdf][With simulated survival time]]
+[[file:LogLoss_diff_by.pdf][With observed survival time]]
+
+Furthermore, tables for means and standard errors for the differences (with simulated survival time) are listed as the following:
+** Log loss differences
+#+begin_src R :exports results :results code
+readr::read_csv(file = paste0(out_dir, "logloss_diff.csv"))
+round(prin,3) %>% knitr::kable()
+#+end_src
+
+** Log loss differences by response type
+#+begin_src R :exports results :results code
+readr::read_csv(prin_by, file = paste0(out_dir, "logloss_diff_by.csv"))
+cbind(prin_by[,2], round(prin_by[,-2],3)) %>% knitr::kable()
+#+end_src
