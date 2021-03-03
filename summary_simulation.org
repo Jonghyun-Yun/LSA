@@ -15,7 +15,7 @@
 
 #+PROPERTY: header-args :tangle
 #+PROPERTY: header-args :eval never-export
-#+PROPERTY: header-args:R :session *R-Org* :exports both :results output :noweb yes :eval t
+#+PROPERTY: header-args:R :session *R-Org* :exports both :results output :noweb yes :eval nil
 * OrgMode                                                          :noexport:
 #+INFOJS_OPT: view:nil toc:t ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
 
@@ -87,12 +87,6 @@
 
 #+LATEX_COMPILER: xelatex
 
-#+LATEX_HEADER: %% Graphics
-# #+LATEX_HEADER: \usepackage{graphicx}
-#+LATEX_HEADER: \usepackage{subfigure}
-#+LATEX_HEADER: %% \usepackage{grffile} % Extended file name support for graphics (legacy package)
-#+LATEX_HEADER: \usepackage{float} % Fix figures and tables by [H]
-
 #+LATEX_HEADER: %% Margins
 #+LATEX_HEADER: \usepackage{geometry}
 #+LATEX_HEADER: \geometry{verbose,margin=1.5in}
@@ -133,14 +127,6 @@
 #+LATEX_HEADER: \setmathfont{XITS Math} % \boldsymbol works
 #+LATEX_HEADER: \setmathfont[range={\mathcal,\mathbfcal},StylisticSet=1]{XITS Math}
 
-#+LATEX_HEADER: \usepackage{xcolor}
-#+LATEX_HEADER: \usepackage{grffile}
-#+LATEX_HEADER: \usepackage{longtable}
-#+LATEX_HEADER: \usepackage{wrapfig}
-#+LATEX_HEADER: \usepackage{rotating}
-#+LATEX_HEADER: \usepackage[normalem]{ulem}
-#+LATEX_HEADER: \usepackage{textcomp}
-#+LATEX_HEADER: \usepackage{capt-of}
 #+LATEX_HEADER: \usepackage[unicode,colorlinks]{hyperref}
 # #+LATEX_HEADER: \PassOptionsToPackage{unicode,colorlinks=true}{hyperref}
 
@@ -173,9 +159,9 @@ h_{i0}(t) &= \lambda_{i0}(t) \exp(\beta_{i0} + \theta_{k0} - ||z_{k} - w_{i}||) 
 \end{align*}
 
 * Histogram of survival times
-You need to open this document in Github using the web browser to see PDF files. The simulated times are divided into two panes based on the observed response type. The =np= model didn't have the issue of simulating the max survival time (=31).
+To see PDF files, you need to open this document using the link I provide. The simulated times are divided into two panes based on the observed response type. The =np= model didn't have the issue of simulating the max survival time (=31).
 
-- [[file:chessB_pn/hist_time.pdf][=np= model]]
+- [[file:chessB_np/hist_time.pdf][=np= model]]
 - [[file:./chessB_pn/hist_time.pdf][=pn= model]]
 - [[file:./chessB_no_latent/hist_time.pdf][=base= model]]
 
