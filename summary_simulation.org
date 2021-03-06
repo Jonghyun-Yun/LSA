@@ -1,7 +1,7 @@
 # Created 2021-03-02 Tue 09:18
-#+TITLE: [2021-03-02 Tue]  Summary: simulated survival time and log-loss
+#+TITLE: Simulated survival time and log-loss
+#+SUBTITLE: model comparison
 #+AUTHOR: Jonghyun Yun
-#+DATE: 
 
 # https://orgmode.org/manual/Export-Settings.html#Export-Settings
 #+OPTIONS: H:4 num:nil toc:nil pri:t ::t |:t f:t <:t -:t \n:nil ':t ^:nil
@@ -14,7 +14,7 @@
 #+SETUPFILE: ~/setup/my-theme-readtheorg.setup
 
 #+PROPERTY: header-args :tangle
-#+PROPERTY: header-args :eval never-export
+# #+PROPERTY: header-args :eval never-export
 #+PROPERTY: header-args:R :session *R-Org* :exports both :results output :noweb yes :eval nil
 * OrgMode                                                          :noexport:
 #+INFOJS_OPT: view:nil toc:t ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
