@@ -34,7 +34,8 @@ z0 <- readr::read_csv(paste0(out_dir, "z0.csv"))
 
 # calculate Euclidean distance and Gaussian distance over all item-respondent pairs
 
-two distance function based on Euclidean dist: 1) identity 2) Gaussian kernel
+-   `dist_zw.csv` Euclidean dist
+-   `rbf_dist_zw.csv` Gaussian dist
 
 ```R
 D <- matrix(0, nrow = nrow(z0), ncol = nrow(w0))
