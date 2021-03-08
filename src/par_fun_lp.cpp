@@ -17,7 +17,7 @@ double par_fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lamb
                   const Eigen::MatrixXi &NA,
                   const Eigen::VectorXd &len, const Eigen::MatrixXi &seg,
                   const Eigen::MatrixXd &H, const Eigen::MatrixXi &Y,
-                  bool SINGLE_Z, bool SINGLE_W, bool UPDATE_GAMMA) {
+                  bool SINGLE_Z, bool SINGLE_W, bool UPDATE_GAMMA, int ONE_FREE_GAMMA) {
 
     using stan::math::to_vector;
     using stan::math::distance;
@@ -98,7 +98,14 @@ double par_fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lamb
 
     if (UPDATE_GAMMA) {
         if (SINGLE_Z && SINGLE_W) {
-            lp_ += lognormal_lpdf(gamma(1), mu_gamma(1), sigma_gamma(1));
+            // abs to play with sign
+            if (ONE_FREE_GAMMA == 99) {
+                lp_ += lognormal_lpdf(std::abs(gamma(1)), mu_gamma(1), sigma_gamma(1));
+            }
+            else {
+                lp_ += lognormal_lpdf(std::abs(gamma(ONE_FREE_GAMMA)),
+                                      mu_gamma(ONE_FREE_GAMMA), sigma_gamma(ONE_FREE_GAMMA));
+            }
         }
         else {
             lp_ += lognormal_lpdf(gamma, mu_gamma, sigma_gamma); // they are vectors!

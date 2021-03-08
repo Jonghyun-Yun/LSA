@@ -25,6 +25,7 @@
 #include "update_double_w.h"
 #include "update_gamma.h"
 #include "update_single_gamma.h"
+#include "update_one_free_gamma.h"
 #include "fun_lp.h"
 #include "par_fun_lp.h"
 
@@ -141,6 +142,7 @@ int main(int argc, const char *argv[]) {
   }
 
   // to play with sign of gammas e.g. both positive, one negative and one positive, etc.
+  // FALSE imposes restriction on the sign assignment
   bool SIGN_GAMMA;
   if (sarg[8] == "true") {
     SIGN_GAMMA = true;
@@ -151,11 +153,24 @@ int main(int argc, const char *argv[]) {
     return 0;
   }
 
+  // update a single gamma varialbe
+  // use normal prior on gamma
+  int ONE_FREE_GAMMA;
+  if (sarg[9] == "correct") {
+    ONE_FREE_GAMMA = 1; // update gamma(c) for correct process
+  } else if (sarg[9] == "incorrect") {
+    ONE_FREE_GAMMA = 0; // update gamma(c) for incorrect process
+  } else if (sarg[9] == "false") {
+    ONE_FREE_GAMMA = 99;
+  } else {
+    std::cout << "invalid arguemnt for ONE_FREE_GAMMA.\n" << std::endl;
+    return 0;
+  }
 
-  int chain_id = atoi(argv[9]);
-  int num_samples = atoi(argv[10]);
-  int num_warmup = atoi(argv[11]);
-  int thin = atoi(argv[12]);
+  int chain_id = atoi(argv[10]);
+  int num_samples = atoi(argv[11]);
+  int num_warmup = atoi(argv[12]);
+  int thin = atoi(argv[13]);
 
   // log-posterior
   double lp_;
@@ -552,21 +567,29 @@ int main(int argc, const char *argv[]) {
 
         if (UPDATE_GAMMA) {
 
-            // std::cout << "updating gamma...\n";
+          // std::cout << "updating gamma...\n";
           // updating gamma...
+          //
+          if (ONE_FREE_GAMMA == 1) {
+              update_one_free_gamma(1, gamma, acc_gamma, mu_gamma, sigma_gamma,
+                                  jump_gamma, cum_lambda, beta, theta, z, w, I,
+                                  N, G, mNA, mlen, mseg, mH, mY, RUN_PAR, rng);
+          } else if (ONE_FREE_GAMMA == 0) {
+              update_one_free_gamma(0, gamma, acc_gamma, mu_gamma, sigma_gamma,
+                                  jump_gamma, cum_lambda, beta, theta, z, w, I,
+                                  N, G, mNA, mlen, mseg, mH, mY, false, rng);
+          } else if (ONE_FREE_GAMMA == 99) {
+            if (SINGLE_Z) {
+              update_single_gamma(gamma, acc_gamma, mu_gamma, sigma_gamma,
+                                  jump_gamma, cum_lambda, beta, theta, z, w, I,
+                                  N, G, mNA, mlen, mseg, mH, mY, RUN_PAR, rng);
 
-          if (SINGLE_Z) {
-            update_single_gamma(gamma, acc_gamma, mu_gamma, sigma_gamma, jump_gamma,
-                                cum_lambda, beta, theta, z, w, I, N,
-                                G, mNA, mlen, mseg, mH, mY, RUN_PAR, rng);
-
+            } else {
+              update_gamma(gamma, acc_gamma, mu_gamma, sigma_gamma, jump_gamma,
+                           cum_lambda, beta, theta, z, w, I, N, G, mNA, mlen,
+                           mseg, mH, mY, rng);
+            }
           }
-          else {
-            update_gamma(gamma, acc_gamma, mu_gamma, sigma_gamma, jump_gamma,
-                         cum_lambda, beta, theta, z, w, I, N,
-                         G, mNA, mlen, mseg, mH, mY, rng);
-          }
-
         }
 
         // std::cout << "updating z...\n";
@@ -801,7 +824,7 @@ int main(int argc, const char *argv[]) {
         lp_ = par_fun_lp(a_lambda, b_lambda, mu_beta, sigma_beta, mu_theta, sigma_theta,
                          a_sigma, b_sigma, mu_gamma, sigma_gamma, mu_z, sigma_z, mu_w, sigma_w,
                          lambda, cum_lambda, beta, theta, sigma, gamma, z, w,
-                         I, N, G, mNA, mlen, mseg, mH, mY, SINGLE_Z, SINGLE_W, UPDATE_GAMMA);
+                         I, N, G, mNA, mlen, mseg, mH, mY, SINGLE_Z, SINGLE_W, UPDATE_GAMMA, ONE_FREE_GAMMA);
       }
       else {
         lp_ = fun_lp(a_lambda, b_lambda, mu_beta, sigma_beta, mu_theta, sigma_theta,
