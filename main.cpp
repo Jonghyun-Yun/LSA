@@ -577,7 +577,7 @@ int main(int argc, const char *argv[]) {
           } else if (ONE_FREE_GAMMA == 0) {
               update_one_free_gamma(0, gamma, acc_gamma, mu_gamma, sigma_gamma,
                                   jump_gamma, cum_lambda, beta, theta, z, w, I,
-                                  N, G, mNA, mlen, mseg, mH, mY, false, rng);
+                                  N, G, mNA, mlen, mseg, mH, mY, RUN_PAR, rng);
           } else if (ONE_FREE_GAMMA == 99) {
             if (SINGLE_Z) {
               update_single_gamma(gamma, acc_gamma, mu_gamma, sigma_gamma,
@@ -713,19 +713,26 @@ int main(int argc, const char *argv[]) {
 
         if (UPDATE_GAMMA) {
           // updating gamma...
+          if (ONE_FREE_GAMMA == 1) {
+            update_one_free_gamma(1, gamma, acc_gamma, mu_gamma, sigma_gamma,
+                                  jump_gamma, cum_lambda, beta, theta, z, w, I,
+                                  N, G, mNA, mlen, mseg, mH, mY, RUN_PAR, rng);
+          } else if (ONE_FREE_GAMMA == 0) {
+            update_one_free_gamma(0, gamma, acc_gamma, mu_gamma, sigma_gamma,
+                                  jump_gamma, cum_lambda, beta, theta, z, w, I,
+                                  N, G, mNA, mlen, mseg, mH, mY, RUN_PAR, rng);
+          } else if (ONE_FREE_GAMMA == 99) {
+            if (SINGLE_Z) {
+              update_single_gamma(gamma, acc_gamma, mu_gamma, sigma_gamma,
+                                  jump_gamma, cum_lambda, beta, theta, z, w, I,
+                                  N, G, mNA, mlen, mseg, mH, mY, RUN_PAR, rng);
 
-          if (SINGLE_Z) {
-            update_single_gamma(gamma, acc_gamma, mu_gamma, sigma_gamma, jump_gamma,
-                                cum_lambda, beta, theta, z, w, I, N,
-                                G, mNA, mlen, mseg, mH, mY, RUN_PAR, rng);
-
+            } else {
+              update_gamma(gamma, acc_gamma, mu_gamma, sigma_gamma, jump_gamma,
+                           cum_lambda, beta, theta, z, w, I, N, G, mNA, mlen,
+                           mseg, mH, mY, rng);
+            }
           }
-          else {
-            update_gamma(gamma, acc_gamma, mu_gamma, sigma_gamma, jump_gamma,
-                         cum_lambda, beta, theta, z, w, I, N,
-                         G, mNA, mlen, mseg, mH, mY, rng);
-          }
-
         }
 
       // updating z...

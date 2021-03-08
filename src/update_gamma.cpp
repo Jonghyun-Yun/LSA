@@ -65,7 +65,7 @@ void update_gamma(Eigen::VectorXd &gamma, Eigen::VectorXd &acc_gamma,
                              stan::math::distance(z.row(c*N + k), w.row(c*I + i))));
 
           if (Y(i, k) == c) {
-            logr_gamma(c) += (gamma_s(c) - gamma(c)) * stan::math::distance(z.row(c*N + k), w.row(c*I + i));
+            logr_gamma(c) -= (gamma_s(c) - gamma(c)) * stan::math::distance(z.row(c*N + k), w.row(c*I + i));
           }
         }
       }

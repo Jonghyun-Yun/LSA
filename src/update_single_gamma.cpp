@@ -61,7 +61,7 @@ void update_single_gamma(Eigen::VectorXd &gamma, Eigen::VectorXd &acc_gamma,
                                                          stan::math::distance(z.row(c*N + k), w.row(c*I + i))));
 
                                     if (Y(i, k) == c) {
-                                        running_total += (gamma_s(c) - gamma(c)) *
+                                        running_total -= (gamma_s(c) - gamma(c)) *
                                             stan::math::distance(z.row(c*N + k), w.row(c*I + i));
                                     }
                                 }
@@ -98,7 +98,7 @@ void update_single_gamma(Eigen::VectorXd &gamma, Eigen::VectorXd &acc_gamma,
                                          stan::math::distance(z.row(c*N + k), w.row(c*I + i))));
 
                     if (Y(i, k) == c) {
-                        logr_gamma += (gamma_s(c) - gamma(c)) * stan::math::distance(z.row(c*N + k), w.row(c*I + i));
+                        logr_gamma -= (gamma_s(c) - gamma(c)) * stan::math::distance(z.row(c*N + k), w.row(c*I + i));
                     }
                 }
             }
