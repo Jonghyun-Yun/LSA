@@ -3,7 +3,7 @@
 #include "update_one_free_gamma.h"
 
 void update_one_free_gamma(
-    const int fc, Eigen::VectorXd &gamma, Eigen::VectorXd &acc_gamma,
+    const int ONE_FREE_GAMMA, Eigen::VectorXd &gamma, Eigen::VectorXd &acc_gamma,
     const Eigen::VectorXd &mu_gamma, const Eigen::VectorXd &sigma_gamma,
     const Eigen::VectorXd &jump_gamma, const Eigen::MatrixXd &cum_lambda,
     const Eigen::MatrixXd &beta, const Eigen::MatrixXd &theta,
@@ -14,8 +14,8 @@ void update_one_free_gamma(
     boost::ecuyer1988 &rng) {
 
   // fc: a "F"ree gamma variable response type "C", this is one to get updated.
-  // do nothing for gamma(c) for c != fc
-  int c = fc;
+  // do nothing for gamma(c) for c != ONE_FREE_GAMMA
+  int c = ONE_FREE_GAMMA;
 
   // we draw a single free gamme gamma_s
   // Eigen::VectorXd gamma_s(2);
@@ -32,10 +32,8 @@ void update_one_free_gamma(
   logr_gamma +=
       stan::math::lognormal_lpdf(gamma_s, mu_gamma(c), sigma_gamma(c)) -
       stan::math::lognormal_lpdf(gamma(c), mu_gamma(c), sigma_gamma(c)) +
-      stan::math::lognormal_lpdf(gamma(c), stan::math::log(gamma_s),
-                                 jump_gamma(c)) -
-      stan::math::lognormal_lpdf(gamma_s, stan::math::log(gamma(c)),
-                                 jump_gamma(c));
+      stan::math::lognormal_lpdf(gamma(c), stan::math::log(gamma_s), jump_gamma(c)) -
+      stan::math::lognormal_lpdf(gamma_s, stan::math::log(gamma(c)), jump_gamma(c));
 
   if (RUN_PAR) {
     logr_gamma += tbb::parallel_reduce(

@@ -314,7 +314,7 @@ r & =
 1. initialize $\gamma_{c}$: 2
 2. for each c
 3. Draw $\gamma_{c}^{* } \sim \log N(\log \gamma_{c}^{(t)}, jump_{\gamma_{c}})$
-4. accept if $\log r < \log U(0,1)$
+4. accept if $\min(\log r, 0) > \log U(0,1)$
 \begin{align*}
 r = & \prod_{i=1}^{I}\prod_{k=1}^{N} \frac{
    \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}^{* }||z_{kc} - w_{i}||)
@@ -322,36 +322,24 @@ r = & \prod_{i=1}^{I}\prod_{k=1}^{N} \frac{
 }{
    \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}^{t}||z_{kc} - w_{i}||)
    \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}^{t}||z_{kc} - w_{i}||)\Lambda_{ic}(t) ]
-}
+} \\
+& \times
 \frac{\pi(\gamma_{c}^{* })}{\pi(\gamma_c^{t})}
    \frac{J(\gamma_{c}^{t} -> \gamma_{c}^{* })}{J(\gamma_{c}^{* } -> \gamma_{c}^{t})} \\
 =&
 \frac{\pi(w_i^{* })}{\pi(w_i^{t})}
+\frac{J(w_i^{t} -> w_i^{* })}{J(w_i^{* } -> w_i^{t})} \\
+& \times \exp[-\sum_{i=1}^{I}\sum_{k=1}^{N}\Lambda_{ic}(t)\exp(\beta_{ic} + \theta_{kc}) \{\exp( - \gamma_{c}^{* } ||z_{kc} - w_{i}||) -
+ \exp( -\gamma_{c}^{t} ||z_{kc} - w_{i}||)\}] \\
+=&\frac{\pi(w_i^{* })}{\pi(w_i^{t})}
 \frac{J(w_i^{t} -> w_i^{* })}{J(w_i^{* } -> w_i^{t})}
-\exp[\sum_{i=1}^{I}\sum_{k=1}^{N} ||z_{kc} - w_{i}||(\gamma_{c}^{t}-\gamma_{c}^{* })]\\
-& \times \exp[-\sum_{i=1}^{I}\sum_{k=1}^{N}\Lambda_{ic}(t)\exp(\beta_{ic} + \theta_{kc}) \{\exp( - \gamma_{c}^{* } ||z_{kc} - w_{i}||) -
- \exp( -\gamma_{c}^{t} ||z_{kc} - w_{i}||)\}]
+\exp[-\sum_{i=1}^{I}\sum_{k=1}^{N}\Lambda_{ic}(t) (RR_{c}^{*} - RR_{c})]
 \end{align*}
 
-if $Y_{ikc} = 1$; otherwise
-\begin{align*}
-r = &
-\frac{\pi(w_i^{* })}{\pi(w_i^{t})}
-\frac{J(w_i^{t} -> w_i^{* })}{J(w_i^{* } -> w_i^{t})}\\
-& \times \exp[-\sum_{i=1}^{I}\sum_{k=1}^{N}\Lambda_{ic}(t)\exp(\beta_{ic} + \theta_{kc}) \{\exp( - \gamma_{c}^{* } ||z_{kc} - w_{i}||) -
- \exp( -\gamma_{c}^{t} ||z_{kc} - w_{i}||)\}]
-\end{align*}
-
-** update \sigma^2
-prior: $\sigma^{2} \sim inv-gamma(a,b)$
-target: $\prod_{k,c} N(\theta_{kc}|0,\sigma^{2}) inv-gamma(\sigma^{2}|a,b)$ -> normal-(inv-gamma) model
-
-1. initialize $\sigma^{2}$
-2. Draw $\sigma^{2} \sim inv-Gamma(a + N, b + \sum_{k,c} \theta_{kc}^{2} / 2)$
-* LSJM prior
-\begin{aligned} \pi\left(\beta_{i}\right) & \sim \mathrm{N}\left(0, \tau_{\beta}^{2}\right) \\ \pi\left(\theta_{j} | \sigma^{2}\right) & \sim \mathrm{N}\left(0, \sigma^{2}\right) \\ \pi\left(\sigma^{2}\right) & \sim \operatorname{lnv}-\operatorname{Gamma}\left(a_{\sigma}, b_{\sigma}\right) \\ \pi\left(\mathbf{z}_{j}\right) & \sim \mathrm{MVN}_{d}\left(0, I_{d}\right) \\ \pi\left(\mathbf{w}_{i}\right) & \sim \mathrm{MVN}_{d}\left(0, I_{d}\right) \\ \log \pi(\gamma) & \sim \mathrm{N}\left(\mu_{\gamma}, \tau_{\gamma}^{2}\right) \end{aligned}
-
-\[\sigma^{2}=4, \tau_{\beta}^{2}=1, a_{\sigma}=1, b_{\sigma}=1, \mu_{\gamma}=0, \text { and } \tau_{\gamma}^{2}=1\]
+If $Y_{ikc} = 1$,
+\[
+r = r \times \exp[-\sum_{i=1}^{I}\sum_{k=1}^{N} ||z_{kc} - w_{i}||(\gamma_{c}^* - \gamma_{c}^{t})]
+\]
 * prerequisite
 :PROPERTIES:
 :header-args:R:          :tangle R/prerequisite.R
@@ -758,7 +746,7 @@ readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
 #+END_SRC
 
-* opusIII-matrices-data.dat
+* opusIII-matrices-data.dat                                         :ARCHIVE:
 #+BEGIN_SRC R
 source("R/opusIII-preprocess.R")
 source("R/opusIII-init.R")
@@ -983,7 +971,7 @@ readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
 #+END_SRC
 
-* verbalIntelligence.dat
+* verbalIntelligence.dat                                            :ARCHIVE:
 
 #+BEGIN_SRC R :results none :tangle no :results output :session
 source("R/verbal-preprocess.R")
@@ -1255,7 +1243,7 @@ readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
 #+END_SRC
 
-* Marketing
+* Marketing                                                         :ARCHIVE:
 ** description
 
 Here is the description of the dataset: Each row of the data represents one fixation.  The duration of the fixation is given by the column labeled "event_duration" and is in units of milliseconds.  The variable ~choice~ indicates the choice that the subject made in that trial, 1 is left and 0 is right. The variable "roi" indicates whether the fixation was to the left ("1) or the right ("2").  The variable ~rt~ is the reaction time for the trial. "fix_num" is the number of the fixation within the trial, with 1 being first fixation, 2 being second fixation etc.  Similarly, "rev_fix_num" is the number of the fixation but going backwards from the last fixation, so 1 is the last fixation, 2 is the second-to-last fixation, etc.
@@ -1472,7 +1460,7 @@ logrt_boxp
 dev.off(which = dev.cur())
 #+END_SRC
 
-* Smith and Krajbich                                                 :ATTACH:
+* Smith and Krajbich                                         :ATTACH:ARCHIVE:
 :PROPERTIES:
 :ID:       d0a1e4f9-326e-4950-8d12-d805efe8950a
 :END:
@@ -1707,7 +1695,7 @@ logrt_boxp
 dev.off(which = dev.cur())
 #+END_SRC
 
-* Chess proficiency (this is for Chees A)                            :ATTACH:
+* Chess proficiency (this is for Chees A)                    :ATTACH:ARCHIVE:
 :PROPERTIES:
 :ID:       aaa8e8c6-ea9b-47b0-8901-047b0388e662
 :END:
@@ -2079,7 +2067,7 @@ b_sigma = 1.0
 
 mu_gamma = matrix(0.0,1,2)
 sigma_gamma = matrix(sqrt(1.0),1,2)
-jump_gamma = matrix(0.01,1,2)
+jump_gamma = matrix(0.05,1,2)
 
 mu_z = matrix(0.0,N,2)
 sigma_z = matrix(sqrt(1.0),N,2)
@@ -2180,90 +2168,6 @@ readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
 #+END_SRC
 
-** Choose-a-move test B: nf (free incorrect gamma) Gamma(0) = ?, Gamma(1) = 1
-#+BEGIN_SRC R :results none :tangle R/chessB_nf-init.R
-mvar = as.matrix( readr::read_csv("input/mvar.csv", col_names=F) )
-I = mvar[1]
-N = mvar[2]
-G = mvar[4]
-
-set.seed(as.numeric(Sys.time()))
-
-init_lambda = matrix(1, nrow = 2*I, ncol = G);
-init_beta = 0*matrix(rnorm(2*I), ncol = 2);
-init_theta = 0*matrix(rnorm(2*N), ncol = 2);
-
-init_gamma = 1*matrix(c(1, 1), ncol = 1);
-
-init_w = 1*matrix(rnorm(2*2*I), ncol = 2);
-init_z = 1*matrix(rnorm(2*2*N), ncol = 2);
-#+END_SRC
-
-#+BEGIN_SRC R :results none :tangle R/chessB_nf-init.R
-readr::write_csv(as.data.frame(init_lambda), "input/init_lambda.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_beta), "input/init_beta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_theta), "input/init_theta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_gamma), "input/init_gamma.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
-#+END_SRC
-
-** Choose-a-move test B: n0 (free incorrect gamma) Gamma(0) = 0, Gamma(1) = 1
-#+BEGIN_SRC R :results none :tangle R/chessB_nf-init.R
-mvar = as.matrix( readr::read_csv("input/mvar.csv", col_names=F) )
-I = mvar[1]
-N = mvar[2]
-G = mvar[4]
-
-set.seed(as.numeric(Sys.time()))
-
-init_lambda = matrix(1, nrow = 2*I, ncol = G);
-init_beta = 0*matrix(rnorm(2*I), ncol = 2);
-init_theta = 0*matrix(rnorm(2*N), ncol = 2);
-
-init_gamma = 1*matrix(c(0, 1), ncol = 1);
-
-init_w = 0*matrix(rnorm(2*2*I), ncol = 2);
-init_z = 0*matrix(rnorm(2*2*N), ncol = 2);
-#+END_SRC
-
-#+BEGIN_SRC R :results none :tangle R/chessB_nf-init.R
-readr::write_csv(as.data.frame(init_lambda), "input/init_lambda.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_beta), "input/init_beta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_theta), "input/init_theta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_gamma), "input/init_gamma.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
-#+END_SRC
-
-** Choose-a-move test B: pf (free incorrect gamma) Gamma(0) = ?, Gamma(1) = -1
-#+BEGIN_SRC R :results none :tangle R/chessB_pf-init.R
-mvar = as.matrix( readr::read_csv("input/mvar.csv", col_names=F) )
-I = mvar[1]
-N = mvar[2]
-G = mvar[4]
-
-set.seed(as.numeric(Sys.time()))
-
-init_lambda = matrix(1, nrow = 2*I, ncol = G);
-init_beta = 0*matrix(rnorm(2*I), ncol = 2);
-init_theta = 0*matrix(rnorm(2*N), ncol = 2);
-
-init_gamma = 1*matrix(c(1, 0), ncol = 1);
-
-init_w = 1*matrix(rnorm(2*2*I), ncol = 2);
-init_z = 1*matrix(rnorm(2*2*N), ncol = 2);
-#+END_SRC
-
-#+BEGIN_SRC R :results none :tangle R/chessB_pf-init.R
-readr::write_csv(as.data.frame(init_lambda), "input/init_lambda.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_beta), "input/init_beta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_theta), "input/init_theta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_gamma), "input/init_gamma.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
-#+END_SRC
-
 ** Choose-a-move test B: nn Gamma(0) = -1, Gamma(1) = -1
 #+BEGIN_SRC R :results none :tangle R/chessB_nn-init.R
 mvar = as.matrix( readr::read_csv("input/mvar.csv", col_names=F) )
@@ -2348,7 +2252,177 @@ readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
 #+END_SRC
 
-* Duolingo
+** Choose-a-move test B: fn (free gamma0) Gamma(0) > 0, Gamma(1) = -1
+:PROPERTIES:
+:ID:       f4cdf66c-59ff-4569-9fec-04baa3f2b694
+:END:
+
+#+BEGIN_SRC R :results none :tangle R/chessB_fn-preprocess.R
+source("R/chessB-preprocess.R")
+
+mvar = readr::read_csv("input/mvar.csv", col_names=FALSE) %>% as.matrix()
+I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
+
+## lambda
+a_lambda = matrix(0.1,I,G)
+b_lambda = matrix(0.1,I,G)
+jump_lambda = matrix(0.5,I,G)
+
+mu_beta = matrix(0.0,I,2)
+sigma_beta = matrix(sqrt(1.0),I,2)
+jump_beta = matrix(0.25,I,2)
+
+mu_theta = matrix(0.0,N,2)
+sigma_theta = matrix(sqrt(1.0),N,2)
+jump_theta = matrix(1.0,N,2)
+
+a_sigma = 1.0
+b_sigma = 1.0
+
+mu_gamma = matrix(0.0,1,2)
+sigma_gamma = matrix(sqrt(10.0),1,2)
+jump_gamma = matrix(0.01,1,2)
+
+mu_z = matrix(0.0,N,2)
+sigma_z = matrix(sqrt(10.0),N,2)
+jump_z = matrix(0.1,N,2)
+
+mu_w = matrix(0.0,I,2)
+sigma_w = matrix(sqrt(10.0),I,2)
+jump_w = matrix(0.05,I,2)
+#+END_SRC
+
+#+BEGIN_SRC R :results none :tangle R/chessB_fn-preprocess.R
+readr::write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"input/pj_lambda.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"input/pj_beta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_theta,sigma_theta,jump_theta)),"input/pj_theta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(a_sigma,b_sigma)),"input/pj_sigma.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_gamma,sigma_gamma,jump_gamma)),"input/pj_gamma.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_z,sigma_z,jump_z)),"input/pj_z.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_w,sigma_w,jump_w)),"input/pj_w.csv", col_names = FALSE)
+#+END_SRC
+
+#+BEGIN_SRC R :results none :tangle R/chessB_fn-init.R
+mvar = as.matrix( readr::read_csv("input/mvar.csv", col_names=F) )
+I = mvar[1]
+N = mvar[2]
+G = mvar[4]
+
+set.seed(as.numeric(Sys.time()))
+
+init_lambda = matrix(1, nrow = 2*I, ncol = G);
+init_beta = 0*matrix(rnorm(2*I), ncol = 2);
+init_theta = 0*matrix(rnorm(2*N), ncol = 2);
+
+init_gamma = 1*matrix(c(1, -1), ncol = 1);
+
+init_w = 1*matrix(rnorm(2*2*I), ncol = 2);
+init_z = 1*matrix(rnorm(2*2*N), ncol = 2);
+#+END_SRC
+
+#+BEGIN_SRC R :results none :tangle R/chessB_fn-init.R
+readr::write_csv(as.data.frame(init_lambda), "input/init_lambda.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_beta), "input/init_beta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_theta), "input/init_theta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_gamma), "input/init_gamma.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
+#+END_SRC
+
+** Choose-a-move test B: fp (free gamma0) Gamma(0) > 0, Gamma(1) = 1
+:PROPERTIES:
+:ID:       3d57be6d-547d-40a8-81a1-43b45124dd57
+:END:
+#+BEGIN_SRC R :results none :tangle R/chessB_fp-init.R
+mvar = as.matrix( readr::read_csv("input/mvar.csv", col_names=F) )
+I = mvar[1]
+N = mvar[2]
+G = mvar[4]
+
+set.seed(as.numeric(Sys.time()))
+
+init_lambda = matrix(1, nrow = 2*I, ncol = G);
+init_beta = 0*matrix(rnorm(2*I), ncol = 2);
+init_theta = 0*matrix(rnorm(2*N), ncol = 2);
+
+init_gamma = 1*matrix(c(1, 1), ncol = 1);
+
+init_w = 1*matrix(rnorm(2*2*I), ncol = 2);
+init_z = 1*matrix(rnorm(2*2*N), ncol = 2);
+#+END_SRC
+
+#+BEGIN_SRC R :results none :tangle R/chessB_fp-init.R
+readr::write_csv(as.data.frame(init_lambda), "input/init_lambda.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_beta), "input/init_beta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_theta), "input/init_theta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_gamma), "input/init_gamma.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
+#+END_SRC
+
+** Choose-a-move test B: pf (free gamma1) Gamma(0) = 1, Gamma(1) > 0
+:PROPERTIES:
+:ID:       dc374dfa-1995-4432-9929-038f3c5c52e0
+:END:
+#+BEGIN_SRC R :results none :tangle R/chessB_pf-init.R
+mvar = as.matrix( readr::read_csv("input/mvar.csv", col_names=F) )
+I = mvar[1]
+N = mvar[2]
+G = mvar[4]
+
+set.seed(as.numeric(Sys.time()))
+
+init_lambda = matrix(1, nrow = 2*I, ncol = G);
+init_beta = 0*matrix(rnorm(2*I), ncol = 2);
+init_theta = 0*matrix(rnorm(2*N), ncol = 2);
+
+init_gamma = 1*matrix(c(1, 1), ncol = 1);
+
+init_w = 1*matrix(rnorm(2*2*I), ncol = 2);
+init_z = 1*matrix(rnorm(2*2*N), ncol = 2);
+#+END_SRC
+
+#+BEGIN_SRC R :results none :tangle R/chessB_pf-init.R
+readr::write_csv(as.data.frame(init_lambda), "input/init_lambda.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_beta), "input/init_beta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_theta), "input/init_theta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_gamma), "input/init_gamma.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
+#+END_SRC
+
+** Choose-a-move test B: nf (free gamma1) Gamma(0) = -1, Gamma(1) > 0
+:PROPERTIES:
+:ID:       9b975f46-8639-4b53-8ee6-0eb16721eb63
+:END:
+#+BEGIN_SRC R :results none :tangle R/chessB_nf-init.R
+mvar = as.matrix( readr::read_csv("input/mvar.csv", col_names=F) )
+I = mvar[1]
+N = mvar[2]
+G = mvar[4]
+
+set.seed(as.numeric(Sys.time()))
+
+init_lambda = matrix(1, nrow = 2*I, ncol = G);
+init_beta = 0*matrix(rnorm(2*I), ncol = 2);
+init_theta = 0*matrix(rnorm(2*N), ncol = 2);
+
+init_gamma = 1*matrix(c(-1, 1), ncol = 1);
+
+init_w = 1*matrix(rnorm(2*2*I), ncol = 2);
+init_z = 1*matrix(rnorm(2*2*N), ncol = 2);
+#+END_SRC
+
+#+BEGIN_SRC R :results none :tangle R/chessB_nf-init.R
+readr::write_csv(as.data.frame(init_lambda), "input/init_lambda.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_beta), "input/init_beta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_theta), "input/init_theta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_gamma), "input/init_gamma.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
+#+END_SRC
+
+* Duolingo                                                          :ARCHIVE:
 #+BEGIN_SRC R :results none :tangle no :results output :session
 source("R/duolingo-preprocess.R")
 source("R/duolingo-init.R")
@@ -2610,7 +2684,7 @@ readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
 #+END_SRC
 
-* MATH: Korea_PISA2015
+* MATH: Korea_PISA2015                                              :ARCHIVE:
 ** notebook
 #+BEGIN_SRC R
 source('R/pisa-KR-preprocess.R')
@@ -2848,7 +2922,7 @@ readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
 #+END_SRC
 
-* Science: Korea_PISA2018
+* Science: Korea_PISA2018                                           :ARCHIVE:
 ** notebook
 #+BEGIN_SRC R
 source('R/pisa-KR-sci2018-preprocess.R')
@@ -3113,262 +3187,28 @@ dev.off(which = dev.cur())
 ** Shell to run C++
 #+begin_src sh :tangle run.sh
 #!/usr/bin/env bash
+out_dir="chessB_fn_noinfo/"
+
 export STAN_NUM_THREADS=2
 mkdir -p output
 rm output/*
-Rscript "R/chessB-preprocess.R"
+Rscript "R/chessB_fn-preprocess.R"
 cp input/{mvar,mlen}.csv output/
 cp run.sh output/
 
 for v in {1..3}
 do
-    Rscript "R/chessB_n0-init.R"
-    ./main initialize parallel single_w single_z full latent no_gamma true false $v 10000 10000 10
+    Rscript "R/chessB_fn-init.R"
+    ./main initialize parallel single_w single_z full latent gamma true incorrect $v 10000 10000 10
 done
 
-cp R/chessB_n0-init.R chessB_n0/
-mv output chessB_n0
-Rscript R/run-analysis.R chessB_n0/
+mkdir -p $out_dir
+cp R/chessB_nf-init.R $out_dir
+mv output/* $out_dir
+Rscript R/run-analysis.R $out_dir
 #+end_src
-
-#+begin_src sh
-#!/usr/bin/env bash
-export STAN_NUM_THREADS=6
-mkdir -p output
-rm output/*
-Rscript "R/opusIII-preprocess.R"
-cp input/{mvar,mlen}.csv output/
-cp run.sh output/
-
-for v in {1..3}
-do
-    Rscript "R/opusIII_pn-init.R"
-    ./main initialize parallel single_w single_z sparse latent no_gamma true $v 10000 10000 10
-done
-mv output opusIII_pn
-Rscript R/run-analysis.R opusIII_pn/
-
-rm output/*
-Rscript "R/verbal-preprocess.R"
-cp input/{mvar,mlen}.csv output/
-cp run.sh output/
-
-for v in {1..3}
-do
-    Rscript "R/verbal_pn-init.R"
-    ./main initialize parallel single_w single_z sparse latent no_gamma true $v 10000 10000 10
-done
-mv output verbal_pn
-Rscript R/run-analysis.R verbal_pn/
-#+END_SRC
-
-#+begin_src sh
-#!/usr/bin/env bash
-export STAN_NUM_THREADS=2
-mkdir -p output
-rm output/*
-Rscript "R/chessB-preprocess.R"
-cp input/{mvar,mlen}.csv output/
-cp run.sh output/
-
-for v in {1..3}
-do
-    Rscript "R/chessB-init.R"
-    ./main initialize parallel double_w double_z full latent no_gamma true $v 10000 10000 10
-done
-mv output chessB_dd
-Rscript R/run-analysis.R chessB_dd/
-#+end_src
-
-#+begin_src sh
-#!/usr/bin/env bash
-export STAN_NUM_THREADS=2
-mkdir -p output
-rm output/*
-Rscript "R/chessB-preprocess.R"
-cp input/{mvar,mlen}.csv output/
-cp run.sh output/
-
-for v in {1..3}
-do
-    Rscript "R/chessB_np-init.R"
-    ./main initialize parallel single_w single_z full latent no_gamma true $v 10000 10000 10
-done
-mv output chessB_np
-Rscript R/run-analysis.R chessB_np/
-
-# rm output/*
-# Rscript "R/chessB-preprocess.R"
-# cp input/{mvar,mlen}.csv output/
-# cp run.sh output/
-
-# for v in {1..3}
-# do
-#     Rscript "R/chessB_no_latent-init.R"
-#     ./main initialize parallel single_w single_z full latent no_gamma true $v 10000 10000 10
-# done
-# mv output chessB_no_latent
-
-#+END_SRC
-
-#+begin_src sh
-#!/usr/bin/env bash
-export STAN_NUM_THREADS=6
-mkdir -p output
-rm output/*
-Rscript "R/chessB-preprocess.R"
-cp input/{mvar,mlen}.csv output/
-cp run.sh output/
-for v in {1..3}
-do
-    Rscript "R/chessB-init.R"
-    ./main initialize parallel single_w single_z full latent no_gamma true $v 10000 10000 10
-done
-mv output chessB
-Rscript R/run-analysis.R chessB/
-#+END_SRC
-
-#+begin_src sh
-#!/usr/bin/env bash
-export STAN_NUM_THREADS=6
-mkdir -p output
-rm output/*
-Rscript "R/chess-preprocess.R"
-cp input/{mvar,mlen}.csv output/
-cp run.sh output/
-for v in {1..3}
-do
-    Rscript "R/chess-init.R"
-    ./main initialize parallel single_w single_z full latent no_gamma $v 10000 10000 10
-done
-mv output chess-singleZ-singleW
-#+END_SRC
-
-#+begin_src sh
-#!/usr/bin/env bash
-export STAN_NUM_THREADS=6
-mkdir -p output
-rm output/*
-Rscript "R/marketing-preprocess.R"
-cp input/{mvar,mlen}.csv output/
-cp run.sh output/
-for v in {1..3}
-do
-    Rscript "R/marketing-init.R"
-    ./main initialize parallel single_w single_z sparse latent no_gamma $v 10000 10000 10
-done
-mv output marketing-singleZ-singleW
-#+END_SRC
-
-#+begin_src sh
-#!/usr/bin/env bash
-export STAN_NUM_THREADS=11
-mkdir -p output
-rm output/*
-Rscript "R/pisa-KR-preprocess.R"
-cp input/{mvar,mlen}.csv output/
-cp run.sh output/
-for v in {1..3}
-do
-    Rscript "R/pisa-KR-init.R"
-    ./main initialize parallel single_w single_z full latent no_gamma $v 10000 10000 10
-done
-mv output pisa-KR-singleZ-singleW
-#+end_src
-
-#+begin_src sh
-#!/usr/bin/env bash
-export STAN_NUM_THREADS=10
-
-mkdir -p output
-rm -r output/*
-
-rsync -rv pisa-KR-sci2018-singleZ-singleW/ output
-
-Rscript R/pisa-KR-sci2018-preprocess.R
-cp input/{mvar,mlen}.csv output/
-
-touch output/run_hist.sh
-cat run.sh >> output/run_hist.sh
-
-for v in {1..3}
-do
-    ./main continue parallel single_w single_z full latent no_gamma $v 10000 10 10
-done
-rsync -rv output/ pisa-KR-sci2018-singleZ-singleW
-
-mkdir -p output
-rm -r output/*
-
-rsync -rv pisa-KR-singleZ-singleW/ output
-
-Rscript R/pisa-KR-preprocess.R
-cp input/{mvar,mlen}.csv output/
-
-touch output/run_hist.sh
-cat run.sh >> output/run_hist.sh
-
-for v in {1..3}
-do
-    ./main continue parallel single_w single_z full latent no_gamma $v 10000 10 10
-done
-rsync -rv output/ pisa-KR-singleZ-singleW
-#+end_src
-
-#+begin_src sh
-export STAN_NUM_THREADS=6
-
-mkdir -p output
-rm output/*
-Rscript "R/pisa-KR-sci2018-preprocess.R"
-cp input/{mvar,mlen}.csv output/
-cp run.sh output/
-for v in {1..3}
-do
-    Rscript "R/pisa-KR-sci2018-init.R"
-    ./main initialize parallel single_w single_z full latent no_gamma $v 10000 10000 10
-done
-mv output pisa-KR-sci2018-singleZ-singleW
-#+end_src
-
-#+begin_src sh
-mkdir -p output
-rm output/*
-Rscript "R/pisa-preprocess.R"
-cp input/{mvar,mlen}.csv output/
-cp run.sh output/
-for v in {1..3}
-do
-    Rscript "R/pisa-init.R"
-    ./main parallel single_w single_z full latent no_gamma $v 10000 10000 10
-done
-mv output pisa-singleZ-singleW
-
-rm output/*
-mkdir -p output
-Rscript "R/verbal-preprocess.R"
-cp input/{mvar,mlen}.csv output/
-cp run.sh output/
-for v in {1..3}
-do
-    Rscript "R/verbal-init.R"
-    ./main parallel single_w single_z sparse latent no_gamma $v 10000 10000 10
-done
-mv output verbal-singleZ-singleW
-
-rm output/*
-mkdir -p output
-Rscript "R/opusIII-preprocess.R"
-cp input/{mvar,mlen}.csv output/
-cp run.sh output/
-for v in {1..3}
-do
-    Rscript "R/opusIII-init.R"
-    ./main parallel single_w single_z sparse latent no_gamma $v 10000 10000 10
-done
-mv output opusIII-singleZ-singleW
-#+end_src
-** Using R
+* Using R
+** Initiate R analysis + prerequites
 #+BEGIN_SRC R :tangle R/run-analysis.R
 #!/usr/bin/env Rscript
 args <- commandArgs(trailingOnly = TRUE)
@@ -3397,13 +3237,15 @@ system(paste0("rsync -rv figure/*.pdf ", out_dir, "figure/"))
 #+END_SRC
 
 #+BEGIN_SRC R
-out_dir <- "chessB_no_latent/"
+out_dir <- "chessB_pf/"
 num_chain <- 3; double_z <- 0; double_w <- 0; HAS_REF <- 0;
 system(paste0("rm figure/*.pdf"))
 source("R/art-analysis.R")
 system(paste0("mkdir -p ", out_dir, "figure/"))
 system(paste0("rsync -rv figure/*.pdf ", out_dir,"figure/"))
 #+END_SRC
+
+#+RESULTS:
 
 #+BEGIN_SRC R
 out_dir <- "verbal_pn/"
@@ -3519,7 +3361,7 @@ print average acceptance rate per type of quantities: \lambda, \beta, \theta, z,
 #+BEGIN_SRC sh
 cat output/summary.csv
 #+END_SRC
-** example to extract w0 and z0
+** example to extract w0 and z0                                     :ARCHIVE:
 #+begin_src R
 out_dir <- "chessB_pn/"
 num_chain <- 3
@@ -3549,11 +3391,17 @@ readr::write_csv(as.data.frame(w0), paste0(out_dir, "w0.csv"))
 readr::write_csv(as.data.frame(z0), paste0(out_dir, "z0.csv"))
 #+end_src
 
-** Bicluster example
+** Biclustering example
+:PROPERTIES:
+:EXPORT_FILE_NAME: biclustering_example
+:END:
+
 Method: cite:dhillon_co-clustering_2001
+Dhillon, I. S., Co-clustering documents and words using bipartite spectral graph partitioning, In , Proceedings of the Seventh {{ACM SIGKDD}} International Conference on {{Knowledge}} Discovery and Data Mining (pp. 269–274) (2001). {New York, NY, USA}: {Association for Computing Machinery}.
+
 Code: https://scikit-learn.org/stable/modules/biclustering.html
 https://scikit-learn.org/stable/auto_examples/bicluster/plot_bicluster_newsgroups.html#sphx-glr-auto-examples-bicluster-plot-bicluster-newsgroups-py
-*** initailization
+*** initialization
 =w0= and =z0= are matrices for latent item and respondent coordinates.
 #+begin_src R :results none
 out_dir <- "chessB_pn/"
@@ -3580,8 +3428,8 @@ z0 <- readr::read_csv(paste0(out_dir, "z0.csv"))
 #+end_src
 
 *** calculate Euclidean distance and Gaussian distance over all item-respondent pairs
-two distance function based on Euclidean dist: 1) identity 2) Gaussian kernel
-
+- =dist_zw.csv= Euclidean dist
+- =rbf_dist_zw.csv= Gaussian dist
 #+begin_src R
 D <- matrix(0, nrow = nrow(z0), ncol = nrow(w0))
 for (i in 1:nrow(D)) {
@@ -3596,7 +3444,7 @@ readr::write_csv(as.data.frame(RBF_D), paste0(out_dir, "rbf_dist_zw.csv"))
 #+end_src
 
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :exports none
 ;; python
 (require 'conda)
 (conda-env-activate "tf")
@@ -3980,6 +3828,23 @@ for (c in 0:1) {
 cnames <- c(cnames, "sigma", "lp_")
 #+end_src
 
+#+RESULTS:
+#+begin_example
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m─────────────────────────────────────────────────────────────────────────────────[39m
+cols(
+  X1 = [32mcol_double()[39m,
+  X2 = [32mcol_double()[39m,
+  X3 = [32mcol_double()[39m,
+  X4 = [32mcol_double()[39m
+)
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m─────────────────────────────────────────────────────────────────────────────────[39m
+cols(
+  X1 = [32mcol_double()[39m
+)
+#+end_example
+
 #+BEGIN_SRC R :tangle R/load-outputs.R
 ## mythin = 10
 ## mystart = 5001
@@ -3989,6 +3854,7 @@ no_z1 <- !grepl("^z\\.1\\.", cnames)
 no_w1 <- !grepl("^w\\.1\\.", cnames)
 
 dlist <- list()
+
 for (cid in 1:num_chain) {
   ## pisa-KR KR-sci data should skip 1000
   dlist[[cid]] <- readr::read_csv(paste0(out_dir, "sample_chain", cid, ".csv"), col_names = F, skip = 0) %>% as.data.frame()
@@ -4005,6 +3871,30 @@ for (cid in 1:num_chain) {
 
 ## mylist[[cid]] = mcmc(df, start = mystart, end = myend, thin = mythin)
 #+END_SRC
+
+#+RESULTS:
+#+begin_example
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m─────────────────────────────────────────────────────────────────────────────────[39m
+cols(
+  .default = col_double()
+)
+[36mℹ[39m Use [90m[40m[90m[40m`spec()`[40m[90m[49m[39m for the full column specifications.
+
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m─────────────────────────────────────────────────────────────────────────────────[39m
+cols(
+  .default = col_double()
+)
+[36mℹ[39m Use [90m[40m[90m[40m`spec()`[40m[90m[49m[39m for the full column specifications.
+
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m─────────────────────────────────────────────────────────────────────────────────[39m
+cols(
+  .default = col_double()
+)
+[36mℹ[39m Use [90m[40m[90m[40m`spec()`[40m[90m[49m[39m for the full column specifications.
+#+end_example
 
 
 #+BEGIN_SRC R :tangle R/art-functions.R
@@ -4412,6 +4302,10 @@ print(p1)
 dev.off(which = dev.cur())
 #+END_SRC
 
+#+RESULTS:
+: null device
+:           1
+
 [[pdf:figure/z_pairs_plot.pdf]]
 #+BEGIN_SRC R :tangle R/visual-trace-plot.R
 pdf("figure/z_pairs_plot.pdf")
@@ -4424,6 +4318,10 @@ for (k in 1:min(N, 50)) {
 }
 dev.off(which = dev.cur())
 #+END_SRC
+
+#+RESULTS:
+: null device
+:           1
 
 [[pdf:figure/w_pairs_plot.pdf]]
 #+BEGIN_SRC R :tangle R/visual-trace-plot.R
@@ -4438,6 +4336,10 @@ for (i in 1:min(I, 50)) {
 dev.off(which = dev.cur())
 #+END_SRC
 
+#+RESULTS:
+: null device
+:           1
+
 [[file:figure/beta_parcoord.pdf]]
 #+BEGIN_SRC R :tangle R/visual-trace-plot.R
 pdf("figure/beta_parcoord.pdf")
@@ -4448,6 +4350,10 @@ print(p)
 dev.off(which = dev.cur())
 #+END_SRC
 
+#+RESULTS:
+: null device
+:           1
+
 [[file:figure/theta_parcoord.pdf]]
 #+BEGIN_SRC R :tangle R/visual-trace-plot.R
 pdf("figure/theta_parcoord.pdf")
@@ -4457,6 +4363,10 @@ p <- bayesplot::mcmc_parcoord(mylist,
 print(p)
 dev.off(which = dev.cur())
 #+END_SRC
+
+#+RESULTS:
+: null device
+:           1
 
 [[file:figure/lambda_parcoord.pdf]]
 #+BEGIN_SRC R :tangle R/visual-trace-plot.R

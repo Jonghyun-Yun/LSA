@@ -36,42 +36,36 @@ double par_fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lamb
     // double log_prop_hazard; // to avoid double evaluation
 
     lp_ += tbb::parallel_reduce(
-        tbb::blocked_range3d<int>(0, 2, 0, I, 0, N),
-        0.0,
-        [&](tbb::blocked_range3d<int> r, double running_total)
-        {
-            for (int c = r.pages().begin(); c < r.pages().end(); ++c)
-            {
-                for(int i=r.rows().begin(); i<r.rows().end(); ++i)
-                {
-                    for(int k=r.cols().begin(); k<r.cols().end(); ++k)
-                    {
-                        // for (int g = 0; g < seg(i,k); g++) {
-                        //     cum_lambda(c*I + i,k) += len(g) * lambda(i,g);
-                        // }
-                        // cum_lambda(i,k) += H(i,k) * lambda(i,seg(i,k));
+        tbb::blocked_range3d<int>(0, 2, 0, I, 0, N), 0.0,
+        [&](tbb::blocked_range3d<int> r, double running_total) {
+          for (int c = r.pages().begin(); c < r.pages().end(); ++c) {
+            for (int i = r.rows().begin(); i < r.rows().end(); ++i) {
+              for (int k = r.cols().begin(); k < r.cols().end(); ++k) {
+                // for (int g = 0; g < seg(i,k); g++) {
+                //     cum_lambda(c*I + i,k) += len(g) * lambda(i,g);
+                // }
+                // cum_lambda(i,k) += H(i,k) * lambda(i,seg(i,k));
 
-                        if (NA(i,k) == 1) {
+                if (NA(i, k) == 1) {
 
-                            running_total -=
-                                cum_lambda(c * I + i, k) *
-                                exp(beta(i, c) + theta(k, c) -
-                                    gamma(c) * distance(z.row(c*N + k), w.row(c*I + i)));
+                  running_total -= cum_lambda(c * I + i, k) *
+                                   exp(beta(i, c) + theta(k, c) -
+                                       gamma(c) * distance(z.row(c * N + k),
+                                                           w.row(c * I + i)));
 
-                            if (Y(i, k) == c) {
-                                running_total +=
-                                    log(lambda(c * I + i, seg(i, k))) + beta(i, c) +
-                                    theta(k, c) -
-                                    gamma(c) * distance(z.row(c*N + k), w.row(c*I + i));
-                            }
-
-                        }
-
-                    }
+                  if (Y(i, k) == c) {
+                    running_total +=
+                        log(lambda(c * I + i, seg(i, k))) + beta(i, c) +
+                        theta(k, c) -
+                        gamma(c) * distance(z.row(c * N + k), w.row(c * I + i));
+                  }
                 }
+              }
             }
-            return running_total;
-        }, std::plus<double>() );
+          }
+          return running_total;
+        },
+        std::plus<double>());
 
     // priors...
     lp_ += inv_gamma_lpdf(square(sigma), a_sigma, b_sigma) +

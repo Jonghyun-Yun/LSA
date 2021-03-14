@@ -499,51 +499,44 @@ int main(int argc, const char *argv[]) {
 
     if (RUN_PAR) {
 
-  // std::cout << "updating lambda...\n";
+      // std::cout << "updating lambda...\n";
       // updating lambda...
       tbb::parallel_for(
-        tbb::blocked_range3d<int>(0, 2, 0, I, 0, G),
-        [&](tbb::blocked_range3d<int> r)
-        {
-          for (int c=r.pages().begin(); c<r.pages().end(); ++c)
-          {
-            for (int i=r.rows().begin(); i<r.rows().end(); ++i)
-            {
-              for (int g=r.cols().begin(); g<r.cols().end(); ++g)
-              {
+          tbb::blocked_range3d<int>(0, 2, 0, I, 0, G),
+          [&](tbb::blocked_range3d<int> r) {
+            for (int c = r.pages().begin(); c < r.pages().end(); ++c) {
+              for (int i = r.rows().begin(); i < r.rows().end(); ++i) {
+                for (int g = r.cols().begin(); g < r.cols().end(); ++g) {
 
-                lambda((c * I) + i, g) = update_lambda(
-                  a_lambda(i,g), b_lambda(i,g), g,
-                  beta(i, c), theta.col(c), gamma(c), z.block(c*N,0,N,2), w.row(c*I + i),
-                  N, mNA.row(i), mlen(g), mseg.row(i), mH.row(i), mIY(c*I + i, g), rng);
-
+                  lambda((c * I) + i, g) = update_lambda(
+                      a_lambda(i, g), b_lambda(i, g), g, beta(i, c),
+                      theta.col(c), gamma(c), z.block(c * N, 0, N, 2),
+                      w.row(c * I + i), N, mNA.row(i), mlen(g), mseg.row(i),
+                      mH.row(i), mIY(c * I + i, g), rng);
+                }
               }
             }
-          }
-        });
+          });
 
-
-  // std::cout << "updating beta...\n";
+      // std::cout << "updating beta...\n";
       // updating beta...
       tbb::parallel_for(
-        tbb::blocked_range2d<int>(0,I,0,2),
-        [&](tbb::blocked_range2d<int> r)
-        {
-          for (int i=r.rows().begin(); i<r.rows().end(); ++i)
-          {
-            for (int c=r.cols().begin(); c<r.cols().end(); ++c)
-            {
+          tbb::blocked_range2d<int>(0, I, 0, 2),
+          [&](tbb::blocked_range2d<int> r) {
+            for (int i = r.rows().begin(); i < r.rows().end(); ++i) {
+              for (int c = r.cols().begin(); c < r.cols().end(); ++c) {
 
-              cum_lambda.row(c*I + i) =
-                update_beta(beta(i,c), acc_beta(i,c), mu_beta(i,c), sigma_beta(i,c), jump_beta(i,c),
-                            lambda.row(c*I + i), theta.col(c), gamma(c), z.block(c*N,0,N,2), w.row(c*I + i),
-                            N, mNA.row(i), mlen, mseg.row(i), mH.row(i), mY.row(i), c, rng);
-
+                cum_lambda.row(c * I + i) = update_beta(
+                    beta(i, c), acc_beta(i, c), mu_beta(i, c), sigma_beta(i, c),
+                    jump_beta(i, c), lambda.row(c * I + i), theta.col(c),
+                    gamma(c), z.block(c * N, 0, N, 2), w.row(c * I + i), N,
+                    mNA.row(i), mlen, mseg.row(i), mH.row(i), mY.row(i), c,
+                    rng);
+              }
             }
-          }
-        });
+          });
 
-  // std::cout << "updating theta...\n";
+      // std::cout << "updating theta...\n";
       // updating theta...
       tbb::parallel_for(
         tbb::blocked_range2d<int>(0,N,0,2),
@@ -570,15 +563,7 @@ int main(int argc, const char *argv[]) {
           // std::cout << "updating gamma...\n";
           // updating gamma...
           //
-          if (ONE_FREE_GAMMA == 1) {
-              update_one_free_gamma(1, gamma, acc_gamma, mu_gamma, sigma_gamma,
-                                  jump_gamma, cum_lambda, beta, theta, z, w, I,
-                                  N, G, mNA, mlen, mseg, mH, mY, RUN_PAR, rng);
-          } else if (ONE_FREE_GAMMA == 0) {
-              update_one_free_gamma(0, gamma, acc_gamma, mu_gamma, sigma_gamma,
-                                  jump_gamma, cum_lambda, beta, theta, z, w, I,
-                                  N, G, mNA, mlen, mseg, mH, mY, RUN_PAR, rng);
-          } else if (ONE_FREE_GAMMA == 99) {
+          if (ONE_FREE_GAMMA == 99) {
             if (SINGLE_Z) {
               update_single_gamma(gamma, acc_gamma, mu_gamma, sigma_gamma,
                                   jump_gamma, cum_lambda, beta, theta, z, w, I,
@@ -589,6 +574,11 @@ int main(int argc, const char *argv[]) {
                            cum_lambda, beta, theta, z, w, I, N, G, mNA, mlen,
                            mseg, mH, mY, rng);
             }
+          } else {
+            update_one_free_gamma(ONE_FREE_GAMMA, gamma, acc_gamma, mu_gamma,
+                                  sigma_gamma, jump_gamma, cum_lambda, beta,
+                                  theta, z, w, I, N, G, mNA, mlen, mseg, mH, mY,
+                                  RUN_PAR, rng);
           }
         }
 
@@ -597,38 +587,36 @@ int main(int argc, const char *argv[]) {
         if (SINGLE_Z) {
 
           tbb::parallel_for(
-          tbb::blocked_range<int>(0, N),
-          [&](tbb::blocked_range<int> r) {
-              for (int k = r.begin(); k < r.end(); ++k) {
-                // DONE: fix update_single_z according to update_double_w
+              tbb::blocked_range<int>(0, N), [&](tbb::blocked_range<int> r) {
+                for (int k = r.begin(); k < r.end(); ++k) {
+                  // DONE: fix update_single_z according to update_double_w
                   z.row(k) = update_single_z(
-                    z.row(k), acc_z(k), mu_z.row(k), sigma_z.row(k), jump_z.row(k),
-                    cum_lambda.col(k), beta, theta.row(k), gamma,
-                    w, I, mNA.col(k), mlen, mseg.col(k), mH.col(k),
-                    mY.col(k), rng);
+                      z.row(k), acc_z(k), mu_z.row(k), sigma_z.row(k),
+                      jump_z.row(k), cum_lambda.col(k), beta, theta.row(k),
+                      gamma, w, I, mNA.col(k), mlen, mseg.col(k), mH.col(k),
+                      mY.col(k), rng);
                 }
-            });
+              });
           // copy z0 to z1
-          z.block(N,0,N,2) = z.block(0,0,N,2);
+          z.block(N, 0, N, 2) = z.block(0, 0, N, 2);
 
-        }
-        else
-        {
+        } else {
           tbb::parallel_for(
-            tbb::blocked_range2d<int>(0, N, 0, 2),
-            [&](tbb::blocked_range2d<int> r) {
-              for (int k = r.rows().begin(); k < r.rows().end(); ++k) {
-                for (int c = r.cols().begin(); c < r.cols().end(); ++c) {
+              tbb::blocked_range2d<int>(0, N, 0, 2),
+              [&](tbb::blocked_range2d<int> r) {
+                for (int k = r.rows().begin(); k < r.rows().end(); ++k) {
+                  for (int c = r.cols().begin(); c < r.cols().end(); ++c) {
 
-                  z.row(c * N + k) = update_z(
-                    z.row(c * N + k), acc_z(c * N + k), mu_z.row(k), sigma_z.row(k),
-                    jump_z.row(k), cum_lambda.block(c * I, k, I, 1), beta.col(c),
-                    theta(k, c), gamma(c), w.block(c*I,0,I,2), I, mNA.col(k), mlen, mseg.col(k), mH.col(k),
-                    mY.col(k), c, rng);
+                    z.row(c * N + k) =
+                        update_z(z.row(c * N + k), acc_z(c * N + k),
+                                 mu_z.row(k), sigma_z.row(k), jump_z.row(k),
+                                 cum_lambda.block(c * I, k, I, 1), beta.col(c),
+                                 theta(k, c), gamma(c), w.block(c * I, 0, I, 2),
+                                 I, mNA.col(k), mlen, mseg.col(k), mH.col(k),
+                                 mY.col(k), c, rng);
+                  }
                 }
-
-              }
-            });
+              });
         }
 
         // std::cout << "updating w...\n";

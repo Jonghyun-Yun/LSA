@@ -23,10 +23,9 @@ Eigen::VectorXd update_z(const Eigen::MatrixXd::RowXpr &z, double &acc_z,
 
   // std::cout << "Drawing...\n";
   for (int d = 0; d < 2; d++) {
-      z_s(d) = stan::math::normal_rng(z(d), jump_z(d), rng);
-  logr_z +=
-      stan::math::normal_lpdf(z_s(d), mu_z(d), sigma_z(d)) -
-      stan::math::normal_lpdf(z(d), mu_z(d), sigma_z(d));
+    z_s(d) = stan::math::normal_rng(z(d), jump_z(d), rng);
+    logr_z += stan::math::normal_lpdf(z_s(d), mu_z(d), sigma_z(d)) -
+              stan::math::normal_lpdf(z(d), mu_z(d), sigma_z(d));
   }
 
   // z_s = stan::math::normal_rng(z, jump_z, rng);
@@ -37,19 +36,23 @@ Eigen::VectorXd update_z(const Eigen::MatrixXd::RowXpr &z, double &acc_z,
   // std::cout << "Calculating the log-acceptance ratio of lambda...\n";
   for (int i = 0; i < I; i++) {
 
-    if(NA(i) == 1) {
+    if (NA(i) == 1) {
 
-  // cum_lambda = 0.0;
-  //   for (int g = 0; g < seg(i); g++) {
-  //     cum_lambda += len(g) * lambda(i,g);
-  //   }
-  //   cum_lambda += H(i) * lambda(i,seg(i));
+      // cum_lambda = 0.0;
+      //   for (int g = 0; g < seg(i); g++) {
+      //     cum_lambda += len(g) * lambda(i,g);
+      //   }
+      //   cum_lambda += H(i) * lambda(i,seg(i));
 
-    logr_z -= cum_lambda(i) * ( stan::math::exp( beta(i) + theta - gamma * stan::math::distance(z_s, w.row(i))) -
-                             stan::math::exp( beta(i) + theta - gamma * stan::math::distance(z, w.row(i))));
+      logr_z -= cum_lambda(i) *
+                (stan::math::exp(beta(i) + theta -
+                                 gamma * stan::math::distance(z_s, w.row(i))) -
+                 stan::math::exp(beta(i) + theta -
+                                 gamma * stan::math::distance(z, w.row(i))));
 
       if (Y_k(i) == cause) {
-          logr_z -= gamma * ( stan::math::distance(z_s, w.row(i)) - stan::math::distance(z, w.row(i)));
+        logr_z -= gamma * (stan::math::distance(z_s, w.row(i)) -
+                           stan::math::distance(z, w.row(i)));
       }
     }
   }

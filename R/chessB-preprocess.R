@@ -108,7 +108,7 @@ b_sigma = 1.0
 
 mu_gamma = matrix(0.0,1,2)
 sigma_gamma = matrix(sqrt(1.0),1,2)
-jump_gamma = matrix(0.01,1,2)
+jump_gamma = matrix(0.05,1,2)
 
 mu_z = matrix(0.0,N,2)
 sigma_z = matrix(sqrt(1.0),N,2)

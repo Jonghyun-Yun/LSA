@@ -56,6 +56,7 @@ no_z1 <- !grepl("^z\\.1\\.", cnames)
 no_w1 <- !grepl("^w\\.1\\.", cnames)
 
 dlist <- list()
+
 for (cid in 1:num_chain) {
   ## pisa-KR KR-sci data should skip 1000
   dlist[[cid]] <- readr::read_csv(paste0(out_dir, "sample_chain", cid, ".csv"), col_names = F, skip = 0) %>% as.data.frame()
