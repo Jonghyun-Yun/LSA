@@ -43,7 +43,7 @@ void update_theta(double &theta, double &acc_theta,
                                       stan::math::exp( beta(i) + theta - gamma * stan::math::distance(z, w.row(i))));
 
       if (Y_k(i) == cause) {
-        logr_theta += stan::math::log(theta_s) - stan::math::log(theta);
+        logr_theta += theta_s - theta;
       }
     }
   }

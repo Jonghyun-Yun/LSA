@@ -41,7 +41,7 @@ Eigen::VectorXd update_beta(double &beta, double &acc_beta,
                                      stan::math::exp( beta + theta(k) - gamma * stan::math::distance(z.row(k), w)));
 
       if (Y_i(k) == cause) {
-        logr_beta += stan::math::log(beta_s) - stan::math::log(beta);
+        logr_beta += beta_s - beta;
       }
 
     }

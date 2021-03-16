@@ -37,36 +37,6 @@ tab_IY <- function(seg_g, G) {
   return(res)
 }
 
-tab_sj <- function(seg_g, G) {
-  res <- NULL
-  for (m in 0:(G - 1)) {
-    res <- c(res, sum(seg_g >= m))
-  }
-  return(res)
-}
-
-tab_IY <- function(seg_g, G) {
-  res <- NULL
-  for (m in 0:(G - 1)) {
-    res <- c(res, sum(seg_g == m))
-  }
-  return(res)
-}
-
-tabulate_id <- function(chrid) {
-  ## reference table of charactor and numeric id
-  chr <- sort(unique(chrid))
-  out <- data.frame(chr = chr, num = seq_len(length(chr)))
-  return(out)
-}
-to_numID <- function(x, tab) {
-  sapply(x, function(x) tab$num[which(tab$chr == x)])
-}
-
-to_chrID <- function(x, tab) {
-  sapply(x, function(x) tab$chr[which(tab$num == x)])
-}
-
 gethaz_item <- function(sam, cname, item, N, theta = NULL) {
   num_iter <- nrow(sam)
   d_zw <- matrix(0, num_iter, N)
