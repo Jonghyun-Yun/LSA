@@ -14,6 +14,7 @@ do
     ./main initialize parallel single_w single_z full latent gamma true incorrect $v 10000 10000 10
 done
 
+mkdir -p $out_dir
 cp R/chessB_nf-init.R $out_dir
 mv output/* $out_dir
 Rscript R/run-analysis.R $out_dir

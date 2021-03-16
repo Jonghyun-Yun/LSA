@@ -1,17 +1,20 @@
 #!/usr/bin/env bash
+out_dir="chessB_fn_noinfo_ARS2/"
+
 export STAN_NUM_THREADS=2
 mkdir -p output
 rm output/*
-Rscript "R/chessB-preprocess.R"
+Rscript "R/chessB_fn-preprocess.R"
 cp input/{mvar,mlen}.csv output/
 cp run.sh output/
 
 for v in {1..3}
 do
     Rscript "R/chessB_fn-init.R"
-    ./main initialize parallel single_w single_z full latent gamma true correct $v 1000 1000 10
+    ./main initialize parallel single_w single_z full latent gamma true incorrect do_ars $v 5000 5000 5
 done
 
-cp R/chessB_fn-init.R chessB_fn/
-mv output chessB_fn
-Rscript R/run-analysis.R chessB_fn/
+mkdir -p $out_dir
+cp R/chessB_nf-init.R $out_dir
+mv output/* $out_dir
+Rscript R/run-analysis.R $out_dir

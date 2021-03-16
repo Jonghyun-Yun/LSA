@@ -28,6 +28,8 @@
 #include "update_one_free_gamma.h"
 #include "fun_lp.h"
 #include "par_fun_lp.h"
+#include "ars.hpp"
+#include "logdensity.h"
 
 // typedef Eigen::Map<Eigen::MatrixXd> MapMatd;
 // typedef Eigen::Map<Eigen::VectorXd> MapVecd;
@@ -60,6 +62,9 @@ inline double update_sigma(const double& a_sigma, const double &b_sigma,
 }
 
 int main(int argc, const char *argv[]) {
+
+  // rand() has to be seeded
+  srand((unsigned)time(NULL));
 
   std::vector<std::string> sarg;
   sarg.assign(argv, argv + argc);
@@ -167,10 +172,27 @@ int main(int argc, const char *argv[]) {
     return 0;
   }
 
-  int chain_id = atoi(argv[10]);
-  int num_samples = atoi(argv[11]);
-  int num_warmup = atoi(argv[12]);
-  int thin = atoi(argv[13]);
+  std::vector<double> x_init;
+
+  std::vector<double> segment_x;
+  std::vector<double> log_cu_vec;
+  double log_cu;
+
+  bool DO_ARS;
+  if (sarg[10] == "do_ars") {
+    DO_ARS = true; // update gamma(c) using ARS
+    x_init = {1.0e-15, 4.0, 10.0};  // Starting points
+  } else if (sarg[10] == "no_ars") {
+    DO_ARS = false;
+  } else {
+    std::cout << "invalid arguemnt for DO_ARS.\n" << std::endl;
+    return 0;
+  }
+
+  int chain_id = atoi(argv[11]);
+  int num_samples = atoi(argv[12]);
+  int num_warmup = atoi(argv[13]);
+  int thin = atoi(argv[14]);
 
   // log-posterior
   double lp_;
@@ -575,10 +597,48 @@ int main(int argc, const char *argv[]) {
                            mseg, mH, mY, rng);
             }
           } else {
-            update_one_free_gamma(ONE_FREE_GAMMA, gamma, acc_gamma, mu_gamma,
-                                  sigma_gamma, jump_gamma, cum_lambda, beta,
-                                  theta, z, w, I, N, G, mNA, mlen, mseg, mH, mY,
-                                  RUN_PAR, rng);
+            if (DO_ARS) {
+              gamma_full_conditional log_density(
+                  ONE_FREE_GAMMA, gamma, acc_gamma, mu_gamma, sigma_gamma,
+                  jump_gamma, cum_lambda, beta, theta, z, w, I, N, mNA, mY,
+                  rng);
+
+              // Sampler
+              ARS ars(&log_density, x_init,
+                      std::numeric_limits<double>::epsilon(),
+                      std::numeric_limits<double>::infinity(), 100);
+
+              gamma(ONE_FREE_GAMMA) = ars.sample(1, &log_density).at(0);
+
+              segment_x = ars.get_x();
+              log_cu_vec = ars.get_log_cu_vec();
+              log_cu = ars.get_log_cu();
+
+              // Starting points after 1st iteration
+              x_init = {0.1, 5.0};  // Starting points
+
+              // double cumsum = 0;
+              // for (int i = 0; i < segment_x.size(); ++i) {
+              //   cumsum += exp(log_cu_vec.at(i) - log_cu);
+              //   std::cout << "x:" << segment_x.at(i) << std::endl;
+              //   std::cout << "cumsum:" << cumsum << std::endl;
+              // }
+              // x_init = set_ars_starting(segment_x, log_cu_vec, log_cu);
+              // std::cout << "get x_init" << std::endl;
+              // std::cout << std::endl;
+              // std::cout << "x0:" << x_init.at(0) << std::endl;
+              // std::cout << "x1:" << x_init.at(1) << std::endl;
+              // std::cout << "x2:" << x_init.at(2) << std::endl;
+
+              // x_init = set_ars_starting(ars.get_x(), ars.get_log_cu_vec(),
+              // ars.get_log_cu());
+
+            } else {
+              update_one_free_gamma(ONE_FREE_GAMMA, gamma, acc_gamma, mu_gamma,
+                                    sigma_gamma, jump_gamma, cum_lambda, beta,
+                                    theta, z, w, I, N, G, mNA, mlen, mseg, mH,
+                                    mY, RUN_PAR, rng);
+            }
           }
         }
 
