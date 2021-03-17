@@ -35,6 +35,16 @@ pseq =  seq(from=0, to = 1, length.out = ncut + 1)
 sj = quantile(time, probs = pseq) %>% round()
 sj[1] = 0; sj[length(sj)] = sj[length(sj)] + 1
 
+segtime <- findInterval(time, sj)
+tdd = data.frame(segtime, item = dit$item, res = dit$resp)
+checksj = 0
+for (ii in 1:nitem) {
+  for (c in 0:1) {
+  checksj = checksj + all(table(tdd %>% filter(item == ii & res == c)) > 0)
+  }
+}
+if (checksj < nitem * 2) stop("there exists an interval(s) with no observation.")
+
 library(survival)
 status = rep(1, nrow(dt))
 
