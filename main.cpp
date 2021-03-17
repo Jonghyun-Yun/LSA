@@ -173,7 +173,6 @@ int main(int argc, const char *argv[]) {
   }
 
   std::vector<double> x_init;
-
   std::vector<double> segment_x;
   std::vector<double> log_cu_vec;
   double log_cu;
@@ -189,10 +188,22 @@ int main(int argc, const char *argv[]) {
     return 0;
   }
 
-  int chain_id = atoi(argv[11]);
-  int num_samples = atoi(argv[12]);
-  int num_warmup = atoi(argv[13]);
-  int thin = atoi(argv[14]);
+  // theta for 1st person is 0
+  bool ZERO_THETA;
+  if (sarg[11] == "zero_theta") {
+    ZERO_THETA = true;
+  } else if (sarg[11] == "nonzero_theta") {
+    ZERO_THETA = false;
+  } else {
+    std::cout << "invalid arguemnt for ZERO_THETA.\n" << std::endl;
+    return 0;
+  }
+
+
+  int chain_id = atoi(argv[12]);
+  int num_samples = atoi(argv[13]);
+  int num_warmup = atoi(argv[14]);
+  int thin = atoi(argv[15]);
 
   // log-posterior
   double lp_;
@@ -525,23 +536,23 @@ int main(int argc, const char *argv[]) {
       // updating lambda...
       // constraint: \sum_g log(\lambda_icg) = 0; \lambda_icG is determined by previous segments
       tbb::parallel_for(
-          tbb::blocked_range3d<int>(0, 2, 0, I, 0, G),
+          tbb::blocked_range3d<int>(0, 2, 0, I, 0, G-1),
           [&](tbb::blocked_range3d<int> r) {
             for (int c = r.pages().begin(); c < r.pages().end(); ++c) {
               for (int i = r.rows().begin(); i < r.rows().end(); ++i) {
                 for (int g = r.cols().begin(); g < r.cols().end(); ++g) {
 
-                  if (g < G - 1) {
+                  // if (g < G - 1) {
                   lambda((c * I) + i, g) = update_lambda(
                       a_lambda(i, g), b_lambda(i, g), g, beta(i, c),
                       theta.col(c), gamma(c), z.block(c * N, 0, N, 2),
                       w.row(c * I + i), N, mNA.row(i), mlen(g), mseg.row(i),
                       mH.row(i), mIY(c * I + i, g), rng);
-                  }
-                  else {  // g = G - 1
-                    // log and exp: inefficient but safe
-                  lambda((c * I) + i, g) = std::exp( - 1.0 * stan::math::sum(stan::math::log(lambda.block((c * I) + i, 0, 1, G - 1))  ));
-                  }
+                  // }
+                  // else {  // g = G - 1
+                  //   // log and exp: inefficient but safe
+                  // lambda((c * I) + i, g) = std::exp( - 1.0 * stan::math::sum(stan::math::log(lambda.block((c * I) + i, 0, 1, G - 1))  ));
+                  // }
                 }
               }
             }
@@ -576,11 +587,12 @@ int main(int argc, const char *argv[]) {
             for (int c=r.cols().begin(); c<r.cols().end(); ++c)
             {
 
+              if (k > 0 || c > 0) {
               update_theta( theta(k,c), acc_theta(k,c), mu_theta(k,c), jump_theta(k,c), sigma,
                             cum_lambda.block(c*I,k,I,1),
                             beta.col(c), gamma(c), z.row(c*N + k), w.block(c*I,0,I,2),
                             I,  mNA.col(k), mlen, mseg.col(k), mH.col(k), mY.col(k), c, rng);
-
+              }
             }
           }
         });
@@ -730,20 +742,22 @@ int main(int argc, const char *argv[]) {
       // updating lambda... with constraint: \sum_g \lambda_icg = 0
       for (int c = 0; c < 2; c++) {
         for (int i = 0; i < I; i++) {
-          for (int g = 0; g < G; g++) {
+          for (int g = 0; g < G-1; g++) {
 
-            if (g < G - 1) {
+            // if (g < G - 1) {
               lambda((c * I) + i, g) =
                   update_lambda(a_lambda(i, g), b_lambda(i, g), g, beta(i, c),
                                 theta.col(c), gamma(c), z.block(c * N, 0, N, 2),
                                 w.row(c * I + i), N, mNA.row(i), mlen(g),
                                 mseg.row(i), mH.row(i), mIY(c * I + i, g), rng);
-            } else { // g = G - 1
-              // log and exp: inefficient but safe
-              lambda((c * I) + i, g) =
-                  std::exp(-1.0 * stan::math::sum(stan::math::log(
-                                      lambda.block((c * I) + i, 0, 1, G - 1))));
-            }
+            // }
+            // else { // g = G - 1
+            //   // log and exp: inefficient but safe
+            //   // lambda((c * I) + i, g) =
+            //   //     std::exp(-1.0 * stan::math::sum(stan::math::log(
+            //   //                         lambda.block((c * I) + i, 0, 1, G - 1))));
+            //   lambda((c * I) + i, g) = 1.0;
+            // }
           }
         }
       }
@@ -763,12 +777,12 @@ int main(int argc, const char *argv[]) {
       // updating theta...
       for (int k = 0; k < N; k++) {
         for (int c = 0; c < 2; c++) {
-
+              if (k > 0 || c > 0) {
               update_theta( theta(k,c), acc_theta(k,c), mu_theta(k,c), jump_theta(k,c), sigma,
                             cum_lambda.block(c*I,k,I,1),
                             beta.col(c), gamma(c), z.row(c*N + k), w.block(c*I,0,I,2),
                             I,  mNA.col(k), mlen, mseg.col(k), mH.col(k), mY.col(k), c, rng);
-
+              }
         }
       }
 
