@@ -146,7 +146,7 @@ gen_surv <- function(out, sj, N) {
   return(list(time = time, pp = pp))
 }
 
-my_procrustes <- function(Xstar, dlist, is_list = FALSE, translation = TRUE, scale = FALSE, reflect = TRUE) {
+my_procrustes <- function(Xstar, dlist, is_list = FALSE, my_translation = TRUE, my_scale = FALSE, my_reflect = TRUE) {
   posm <- 0
   if (is_list == TRUE) {
     num_chain <- length(dlist)

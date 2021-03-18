@@ -86,6 +86,7 @@ if (HAS_REF) {
 }
 
 matched <- my_procrustes(Xstar, dlist, is_list = T)
+## , my_translation = TRUE, my_scale = FALSE)
 mydf <- matched$dlist
 mdf <- bind_rows(matched$dlist, .id = "column_label")
 

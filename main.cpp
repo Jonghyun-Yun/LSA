@@ -47,7 +47,7 @@ const static Eigen::IOFormat CSVFormatN(Eigen::StreamPrecision,
                                         Eigen::DontAlignCols, ", ", "\n");
 
 // format matrix by row vectors (all separated by commas)
-const static Eigen::IOFormat CSVFormat(Eigen::FullPrecision,
+const static Eigen::IOFormat CSVFormat(Eigen::StreamPrecision,
                                        Eigen::DontAlignCols, ", ", ", ");
 
 const static Eigen::IOFormat CommaInitFmt(Eigen::StreamPrecision,
@@ -477,6 +477,11 @@ int main(int argc, const char *argv[]) {
     gamma =  readCSV("input/init_gamma.csv", 2, 1);
   }
 
+  if (ZERO_THETA && (stan::math::sum(theta.col(0)) != 0)) {
+    std::cout << "theta.k.0 should be zero." << std::endl;
+    return 0;
+  }
+
   if (SINGLE_Z && SINGLE_W) {
     // TODO gamma constraint
     if (!SIGN_GAMMA) {
@@ -587,7 +592,7 @@ int main(int argc, const char *argv[]) {
             for (int c=r.cols().begin(); c<r.cols().end(); ++c)
             {
 
-              if (k > 0 || c > 0) {
+              if (c > 0 || !ZERO_THETA ) {
               update_theta( theta(k,c), acc_theta(k,c), mu_theta(k,c), jump_theta(k,c), sigma,
                             cum_lambda.block(c*I,k,I,1),
                             beta.col(c), gamma(c), z.row(c*N + k), w.block(c*I,0,I,2),
@@ -676,6 +681,9 @@ int main(int argc, const char *argv[]) {
                       mY.col(k), rng);
                 }
               });
+          // NOTE: they won't be (0,0) after Procrustean matching!!
+          // z(0,0) = 0.5;
+          // z(0,1) = 0.0;
           // copy z0 to z1
           z.block(N, 0, N, 2) = z.block(0, 0, N, 2);
 
@@ -707,14 +715,20 @@ int main(int argc, const char *argv[]) {
               for (int i = r.begin(); i < r.end(); ++i) {
 
                 w.row(i) = update_w(
-                  w.row(i), acc_w(i), mu_w.row(i), sigma_w.row(i), jump_w.row(i),
-                  cum_lambda.row(i), cum_lambda.row(I + i), beta.row(i), theta, gamma,
-                  z, N, mNA.row(i), mlen,
-                  mseg.row(i), mH.row(i), mY.row(i), rng);
-
+                    w.row(i), acc_w(i), mu_w.row(i), sigma_w.row(i),
+                    jump_w.row(i), cum_lambda.row(i), cum_lambda.row(I + i),
+                    beta.row(i), theta, gamma, z, N, mNA.row(i), mlen,
+                    mseg.row(i), mH.row(i), mY.row(i), rng);
               }
             });
-          w.block(I,0,I,2) = w.block(0,0,I,2);
+          // w.row(0) = update_w_begin(
+          //     w.row(0), acc_w(0), mu_w.row(0), sigma_w.row(0), jump_w.row(0),
+          //     cum_lambda.row(0), cum_lambda.row(0 + 0), beta.row(0), theta,
+          //     gamma, z, N, mNA.row(0), mlen, mseg.row(0), mH.row(0), mY.row(0),
+          //     rng);
+          // w(0,0) = 0.0;
+          // w(0,1) = 0.0;
+          w.block(I, 0, I, 2) = w.block(0, 0, I, 2);
         }
         else {
 
@@ -777,7 +791,7 @@ int main(int argc, const char *argv[]) {
       // updating theta...
       for (int k = 0; k < N; k++) {
         for (int c = 0; c < 2; c++) {
-              if (k > 0 || c > 0) {
+              if (c > 0 || !ZERO_THETA ) {
               update_theta( theta(k,c), acc_theta(k,c), mu_theta(k,c), jump_theta(k,c), sigma,
                             cum_lambda.block(c*I,k,I,1),
                             beta.col(c), gamma(c), z.row(c*N + k), w.block(c*I,0,I,2),
@@ -816,14 +830,12 @@ int main(int argc, const char *argv[]) {
         if (SINGLE_Z) {
 
           for (int k = 0; k < N; k++) {
-            for (int c = 0; c < 2; c++) {
               z.row(k) = update_single_z(
                 z.row(k), acc_z(k), mu_z.row(k), sigma_z.row(k),
                 jump_z.row(k),
                 cum_lambda.col(k), beta, theta.row(k), gamma,
                 w, I, mNA.col(k), mlen, mseg.col(k), mH.col(k),
                 mY.col(k), rng);
-            }
           }
           // copy z0 to z1
           z.block(N,0,N,2) = z.block(0,0,N,2);
@@ -849,16 +861,19 @@ int main(int argc, const char *argv[]) {
 
           for (int i = 0; i < I; i++) {
 
-                w.row(i) = update_w(
-                  w.row(i), acc_w(i), mu_w.row(i), sigma_w.row(i), jump_w.row(i),
-                  cum_lambda.row(i), cum_lambda.row(I + i), beta.row(i), theta, gamma,
-                  z, N, mNA.row(i), mlen,
-                  mseg.row(i), mH.row(i), mY.row(i), rng);
-
-              }
-          w.block(I,0,I,2) = w.block(0,0,I,2);
-        }
-        else {
+            w.row(i) = update_w(w.row(i), acc_w(i), mu_w.row(i), sigma_w.row(i),
+                                jump_w.row(i), cum_lambda.row(i),
+                                cum_lambda.row(I + i), beta.row(i), theta,
+                                gamma, z, N, mNA.row(i), mlen, mseg.row(i),
+                                mH.row(i), mY.row(i), rng);
+          }
+          // w.row(0) = update_w_begin(
+          //     w.row(0), acc_w(0), mu_w.row(0), sigma_w.row(0), jump_w.row(0),
+          //     cum_lambda.row(0), cum_lambda.row(0 + 0), beta.row(0), theta,
+          //     gamma, z, N, mNA.row(0), mlen, mseg.row(0), mH.row(0), mY.row(0),
+          //     rng);
+          w.block(I, 0, I, 2) = w.block(0, 0, I, 2);
+        } else {
           for (int i = 0; i < I; i++) {
             for (int c = 0; c < 2; c++) {
 

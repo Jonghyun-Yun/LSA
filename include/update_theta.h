@@ -1,6 +1,8 @@
 #ifndef __UPDATE_THETA_H_
 #define __UPDATE_THETA_H_
 
+#include <stan/math.hpp>
+
 void update_theta(double &theta, double &acc_theta,
                   const double &mu_theta, const double &jump_theta,
                   const double &sigma,

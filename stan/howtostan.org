@@ -1,0 +1,1345 @@
+#+AUTHOR: Jonghyun Yun
+#+EMAIL:
+
+#+OPTIONS: ':nil -:nil ^:{} pri:t H:10 num:nil toc:nil
+
+See TODO list: [[id:1EBB7C8B-8EC1-4DA0-99E6-14F647F1F13C][hubviz shiny app]]
+
+* OrgMode                                                           :ARCHIVE:
+#+HUGO_BASE_DIR: ~/website
+#+HUGO_AUTO_SET_LASTMOD: t
+#+HUGO_DATE_FORMAT: %Y-%m-%dT%T%z
+#+HUGO_FRONT_MATTER_FORMAT: toml
+
+#+HUGO_SECTION: 
+#+HUGO_BUNDLE: 
+#+HUGO_CATEGORIES:
+
+#+BIBLIOGRAPHY:
+#+HUGO_EXPORT_RMARKDOWN:
+
+#+SEQ_TODO: TODO DRAFT DONE
+
+#+STARTUP: indent logdone 
+
+# https://scripter.co/latex-in-html/
+#+macro: latex @@html:<span class="latex">L<sup>a</sup>T<sub>e</sub>X</span>@@
+
+#+OPTIONS: html-link-use-abs-url:nil html-postamble:nil html-preamble:t
+#+OPTIONS: html-scripts:t html-style:t html5-fancy:t
+#+HTML_MATHJAX: align: left tagside: right
+#+HTML_MATHJAX: indent: 5em scale: 85
+# MATHJAX font: MathJax TeX (default) Asana-Math Neo-Euler Latin-Modern Gyre-Pagella Gyre-Termes
+# #+OPTIONS: tex:dvipng # use LaTeX to generate images for equations
+
+#+LATEX_CLASS: article
+#+LaTeX_CLASS_OPTIONS: [9pt]
+#+LATEX_CMD: xelatex
+#+LATEX_HEADER: \usepackage{geometry}\geometry{verbose,tmargin=1in,bmargin=1in,lmargin=0.7in,rmargin=0.7in}
+#+LATEX_HEADER: \usepackage[stretch=10,babel=true]{microtype}\usepackage{lmodern}
+#+LATEX_HEADER: \setlength\parindent{0pt}\linespread{0.95}
+#+LATEX_HEADER: \usepackage{unicode-math}
+
+# #+PROPERTY: header-args :eval never-export
+#+PROPERTY: header-args:R :session *hubViz-R* :exports both :results output :noweb yes :eval never-export
+
+#+SETUPFILE: ~/setup/theme-readtheorg-side-remote.setup
+
+# #+HTML_LINK_HOME: http://wweb.uta.edu/faculty/yunj/index.html
+# #+HTML_LINK_UP: http://wweb.uta.edu/faculty/yunj/index.html
+
+#+HTML_HEAD:  <!-- Global site tag (gtag.js) - Google Analytics -->
+#+HTML_HEAD:<script async src="https://www.googletagmanager.com/gtag/js?id=UA-128966866-1"></script>
+#+HTML_HEAD:<script>
+#+HTML_HEAD:  window.dataLayer = window.dataLayer || [];
+#+HTML_HEAD:  function gtag(){dataLayer.push(arguments);}
+#+HTML_HEAD:  gtag('js', new Date());
+#+HTML_HEAD:
+#+HTML_HEAD:  gtag('config', 'UA-128966866-1');
+#+HTML_HEAD:</script>
+
+#+MACRO: phone x29045
+#+MACRO: doclink [[https://elearn.uta.edu/bbcswebdav/courses/2178-SELECTED-TOPICS-IN-MATH-90569-001/doc/$1][$2]]
+
+#+BEGIN_SRC emacs-lisp :eval no :results silent :exports none :tangle no
+(setq org-html-htmlize-output-type 'css)
+(setq org-html-htmlize-output-type 'inline-css)
+#+END_SRC
+
+#+begin_src emacs-lisp ::eval no results silent :exports none :tangle no
+  (add-hook 'org-babel-after-execute-hook 'org-display-inline-images)
+  (add-hook 'org-mode-hook 'org-display-inline-images)
+#+end_src
+
+#+begin_src R
+rm(list=ls())
+#+end_src
+
+* References                                                       :noexport:
+#+Bibliography: ~/Zotero/myref.bib
+#+PANDOC_OPTIONS: csl:~/Zotero/styles/chicago-author-date.csl
+bibliographystyle:unsrt
+bibliography:~/Zotero/myref.bib
+
+* Interactive software
+
+The goal is to make a shiny app for hubViz to implement the followings:
+- fast computation
+- user can zoom-in / leave-one out
+- tuning a few parameters
+- 3d plot
+R pacckage will be published as well for hubviz MCMC and fast VB-EM.
+
+* Summary
+Any optimization method will get trapped in the local mode. (VB-EM, LBFGS, etc.).
+Also, many well-known dimension reduction methods such as UMAP, tSNE, LLE, IsoMap (if not all) depends on random configuration at the begining.
+** Gollini's VB-EM
+- slower than hubViz
+- no useful/interpretable results; e.g. lie on a straight line
+- depends on starting points
+** LBFGS optimization
+*** Procrustes matching
+- one set consisit of 10 runs of LBFGS optim
+- perform the mathcing and compare two sets; still quite different.
+*** fixing two points 
+- depends on starting points (but less than without fixing points).
+- make it hard to interprete results; first position is (0,0) always. In hubViz, the center is the most important position!
+*** full model
+- estimated $\sigma_{w}$ is quite small (e.g. < 0.001), and a lot smaller than hubViz's one.
+- hubViz function to provide the best $\sigma_{w}$. 
+*** user-defined $\sigma_w$ 
+
+* Setup
+#+NAME: mdsplot
+#+BEGIN_SRC R
+library(ggplot2)
+library(ggrepel)
+
+mdsplot <- function( x, cname, xlim=NA, ylim=NA, lab = "Coordinate") {
+
+  ## extract objects
+  colname <- cname
+  position <- as.data.frame(x)
+	ndim <- dim(x)[2]
+  
+	rownames(position) <- colname
+  colnames(position) <- paste("position",1:ndim,sep="")
+
+  padding = 1.05
+  if (any(is.na(xlim))) {
+    x1 <- -max(abs(position[,1]))*padding
+    x2 <- max(abs(position[,1]))*padding
+  } else {
+    x1 <- xlim[1]
+    x2 <- xlim[2]
+  }
+  if (any(is.na(ylim))) {
+    y1 <- -max(abs(position[,2]))*padding
+    y2 <- max(abs(position[,2]))*padding
+  } else {
+    y1 <- ylim[1]
+    y2 <- ylim[2]
+  }
+  
+  ## plot
+  ggplot(position,aes(x=position1,y=position2))+
+  theme(text=element_text(size=20)) +
+  geom_point(color="red")+
+  xlim(x1,x2) + ylim(y1,y2) + 
+  xlab(paste(lab," 1",sep="")) + ylab(paste(lab," 2",sep="")) +
+  ##xlab("Position 1") + ylab("Position 2") +
+  geom_hline(yintercept = 0, color = "gray70", linetype=2) +
+  geom_vline(xintercept = 0, color = "gray70", linetype=2) + 
+  ##geom_text_repel(aes(y = position2 + 0.1), label=rownames(position), segment.color = "grey50")    
+  geom_text_repel(label=rownames(position), segment.color = "grey50", size=6)
+}
+#+END_SRC
+
+#+RESULTS: mdsplot
+
+#+RESULTS:
+: #   -01:05/04:32
+
+#+begin_src R :results silent
+library(kknn)
+library(pheatmap)
+library(Rtsne) # t-SNE
+library(umap) # umap
+library(hubviz)
+library(lvm4net)
+#+end_src
+
+
+#+begin_src R
+mm = list()
+
+load("../11. simulation/simulation2.RData")
+mm[[1]] = bmat
+colnames(mm[[1]]) = 1:ncol(bmat)
+row.names(mm[[1]]) = 1:nrow(bmat)
+
+load("../11. simulation/simulation3.RData")
+mm[[2]] = bmat
+colnames(mm[[2]]) = 1:ncol(bmat)
+row.names(mm[[2]]) = 1:nrow(bmat)
+
+names(mm) = c("simulation2", "simulation3")
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R
+pdf_figure = 0
+i = 2
+tff = sprintf("../11. simulation/t_sne.%s.pdf",names(mm)[i])
+uff = sprintf("../11. simulation/umap.%s.pdf",names(mm)[i])
+
+dist.sub <- dist( t(mm[[i]]), method="binary" )
+cname = colnames(mm[[i]])
+if (pdf_figure == 0) dev.off()
+#+end_src
+
+#+RESULTS:
+: Error in dev.off() : cannot shut down device 1 (the null device)
+
+#+attr_ravel: eval=F
+#+begin_src R
+pheatmap(mm[[i]], cluster_rows=FALSE, cluster_cols=FALSE )
+dim(mm[[i]])
+#+end_src
+
+#+RESULTS:
+: [1] 100  10
+
+* VB-EM using Gollini's =lvm4net=
+:PROPERTIES:
+:ID:       8088547C-3916-4D96-B618-87975E267B9D
+:END:
+
+ - Use R package (https://cran.r-project.org/web/packages/lvm4net/lvm4net.pdf) by Golloni
+ - See cite:gollini_joint_2016 for Variational inference of a similar model
+
+The Gollini's method:
+- slow (100 sec for hubviz example 2)
+- depends a lot on starting points
+- no useful results for sim3.
+- not stable: error while running hubviz example 1, for the example 2: cannot specify $\sigma_{\theta} = 10$.
+- scRNA: cannot run. got NaNs. not working at even a smaller size
+
+#+begin_src R
+## Simulate Undirected Network
+N <- 20
+Ndata <- 2
+Y <- list()
+Y[[1]] <- network(N, directed = FALSE)[,]
+
+### create a new view that is similar to the original
+for(nd in 2:Ndata){
+  Y[[nd]] <- Y[[nd - 1]] - sample(c(-1, 0, 1), N * N, replace = TRUE,prob = c(.05, .85, .1))
+  Y[[nd]] <- 1 * (Y[[nd]]  > 0 )
+  diag(Y[[nd]]) <- 0}
+
+##par(mfrow = c(1, 2))
+##z <- plotY(Y[[1]], verbose = TRUE, main ='Network 1')
+##plotY(Y[[2]], EZ = z, main ='Network 2')
+
+modLSJM <- lsjm(Y, D = 2)
+plot(modLSJM, Y, drawCB = TRUE)
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R
+ptm <- proc.time()
+modLSJM <- lsjm(Y, D = 2)
+proc.time() - ptm
+mdsplot(data.frame( modLSJM$EZ), 1:N)
+##plot(modLSJM, Y)
+##plot(modLSJM, Y, drawCB = TRUE)
+##plot(modLSJM, Y, drawCB = TRUE, plotZtilde = TRUE)
+#+end_src
+
+#+RESULTS:
+:    user  system elapsed 
+: 100.879  12.871 108.264
+
+[[file:Gollini_sim3.pdf]]
+#+begin_src R
+library(lvm4net)
+load("../11. simulation/simulation3.RData")
+X = bmat
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R
+## X = X[seq(1,100,25),]
+N = ncol(X)
+Ndata = nrow(X)
+Y = list()
+for (nd in 1:Ndata){
+Y[[nd]] = X[nd,] %o% X[nd,]
+diag(Y[[nd]]) = 0
+}
+
+ptm <- proc.time()
+modLSJM <- lsjm(Y, D = 2, sigma = 1)
+proc.time() - ptm
+
+x = modLSJM$EZ[,1]
+y = modLSJM$EZ[,2]
+pdf("Gollini_sim3.pdf")
+mdsplot(data.frame(x,y), 1:N)
+dev.off()
+#+end_src
+
+#+RESULTS:
+:  user  system elapsed 
+: 98.043  12.952 105.380 
+
+file:Gollini_sim2.pdf
+#+begin_src R
+library(lvm4net)
+load("../11. simulation/simulation2.RData")
+X = bmat
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R :results output
+## X = X[seq(1,100,25),]
+N = ncol(X)
+Ndata = nrow(X)
+Y = list()
+for (nd in 1:Ndata){
+Y[[nd]] = X[nd,] %o% X[nd,]
+diag(Y[[nd]]) = 0
+}
+
+ptm <- proc.time()
+modLSJM <- lsjm(Y, D = 2, sigma = 1)
+proc.time() - ptm
+
+x = modLSJM$EZ[,1]
+y = modLSJM$EZ[,2]
+#pdf("Gollini_sim2.pdf")
+mdsplot(data.frame(x,y), 1:N)
+#dev.off()
+#+end_src
+
+#+RESULTS:
+: Error in svd(t(Y) %*% X) : infinite or missing values in 'x'
+:    user  system elapsed 
+:  53.053   4.668  55.835
+: Error in `.rowNamesDF<-`(x, value = value) : invalid 'row.names' length
+
+** scRNA-seq example
+
+file:Gollini_scRNA.pdf
+#+begin_src R
+load("../scRNA-seq/scRNA-seq_ifnb_binary.RData")
+
+mm = list()
+mm[[1]] = gene.marker.bin
+mm[[2]] = gene.DE.bin
+mm[[3]] = gene.marker.bin.sub
+mm[[4]] = gene.DE.bin.sub
+
+names(mm) = c("gene.marker.bin","gene.DE.bin","gene.marker.bin.sub","gene.DE.bin.sub")
+#+end_src
+
+#+RESULTS:
+
+=i= should be 4 to use DE gene data under subsampling.
+#+begin_src R
+pdf_figure = 0
+i = 4
+tff = sprintf("../scRNA-seq/t_sne.%s.pdf",names(mm)[i])
+uff = sprintf("../scRNA-seq/umap.%s.pdf",names(mm)[i])
+dist.sub <- dist( t(mm[[i]]), method="binary" )
+cname = colnames(mm[[i]])
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R
+X = mm[[i]]
+
+N = ncol(X)
+Ndata = nrow(X)
+Y = list()
+for (nd in 1:Ndata){
+Y[[nd]] = X[nd,] %o% X[nd,]
+diag(Y[[nd]]) = 0
+}
+
+ptm <- proc.time()
+modLSJM <- lsjm(Y, D = 2, sigma = 10)
+proc.time() - ptm
+
+x = modLSJM$EZ[,1]
+y = modLSJM$EZ[,2]
+#pdf("Gollini_scRNA.pdf")
+mdsplot(data.frame(x,y), cname)
+#dev.off()
+#+end_src
+
+#+RESULTS:
+: Error in svd(t(Y) %*% X) : infinite or missing values in 'x'
+: In addition: There were 50 or more warnings (use warnings() to see the first 50)
+: R>    user  system elapsed 
+:  70.357   7.827  74.832 
+: R> Error in `.rowNamesDF<-`(x, value = value) : invalid 'row.names' length
+: R> [1] "org_babel_R_eoe"
+
+** addiction brain
+#+begin_src R
+# data
+
+## dir.in <- "C:\\Users\\dchung\\Dropbox\\USB\\research - 28. visualization\\2. Ick Hoon Jin - hub-centric visualization\\4-0. addiction_brain_geneexpr_data\\2. limma\\"
+## dir.out <- "C:\\Users\\dchung\\Dropbox\\USB\\research - 28. visualization\\2. Ick Hoon Jin - hub-centric visualization\\4-1. addiction_brain_geneexpr_hubviz\\"
+
+dir.in = "../4-0. addiction_brain_geneexpr_data/2. limma/"
+dir.out = "../4-1. addiction_brain_geneexpr_hubviz/"
+
+#dir.in <- "/Users/dongjunchung/Dropbox/USB/research - 28. visualization/2. Ick Hoon Jin - hub-centric visualization/4-0. addiction_brain_geneexpr_data/2. limma/"
+#dir.out <- "/Users/dongjunchung/Dropbox/USB/research - 28. visualization/2. Ick Hoon Jin - hub-centric visualization/4-1. addiction_brain_geneexpr_hubviz/"
+
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R
+# load dataset
+
+filenames <- list.files( dir.in, "csv" )
+
+data.all <- vector( "list", length(filenames) )
+for ( i in 1:length(filenames) ) {
+  data.all[[i]] <- read.csv( paste(dir.in,filenames[i],sep=""),
+    stringsAsFactors=FALSE )
+}
+
+# check dataset
+
+print(dim(data.all[[1]]))
+for ( i in 2:length(filenames) ) {
+  print(dim(data.all[[i]]))
+  print(all( rownames(data.all[[i]] == rownames(data.all[[1]]) ) ))
+}
+#+end_src
+
+#+RESULTS:
+#+begin_example
+[1] 1322   30
+[1] 1322   30
+[1] TRUE
+[1] 1322   30
+[1] TRUE
+[1] 1322   31
+[1] TRUE
+[1] 1322   31
+[1] TRUE
+[1] 1322   31
+[1] TRUE
+[1] 1322   31
+[1] TRUE
+[1] 1322   30
+[1] TRUE
+[1] 1322   31
+[1] TRUE
+[1] 1322   31
+[1] TRUE
+[1] 1322   31
+[1] TRUE
+[1] 1322   31
+[1] TRUE
+#+end_example
+
+#+begin_src R
+# collect p-values
+
+pmat <- matrix( NA, nrow(data.all[[1]]), length(filenames) )
+for ( i in 1:length(filenames) ) {
+  pmat[,i] <- data.all[[i]][,5]
+}
+rownames(pmat) <- data.all[[1]][,1]
+
+brain_region <- sapply( strsplit( filenames, "1h|6h" ), function(x) x[1] )
+brain_region <- gsub( "GDS1608_", "", brain_region )
+brain_region <- gsub( "_", " ", brain_region )
+
+hours <- rep( "6h", length(filenames) ) 
+hours[ grep( "1h", filenames) ] <- "1h"
+
+# thresholding
+
+#method <- "fdr"; cutoff <- 0.20
+method <- "bonferroni"; cutoff <- 0.20
+
+#pmat = gds0
+pmat.sub <- matrix( 0, nrow(pmat), ncol(pmat) )
+rownames(pmat.sub) <- rownames(pmat)
+for ( i in 1:ncol(pmat) ) {
+  if ( method == "bonferroni" ) {
+    pmat.sub[,i] <- as.numeric( pmat[,i] < cutoff )
+  } else {
+    pmat.sub[,i] <- as.numeric( p.adjust( pmat[,i], method="fdr" ) < cutoff )
+  }
+}
+pmat.sub <- pmat.sub[ rowSums(pmat.sub) > 0, ]
+colnames(pmat.sub) <-
+  c( "A1", "A6", "LH1", "LH6", "MPC1", "MPC6", "NA1", "NA6", "S1", "S6", "VTA1", "VTA6" )
+#+end_src
+
+#+RESULTS:
+
+#+attr_ravel: eval=F
+#+begin_src R :eval no
+# print gene list
+
+write.csv( rownames(pmat.sub)[ pmat.sub[,1] == 1 | pmat.sub[,2] == 1 ],
+  file=paste(dir.out,"gene_list_A.csv",sep="") )
+write.csv( rownames(pmat.sub)[ pmat.sub[,3] == 1 | pmat.sub[,4] == 1 ],
+  file=paste(dir.out,"gene_list_LH.csv",sep="") )
+write.csv( rownames(pmat.sub)[ pmat.sub[,5] == 1 | pmat.sub[,6] == 1 ],
+  file=paste(dir.out,"gene_list_MPC.csv",sep="") )
+write.csv( rownames(pmat.sub)[ pmat.sub[,7] == 1 | pmat.sub[,8] == 1 ],
+  file=paste(dir.out,"gene_list_NA.csv",sep="") )
+write.csv( rownames(pmat.sub)[ pmat.sub[,9] == 1 | pmat.sub[,10] == 1 ],
+  file=paste(dir.out,"gene_list_S.csv",sep="") )
+write.csv( rownames(pmat.sub)[ pmat.sub[,11] == 1 | pmat.sub[,12] == 1 ],
+  file=paste(dir.out,"gene_list_VTA.csv",sep="") )
+
+for ( i in 1:ncol(pmat.sub) ) {
+  write.csv( rownames(pmat.sub)[ pmat.sub[,i] == 1 ],
+    file=paste(dir.out,"gene_list_",colnames(pmat.sub)[i],".csv",sep="") )
+}
+
+for ( i in 1:ncol(pmat.sub) ) {
+  write.csv( rownames(pmat.sub)[ pmat.sub[,i] == 1 & rowSums(pmat.sub) == 1 ],
+    file=paste(dir.out,"gene_list_exclusive_",colnames(pmat.sub)[i],".csv",sep="") )
+}
+#+end_src
+
+#+begin_src R :results output
+## X = X[seq(1,100,25),]
+X = pmat.sub
+N = ncol(X)
+Ndata = nrow(X)
+Y = list()
+for (nd in 1:Ndata){
+Y[[nd]] = X[nd,] %o% X[nd,]
+diag(Y[[nd]]) = 0
+}
+
+ptm <- proc.time()
+modLSJM <- lsjm(Y, D = 2, sigma = 1)
+proc.time() - ptm
+
+x = modLSJM$EZ[,1]
+y = modLSJM$EZ[,2]
+mdsplot(data.frame(x,y), colnames(pmat.sub))
+#+end_src
+
+#+RESULTS:
+: Error in svd(t(Y) %*% X) : infinite or missing values in 'x'
+: In addition: There were 50 or more warnings (use warnings() to see the first 50)
+:    user  system elapsed 
+: 198.117  23.985 211.774
+: Error: object 'modLSJM' not found
+: Error: object 'modLSJM' not found
+: Error in data.frame(x, y) : object 'x' not found
+: null device 
+:           1
+
+** Literature mining
+#+begin_src R
+# data
+
+## dir.in <- "C:\\Users\\dchung\\Dropbox\\USB\\research - 28. visualization\\2. Ick Hoon Jin - hub-centric visualization\\5-0. literature_mining_disease_gene_data\\"
+## dir.out <- "C:\\Users\\dchung\\Dropbox\\USB\\research - 28. visualization\\2. Ick Hoon Jin - hub-centric visualization\\5-1. literature_mining_disease_gene_hubviz\\"
+
+dir.in = "../5-0. literature_mining_disease_gene_data/"
+dir.out = "../5-1. literature_mining_disease_gene_hubviz/"
+
+#dir.in <- "/Users/dongjunchung/Dropbox/USB/research - 28. visualization/2. Ick Hoon Jin - hub-centric visualization/5-0. literature_mining_disease_gene_data/"
+#dir.out <- "/Users/dongjunchung/Dropbox/USB/research - 28. visualization/2. Ick Hoon Jin - hub-centric visualization/5-1. literature_mining_disease_gene_hubviz/"
+
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R
+# load data
+
+load( file=paste(dir.in,"pmat_disease_gene.RData",sep="") )
+
+for ( i in 1:ncol(pmat) ) {
+  pmat.i <- pmat[,i]
+  pmat.i[ is.na(pmat.i) ] <- 1
+  pmat[,i] <- pmat.i
+}
+
+bmat <- matrix( 0, nrow(pmat), ncol(pmat) )
+colnames(bmat) <- colnames(pmat)
+rownames(bmat) <- rownames(pmat)
+bmat[ pmat < 0.2 ] <- 1
+
+bmat1 <- bmat
+
+# load data
+
+load( file=paste(dir.in,"pmat_trait_gene.RData",sep="") )
+
+for ( i in 1:ncol(pmat) ) {
+  pmat.i <- pmat[,i]
+  pmat.i[ is.na(pmat.i) ] <- 1
+  pmat[,i] <- pmat.i
+}
+
+bmat <- matrix( 0, nrow(pmat), ncol(pmat) )
+colnames(bmat) <- colnames(pmat)
+rownames(bmat) <- rownames(pmat)
+bmat[ pmat < 0.2 ] <- 1
+
+bmat2 <- bmat
+
+bmat <- cbind( bmat1, bmat2 )
+#bmat <- bmat[ , -c(1,2,3,6,8,10,11) ]
+bmat <- bmat[ , c(4,5,7,9,10,11,12) ]
+bmat <- bmat[ apply( bmat, 1, function(x) sum(x) ) > 0, ]
+
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R :results output
+X = bmat
+N = ncol(X)
+Ndata = nrow(X)
+Y = list()
+for (nd in 1:Ndata){
+Y[[nd]] = X[nd,] %o% X[nd,]
+diag(Y[[nd]]) = 0
+}
+
+ptm <- proc.time()
+modLSJM <- lsjm(Y, D = 2, sigma = 1)
+proc.time() - ptm
+
+x = modLSJM$EZ[,1]
+y = modLSJM$EZ[,2]
+mdsplot(data.frame(x,y), colnames(pmat.sub))
+#+end_src
+
+#+RESULTS:
+: Error in chol.default(SI4SigmaT) : 
+:   the leading minor of order 1 is not positive definite
+: In addition: Warning message:
+: In sqrt(det(SI4SigmaT)) : NaNs produced
+:    user  system elapsed 
+: 225.633  33.364 244.431
+: Error: object 'modLSJM' not found
+: Error: object 'modLSJM' not found
+: Error in data.frame(x, y) : object 'x' not found
+
+* HubViz
+#+begin_src R
+ptm <- proc.time()
+tmp = hubviz(Y)
+proc.time() - ptm
+#+end_src
+
+#+RESULTS:
+#+begin_example
+
+
+---------------------
+
+Running MCMC... 
+
+---------------------
+
+#   -02:28/04:42Progress[                                                                ]   0%Progress[                                                                ]   0%Progress[                                                                ]   1%Progress[                                                                ]   1%Progress[=                                                               ]   1%Progress[=                                                               ]   2%Progress[=                                                               ]   2%Progress[=                                                               ]   2%Progress[=                                                               ]   3%Progress[==                                                              ]   3%Progress[==                                                              ]   3%Progress[==                                                              ]   4%Progress[==                                                              ]   4%Progress[==                                                              ]   4%Progress[===                                                             ]   5%Progress[===                                                             ]   5%Progress[===                                                             ]   5%Progress[===                                                             ]   6%Progress[====                                                            ]   6%Progress[====                                                            ]   6%Progress[====                                                            ]   7%Progress[====                                                            ]   7%Progress[====                                                            ]   7%Progress[=====                                                           ]   8%Progress[=====                                                           ]   8%Progress[=====                                                           ]   8%Progress[=====                                                           ]   9%Progress[=====                                                           ]   9%Progress[======                                                          ]   9%Progress[======                                                          ]  10%Progress[======                                                          ]  10%Progress[======                                                          ]  10%Progress[=======                                                         ]  11%Progress[=======                                                         ]  11%Progress[=======                                                         ]  11%Progress[=======                                                         ]  12%Progress[=======                                                         ]  12%Progress[========                                                        ]  12%Progress[========                                                        ]  13%Progress[========                                                        ]  13%Progress[========                                                        ]  13%Progress[========                                                        ]  14%Progress[=========                                                       ]  14%Progress[=========                                                       ]  14%Progress[=========                                                       ]  15%Progress[=========                                                       ]  15%Progress[==========                                                      ]  15%Progress[==========                                                      ]  16%Progress[==========                                                      ]  16%Progress[==========                                                      ]  16%Progress[==========                                                      ]  17%Progress[=======#   -02:27/04:42====                                                     ]  17%Progress[===========                                                     ]  17%Progress[===========                                                     ]  18%Progress[===========                                                     ]  18%Progress[===========                                                     ]  18%Progress[============                                                    ]  19%Progress[============                                                    ]  19%Progress[============                                                    ]  19%Progress[============                                                    ]  20%Progress[=============                                                   ]  20%Progress[=============                                                   ]  20%Progress[=============                                                   ]  21%Progress[=============                                                   ]  21%Progress[=============                                                   ]  21%Progress[==============                                                  ]  22%Progress[==============                                                  ]  22%Progress[==============                                                  ]  22%Progress[==============                                                  ]  23%Progress[==============                                                  ]  23%Progress[===============                                                 ]  23%Progress[===============                                                 ]  24%Progress[===============                                                 ]  24%Progress[===============                                                 ]  24%Progress[================                                                ]  25%Progress[================                                                ]  25%Progress[================                                                ]  25%Progress[================                                                ]  26%Progress[================                                                ]  26%Progress[=================                                               ]  26%Progress[=================                                               ]  27%Progress[=================                                               ]  27%Progress[=================                                               ]  27%Progress[=================                                               ]  28%Progress[==================                                              ]  28%Progress[==================                                              ]  28%Progress[==================                                              ]  29%Progress[==================                                              ]  29%Progress[==================                                              ]  29%Progress[===================                                             ]  30%Progress[===================                                             ]  30%Progress[===================                                             ]  30%Progress[===================                                             ]  31%Progress[====================                                            ]  31%Progress[====================                                            ]  31%Progress[====================                                            ]  32%Progress[====================                                            ]  32%Progress[====================                                            ]  32%Progress[=====================                                           ]  33%Progress[=====================                                           ]  33%Progress[=====================                                           ]  33%Progress[=====================                                           ]  34%Progress[=====================  #   -02:26/04:42#   -02:25/04:42                                         ]  34%Progress[======================                                          ]  34%Progress[======================                                          ]  35%Progress[======================                                          ]  35%Progress[======================                                          ]  35%Progress[=======================                                         ]  36%Progress[=======================                                         ]  36%Progress[=======================                                         ]  36%Progress[=======================                                         ]  37%Progress[=======================                                         ]  37%Progress[========================                                        ]  37%Progress[========================                                        ]  38%Progress[========================                                        ]  38%Progress[========================                                        ]  38%Progress[========================                                        ]  39%Progress[=========================                                       ]  39%Progress[=========================                                       ]  39%Progress[=========================                                       ]  40%Progress[=========================                                       ]  40%Progress[==========================                                      ]  40%Progress[==========================                                      ]  41%Progress[==========================                                      ]  41%Progress[==========================                                      ]  41%Progress[==========================                                      ]  42%Progress[===========================                                     ]  42%Progress[===========================                                     ]  42%Progress[===========================                                     ]  43%Progress[===========================                                     ]  43%Progress[===========================                                     ]  43%Progress[============================                                    ]  44%Progress[============================                                    ]  44%Progress[============================                                    ]  44%Progress[============================                                    ]  45%Progress[=============================                                   ]  45%Progress[=============================                                   ]  45%Progress[=============================                                   ]  46%Progress[=============================                                   ]  46%Progress[=============================                                   ]  46%Progress[==============================                                  ]  47%Progress[==============================                                  ]  47%Progress[==============================                                  ]  47%Progress[==============================                                  ]  48%Progress[==============================                                  ]  48%Progress[===============================                                 ]  48%Progress[===============================                                 ]  49%Progress[===============================                                 ]  49%Progress[===============================                                 ]  49%Progress[================================                                ]  50%Progress[================================                                ]  50%Progress[================================                                ]  50%Progress[================================                                ]  51%Progress[================================       #   -02:24/04:42                         ]  51%Progress[=================================                               ]  51%Progress[=================================                               ]  52%Progress[=================================                               ]  52%Progress[=================================                               ]  52%Progress[=================================                               ]  53%Progress[==================================                              ]  53%Progress[==================================                              ]  53%Progress[==================================                              ]  54%Progress[==================================                              ]  54%Progress[==================================                              ]  54%Progress[===================================                             ]  55%Progress[===================================                             ]  55%Progress[===================================                             ]  55%Progress[===================================                             ]  56%Progress[====================================                            ]  56%Progress[====================================                            ]  56%Progress[====================================                            ]  57%Progress[====================================                            ]  57%Progress[====================================                            ]  57%Progress[=====================================                           ]  58%Progress[=====================================                           ]  58%Progress[=====================================                           ]  58%Progress[=====================================                           ]  59%Progress[=====================================                           ]  59%Progress[======================================                          ]  59%Progress[======================================                          ]  60%Progress[======================================                          ]  60%Progress[======================================                          ]  60%Progress[=======================================                         ]  61%Progress[=======================================                         ]  61%Progress[=======================================                         ]  61%Progress[=======================================                         ]  62%Progress[=======================================                         ]  62%Progress[========================================                        ]  62%Progress[========================================                        ]  63%Progress[========================================                        ]  63%Progress[========================================                        ]  63%Progress[========================================                        ]  64%Progress[=========================================                       ]  64%Progress[=========================================                       ]  64%Progress[=========================================                       ]  65%Progress[=========================================                       ]  65%Progress[==========================================                      ]  65%Progress[==========================================                      ]  66%Progress[==========================================                      ]  66%Progress[==========================================                      ]  66%Progress[==========================================                      ]  67%Progress[===========================================                     ]  67%Progress[===========================================                     ]  67%Progress[===========================================                     ]  68%Progress[===========================================            #   -02:23/04:42         ]  68%Progress[===========================================                     ]  68%Progress[============================================                    ]  69%Progress[============================================                    ]  69%Progress[============================================                    ]  69%Progress[============================================                    ]  70%Progress[=============================================                   ]  70%Progress[=============================================                   ]  70%Progress[=============================================                   ]  71%Progress[=============================================                   ]  71%Progress[=============================================                   ]  71%Progress[==============================================                  ]  72%Progress[==============================================                  ]  72%Progress[==============================================                  ]  72%Progress[==============================================                  ]  73%Progress[==============================================                  ]  73%Progress[===============================================                 ]  73%Progress[===============================================                 ]  74%Progress[===============================================                 ]  74%Progress[===============================================                 ]  74%Progress[================================================                ]  75%Progress[================================================                ]  75%Progress[================================================                ]  75%Progress[================================================                ]  76%Progress[================================================                ]  76%Progress[=================================================               ]  76%Progress[=================================================               ]  77%Progress[=================================================               ]  77%Progress[=================================================               ]  77%Progress[=================================================               ]  78%Progress[==================================================              ]  78%Progress[==================================================              ]  78%Progress[==================================================              ]  79%Progress[==================================================              ]  79%Progress[==================================================              ]  79%Progress[===================================================             ]  80%Progress[===================================================             ]  80%Progress[===================================================             ]  80%Progress[===================================================             ]  81%Progress[====================================================            ]  81%Progress[====================================================            ]  81%Progress[====================================================            ]  82%Progress[====================================================            ]  82%Progress[====================================================            ]  82%Progress[=====================================================           ]  83%Progress[=====================================================           ]  83%Progress[=====================================================           ]  83%Progress[=====================================================           ]  84%Progress[=====================================================           ]  84%Progress[======================================================          ]  84%Progress[======================================================          ]  85%Progress[======================================================          ]  85%#   -02:22/04:42Progress[======================================================          ]  85%Progress[=======================================================         ]  86%Progress[=======================================================         ]  86%Progress[=======================================================         ]  86%Progress[=======================================================         ]  87%Progress[=======================================================         ]  87%Progress[========================================================        ]  87%Progress[========================================================        ]  88%Progress[========================================================        ]  88%Progress[========================================================        ]  88%Progress[========================================================        ]  89%Progress[=========================================================       ]  89%Progress[=========================================================       ]  89%Progress[=========================================================       ]  90%Progress[=========================================================       ]  90%Progress[==========================================================      ]  90%Progress[==========================================================      ]  91%Progress[==========================================================      ]  91%Progress[==========================================================      ]  91%Progress[==========================================================      ]  92%Progress[===========================================================     ]  92%Progress[===========================================================     ]  92%Progress[===========================================================     ]  93%Progress[===========================================================     ]  93%Progress[===========================================================     ]  93%Progress[============================================================    ]  94%Progress[============================================================    ]  94%Progress[============================================================    ]  94%Progress[============================================================    ]  95%Progress[=============================================================   ]  95%Progress[=============================================================   ]  95%Progress[=============================================================   ]  96%Progress[=============================================================   ]  96%Progress[=============================================================   ]  96%Progress[==============================================================  ]  97%Progress[==============================================================  ]  97%Progress[==============================================================  ]  97%Progress[==============================================================  ]  98%Progress[==============================================================  ]  98%Progress[=============================================================== ]  98%Progress[=============================================================== ]  99%Progress[=============================================================== ]  99%Progress[=============================================================== ]  99%Progress[================================================================] 100%
+   user  system elapsed 
+ 80.730   0.262   6.962
+#+end_example
+
+* STAN optimization using LBFGS
+:PROPERTIES:
+:ID:       343fb468-844b-4f7e-840c-30161fa57835
+:END:
+- Limited-memory BFGS (https://en.wikipedia.org/wiki/Limited-memory_BFGS)
+- Try to fix two points, and see if multiple results are similar
+- Variational Bayes + any optimization may get trapped in local modes. 
+
+** single optim
+#+begin_src stan :tangle vb.stan
+data {
+  int<lower=1> n;
+  int<lower=1> p;
+  int<lower=0,upper=1> Y[n,p];
+  real<lower=machine_precision()> sigma_t;
+}
+transformed data {
+  // STAN takes row vectors for matrix initialization.
+  int<lower=0,upper=1> u[n,p,p];
+  real<lower=machine_precision()> a = 0.001;
+  real<lower=machine_precision()> b = 0.001;
+  for (k in 1:n) {
+    for (i in 1:p) {
+      for (j in 1:p) {
+        if (i != j)
+          u[k,i,j] = Y[k,i] * Y[k,j];
+        else
+          u[k,i,j] = 0; }
+    }
+  }
+}
+parameters {
+  vector[n] theta;
+  real<lower=0> sigma_w;
+  matrix[p,2] w;
+}
+model {
+  for (k in 1:n) {
+    target += normal_lpdf(theta[k] | 0, sigma_t);
+    for (i in 1:p) {
+      target += normal_lpdf(w[i,1]|0,sigma_w) + normal_lpdf(w[i,2]|0,sigma_w);
+      for (j in (i+1):p) {
+        target += - log(1 + exp(theta[k] - distance(row(w, i), row(w, j))));
+        if ( u[k,i,j] != 0)
+          target += theta[k] - distance(row(w,i), row(w, j));
+      }
+    }
+  }
+  target += inv_gamma_lpdf(sigma_w^2 | a,b);
+}
+#+end_src
+
+#+begin_src sh :async
+cd /opt/cmdstan
+make ~/workspace/hubViz-code/vb
+#+end_src
+
+#+RESULTS:
+| ---       | Translating                                  | Stan                                      | model                     | to                | C++          | code | ---                                        |     |    |     |    |          |    |                      |    |                     |    |                                    |    |                                     |    |                                               |                         |                                         |                                         |                                          |                    |                                                                    |                                                                |                                                              |                                                                |                                         |                                               |                                                     |    |                                      |
+| bin/stanc | --o=/Users/yunj/workspace/hubViz-code/vb.hpp | /Users/yunj/workspace/hubViz-code/vb.stan |                           |                   |              |      |                                            |     |    |     |    |          |    |                      |    |                     |    |                                    |    |                                     |    |                                               |                         |                                         |                                         |                                          |                    |                                                                    |                                                                |                                                              |                                                                |                                         |                                               |                                                     |    |                                      |
+| ---       | Compiling,                                   | linking                                   | C++                       | code              | ---          |      |                                            |     |    |     |    |          |    |                      |    |                     |    |                                    |    |                                     |    |                                               |                         |                                         |                                         |                                          |                    |                                                                    |                                                                |                                                              |                                                                |                                         |                                               |                                                     |    |                                      |
+| clang++   | -std=c++1y                                   | -Wno-unknown-warning-option               | -Wno-tautological-compare | -Wno-sign-compare | -D_REENTRANT | -I   | stan/lib/stan_math/lib/tbb_2019_U8/include | -O3 | -I | src | -I | stan/src | -I | lib/rapidjson_1.1.0/ | -I | stan/lib/stan_math/ | -I | stan/lib/stan_math/lib/eigen_3.3.3 | -I | stan/lib/stan_math/lib/boost_1.69.0 | -I | stan/lib/stan_math/lib/sundials_4.1.0/include | -DBOOST_DISABLE_ASSERTS | -c                                      | -include-pch                            | stan/src/stan/model/model_header.hpp.gch | -x                 | c++                                                                | -o                                                             | /Users/yunj/workspace/hubViz-code/vb.o                       | /Users/yunj/workspace/hubViz-code/vb.hpp                       |                                         |                                               |                                                     |    |                                      |
+| clang++   | -std=c++1y                                   | -Wno-unknown-warning-option               | -Wno-tautological-compare | -Wno-sign-compare | -D_REENTRANT | -I   | stan/lib/stan_math/lib/tbb_2019_U8/include | -O3 | -I | src | -I | stan/src | -I | lib/rapidjson_1.1.0/ | -I | stan/lib/stan_math/ | -I | stan/lib/stan_math/lib/eigen_3.3.3 | -I | stan/lib/stan_math/lib/boost_1.69.0 | -I | stan/lib/stan_math/lib/sundials_4.1.0/include | -DBOOST_DISABLE_ASSERTS | /opt/cmdstan/stan/lib/stan_math/lib/tbb | /opt/cmdstan/stan/lib/stan_math/lib/tbb | /Users/yunj/workspace/hubViz-code/vb.o   | src/cmdstan/main.o | stan/lib/stan_math/lib/sundials_4.1.0/lib/libsundials_nvecserial.a | stan/lib/stan_math/lib/sundials_4.1.0/lib/libsundials_cvodes.a | stan/lib/stan_math/lib/sundials_4.1.0/lib/libsundials_idas.a | stan/lib/stan_math/lib/sundials_4.1.0/lib/libsundials_kinsol.a | stan/lib/stan_math/lib/tbb/libtbb.dylib | stan/lib/stan_math/lib/tbb/libtbbmalloc.dylib | stan/lib/stan_math/lib/tbb/libtbbmalloc_proxy.dylib | -o | /Users/yunj/workspace/hubViz-code/vb |
+
+#+begin_src R
+## data, fixed parameters
+i = 2
+Y = mm[[i]]
+n = nrow(Y)
+p = ncol(Y)
+sigma_t = 10
+rstan::stan_rdump(c('n','p','Y','sigma_t'),"free_sigma.R")
+
+## initialization
+w_fr = matrix(rnorm(2*p),p,2)
+w = w_fr
+w_fr[1,] = c(0,0)
+w_fr[2,] = 1*c(1,1)
+theta = rnorm(n)
+sigma_w = 10
+rstan::stan_rdump(c('w','w_fr','theta','sigma_w'),"init_list.R")
+#+end_src
+
+#+RESULTS:
+
+
+A good output is saved "optim_good.csv" (lp 8887.9)
+#+begin_src sh :async :results none
+cd ~/workspace/hubViz-code
+./vb optimize data file=free_sigma.R output file=optim.csv init=init_list.R
+#+end_src
+
+[[file:stan_optimization.pdf]]
+#+begin_src R
+out = as.matrix(readr::read_csv("optim.csv", skip=27))
+x = out[(1+n)+2:(2+p-1)]
+y = out[(1+n)+(2+p):(2+2*p-1)]
+cname = colnames(mm[[i]])
+
+pdf("stan_optimization.pdf")
+mdsplot(data.frame(x,y), cname)
+dev.off()
+#+end_src
+
+#+RESULTS:
+: Parsed with column specificatio n:
+: cols(
+:   .default = col_double()
+: )
+: See spec(...) for full column specifications.
+: quartz 
+:      2
+
+** Procrustes matching
+- Do Procrustes in MCMCpack. Try two sets (each 10 results in sec) compare results.
+- https://rdrr.io/cran/MCMCpack/man/procrustes.html
+- Matching alone doesn't work. its results are still quite varying...
+
+#+begin_src stan :tangle vb.stan
+data {
+  int<lower=1> n;
+  int<lower=1> p;
+  int<lower=0,upper=1> Y[n,p];
+}
+transformed data {
+  // STAN takes row vectors for matrix initialization.
+  int<lower=0,upper=1> u[n,p,p];
+  real<lower=machine_precision()> sigma_t = 10;
+  real<lower=machine_precision()> a = 0.001;
+  real<lower=machine_precision()> b = 0.001;
+  for (k in 1:n) {
+    for (i in 1:p) {
+      for (j in 1:p) {
+        if (i != j)
+          u[k,i,j] = Y[k,i] * Y[k,j];
+        else
+          u[k,i,j] = 0; }
+    }
+  }
+}
+parameters {
+  vector[n] theta;
+  real<lower=0> sigma_w;
+  matrix[p,2] w;
+}
+model {
+  for (k in 1:n) {
+    target += normal_lpdf(theta[k] | 0, sigma_t);
+    for (i in 1:p) {
+      target += normal_lpdf(w[i,1]|0,sigma_w) + normal_lpdf(w[i,2]|0,sigma_w);
+      for (j in (i+1):p) {
+        target += - log(1 + exp(theta[k] - distance(row(w, i), row(w, j))));
+        if ( u[k,i,j] != 0)
+          target += theta[k] - distance(row(w,i), row(w, j));
+      }
+    }
+  }
+  target += inv_gamma_lpdf(sigma_w^2 | a,b);
+}
+#+end_src
+
+#+begin_src sh :async
+cd /opt/cmdstan
+make ~/workspace/hubViz-code/vb
+#+end_src
+
+#+begin_src R
+## data, fixed parameters
+i = 2
+Y = mm[[i]]
+n = nrow(Y)
+p = ncol(Y)
+sigma_t = 10
+rstan::stan_rdump(c('n','p','Y','sigma_t','sigma_w'),"sim1_Y.R")
+#+end_src
+
+#+RESULTS:
+
+#+begin_src sh :async :results silent
+mkdir -p out
+for i in {1..10}
+do
+./vb optimize data file=sim1_Y.R output file=out/optim$i.csv
+done
+wait
+#+end_src
+
+#+begin_src R :results value
+lp = numeric(10)
+out = list()
+cname = colnames(mm[[i]])
+
+for (k in 1:10){
+out[[k]] = as.matrix(readr::read_csv(paste0("out/optim",k,".csv"), skip=27))
+lp[k] = out[[k]][1]
+}
+#+end_src
+
+#+RESULTS:
+
+[[file:stan-optim-plots.pdf]]
+#+begin_src R :results value
+pp = list()
+for (k in 1:10){
+x = out[[k]][2:11]
+y = out[[k]][12:21]
+pp[[k]] = mdsplot(data.frame(x,y), cname)}
+#+end_src
+
+#+begin_src R
+library(MCMCpack)
+mm = list()
+tt = which.max(lp)
+Xstar = matrix(out[[tt]][2:21],10,2)
+for (k in 1:10){
+X = matrix(out[[k]][2:21],10,2)
+mm[[k]] = procrustes(X, Xstar, translation = FALSE, dilation = FALSE)$X.new
+}
+#+end_src
+
+#+begin_src R
+w = Reduce("+",mm)
+pdf("plot4.pdf")
+mdsplot(data.frame(w), cname)
+dev.off(0)
+#+end_src
+
+
+** fixed first two rows of $w$ 
+#+begin_src stan :tangle vb.stan
+data {
+  int<lower=1> n;
+  int<lower=1> p;
+  int<lower=0,upper=1> Y[n,p];
+  real w_2;
+  real<lower=0> sigma_w;
+}
+transformed data {
+  // STAN takes row vectors for matrix initialization.
+  int<lower=0,upper=1> u[n,p,p];
+  real<lower=machine_precision()> sigma_t = 10;
+  real<lower=machine_precision()> a = 0.001;
+  real<lower=machine_precision()> b = 0.001;
+  for (k in 1:n) {
+    for (i in 1:p) {
+      for (j in 1:p) {
+        if (i != j)
+          u[k,i,j] = Y[k,i] * Y[k,j];
+        else
+          u[k,i,j] = 0; }
+    }
+  }
+}
+parameters {
+  vector[n] theta;
+  /* real<lower=0> sigma_w; */
+  matrix[p,2] w_fr;
+}
+transformed parameters {
+  matrix[p,2] w;
+  w = w_fr;
+  w[1,1] = 0;
+  w[1,2] = 0;
+  w[2,1] = w_2;
+  w[2,2] = w_2;
+}
+model {
+  for (k in 1:n) {
+    target += normal_lpdf(theta[k] | 0, sigma_t);
+    for (i in 1:p) {
+      target += normal_lpdf(w[i,1]|0,sigma_w) + normal_lpdf(w[i,2]|0,sigma_w);
+      for (j in (i+1):p) {
+        target += - log(1 + exp(theta[k] - distance(row(w, i), row(w, j))));
+        if ( u[k,i,j] != 0)
+          target += theta[k] - distance(row(w,i), row(w, j));
+      }
+    }
+  }
+  /* target += inv_gamma_lpdf(sigma_w^2 | a,b); */
+}
+#+end_src
+
+#+begin_src sh :async
+cd /opt/cmdstan
+make ~/workspace/hubViz-code/vb
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R
+## data, fixed parameters
+i = 1
+Y = mm[[i]]
+n = nrow(Y)
+p = ncol(Y)
+w_2 = 1
+sigma_w = 5
+rstan::stan_rdump(c('n','p','Y','w_2','sigma_w'),"fixedtwo.R")
+
+## initialization
+w_fr = matrix(rnorm(2*p),p,2)
+w_fr[1,] = c(0,0)
+w_fr[2,] = 1*c(1,1)
+theta = rnorm(n)
+#sigma_w = 10
+rstan::stan_rdump(c('w_fr','theta','sigma_w'),"init_list.R")
+#+end_src
+
+#+RESULTS:
+
+- put ~init=init_list.R~ for custom initialization.
+#+begin_src sh :async :results none
+cd ~/workspace/hubViz-code
+./vb optimize data file=fixedtwo.R output file=optim.csv init=init_list.R
+#+end_src
+
+#+begin_src R
+out = as.matrix(readr::read_csv("optim.csv", skip=27))
+
+x = out[(n+2*p)+2:(2+p-1)]
+y = out[(n+2*p)+(2+p):(2+2*p-1)]
+cname = colnames(mm[[i]])
+
+mdsplot(data.frame(x,y), cname)
+#+end_src
+
+#+RESULTS:
+: Parsed with column specification:
+: cols(
+:   .default = col_double()
+: )
+: See spec(...) for full column specifications.
+: #   -00:02/05:20#   -00:02/05:20#   -00:02/05:20#   -00:02/05:20#   -00:02/05:20#   -00:02/05:20
+
+
+** no fixed points: user-defined $\sigma$'s 
+#+begin_src stan :tangle vb.stan
+data {
+  int<lower=1> n;
+  int<lower=1> p;
+  int<lower=0,upper=1> Y[n,p];
+  real<lower=machine_precision()> sigma_w;
+  real<lower=machine_precision()> sigma_t;
+}
+transformed data {
+  // STAN takes row vectors for matrix initialization.
+  int<lower=0,upper=1> u[n,p,p];
+  real<lower=machine_precision()> a = 0.001;
+  real<lower=machine_precision()> b = 0.001;
+  for (k in 1:n) {
+    for (i in 1:p) {
+      for (j in 1:p) {
+        if (i != j)
+          u[k,i,j] = Y[k,i] * Y[k,j];
+        else
+          u[k,i,j] = 0; }
+    }
+  }
+}
+parameters {
+  vector[n] theta;
+  /* real<lower=0> sigma_w; */
+  matrix[p,2] w;
+}
+model {
+  for (k in 1:n) {
+    target += normal_lpdf(theta[k] | 0, sigma_t);
+    for (i in 1:p) {
+      target += normal_lpdf(w[i,1]|0,sigma_w) + normal_lpdf(w[i,2]|0,sigma_w);
+      for (j in (i+1):p) {
+        target += - log(1 + exp(theta[k] - distance(row(w, i), row(w, j))));
+        if ( u[k,i,j] != 0)
+          target += theta[k] - distance(row(w,i), row(w, j));
+      }
+    }
+  }
+  /* target += inv_gamma_lpdf(sigma_w^2 | a,b); */
+}
+#+end_src
+
+#+begin_src sh :async
+cd /opt/cmdstan
+make ~/workspace/hubViz-code/vb
+#+end_src
+
+#+RESULTS:
+| ---       | Translating                                  | Stan                                      | model                     | to                | C++          | code | ---                                        |     |    |     |    |          |    |                      |    |                     |    |                                    |    |                                     |    |                                               |                         |                                         |                                         |                                          |                    |                                                                    |                                                                |                                                              |                                                                |                                         |                                               |                                                     |    |                                      |
+| bin/stanc | --o=/Users/yunj/workspace/hubViz-code/vb.hpp | /Users/yunj/workspace/hubViz-code/vb.stan |                           |                   |              |      |                                            |     |    |     |    |          |    |                      |    |                     |    |                                    |    |                                     |    |                                               |                         |                                         |                                         |                                          |                    |                                                                    |                                                                |                                                              |                                                                |                                         |                                               |                                                     |    |                                      |
+| ---       | Compiling,                                   | linking                                   | C++                       | code              | ---          |      |                                            |     |    |     |    |          |    |                      |    |                     |    |                                    |    |                                     |    |                                               |                         |                                         |                                         |                                          |                    |                                                                    |                                                                |                                                              |                                                                |                                         |                                               |                                                     |    |                                      |
+| clang++   | -std=c++1y                                   | -Wno-unknown-warning-option               | -Wno-tautological-compare | -Wno-sign-compare | -D_REENTRANT | -I   | stan/lib/stan_math/lib/tbb_2019_U8/include | -O3 | -I | src | -I | stan/src | -I | lib/rapidjson_1.1.0/ | -I | stan/lib/stan_math/ | -I | stan/lib/stan_math/lib/eigen_3.3.3 | -I | stan/lib/stan_math/lib/boost_1.69.0 | -I | stan/lib/stan_math/lib/sundials_4.1.0/include | -DBOOST_DISABLE_ASSERTS | -c                                      | -include-pch                            | stan/src/stan/model/model_header.hpp.gch | -x                 | c++                                                                | -o                                                             | /Users/yunj/workspace/hubViz-code/vb.o                       | /Users/yunj/workspace/hubViz-code/vb.hpp                       |                                         |                                               |                                                     |    |                                      |
+| clang++   | -std=c++1y                                   | -Wno-unknown-warning-option               | -Wno-tautological-compare | -Wno-sign-compare | -D_REENTRANT | -I   | stan/lib/stan_math/lib/tbb_2019_U8/include | -O3 | -I | src | -I | stan/src | -I | lib/rapidjson_1.1.0/ | -I | stan/lib/stan_math/ | -I | stan/lib/stan_math/lib/eigen_3.3.3 | -I | stan/lib/stan_math/lib/boost_1.69.0 | -I | stan/lib/stan_math/lib/sundials_4.1.0/include | -DBOOST_DISABLE_ASSERTS | /opt/cmdstan/stan/lib/stan_math/lib/tbb | /opt/cmdstan/stan/lib/stan_math/lib/tbb | /Users/yunj/workspace/hubViz-code/vb.o   | src/cmdstan/main.o | stan/lib/stan_math/lib/sundials_4.1.0/lib/libsundials_nvecserial.a | stan/lib/stan_math/lib/sundials_4.1.0/lib/libsundials_cvodes.a | stan/lib/stan_math/lib/sundials_4.1.0/lib/libsundials_idas.a | stan/lib/stan_math/lib/sundials_4.1.0/lib/libsundials_kinsol.a | stan/lib/stan_math/lib/tbb/libtbb.dylib | stan/lib/stan_math/lib/tbb/libtbbmalloc.dylib | stan/lib/stan_math/lib/tbb/libtbbmalloc_proxy.dylib | -o | /Users/yunj/workspace/hubViz-code/vb |
+
+#+begin_src R
+## data, fixed parameters
+i = 2
+Y = mm[[i]]
+n = nrow(Y)
+p = ncol(Y)
+sigma_w = 20
+sigma_t = 10
+rstan::stan_rdump(c('n','p','Y','sigma_t','sigma_w'),"nofixed.R")
+
+## initialization
+w_fr = sigma_w*matrix(rnorm(2*p),p,2)
+w = w_fr
+w_fr[1,] = c(0,0)
+w_fr[2,] = 1*c(1,1)
+theta = sigma_t*rnorm(n)
+#sigma_w = 10
+rstan::stan_rdump(c('w','w_fr','theta','sigma_w'),"init_list.R")
+#+end_src
+
+#+RESULTS:
+
+- put =init=init_list.R= for custom initialization.
+#+begin_src sh :async
+cd ~/workspace/hubViz-code
+./vb optimize data file=nofixed.R output file=optim.csv init=init_list.R
+#+end_src
+
+#+RESULTS:
+| method          | =          |    optimize |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| optimize        |            |             |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| algorithm       | =          |       lbfgs | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| lbfgs           |            |             |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| init_alpha      | =          |       0.001 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| tol_obj         | =          |       1e-12 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| tol_rel_obj     | =          |       10000 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| tol_grad        | =          |       1e-08 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| tol_rel_grad    | =          |    10000000 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| tol_param       | =          |       1e-08 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| history_size    | =          |           5 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| iter            | =          |        2000 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| save_iterations | =          |           0 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| id              | =          |           0 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| data            |            |             |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| file            | =          |   nofixed.R |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| init            | =          | init_list.R |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| random          |            |             |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| seed            | =          |          -1 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| output          |            |             |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| file            | =          |   optim.csv |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| diagnostic_file | =          |   (Default) |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| refresh         | =          |         100 | (Default)   |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| Initial         | log        |       joint | probability |         = | -36325.7 |       |           |   |   |      |   |   |       |        |   |       |       |
+| Iter            | log        |        prob |             |           |       dx |       |           |   |   | grad |   |   | alpha | alpha0 | # | evals | Notes |
+| 99              | -9512.25   |    0.110302 | 24.364      |         1 |        1 |   137 |           |   |   |      |   |   |       |        |   |       |       |
+| Iter            | log        |        prob |             |           |       dx |       |           |   |   | grad |   |   | alpha | alpha0 | # | evals | Notes |
+| 125             | -9512.02   | 5.24062e-05 | 23.602      |    0.1247 |   0.7561 |   182 |           |   |   |      |   |   |       |        |   |       |       |
+| Optimization    | terminated |   normally: |             |           |          |       |           |   |   |      |   |   |       |        |   |       |       |
+| Convergence     | detected:  |    relative | gradient    | magnitude |       is | below | tolerance |   |   |      |   |   |       |        |   |       |       |
+
+#+begin_src R
+out = as.matrix(readr::read_csv("optim.csv", skip=27))
+
+x = out[(n)+2:(2+p-1)]
+y = out[(n)+(2+p):(2+2*p-1)]
+cname = colnames(mm[[i]])
+
+mdsplot(data.frame(x,y), cname)
+#+end_src
+
+#+RESULTS:
+: Parsed with column specification:
+: cols(
+:   .default = col_double()
+: )
+: See spec(...) for full column specifications.
+: #   -00:12/03:11#   -00:11/03:11#   -00:10/03:11#   -00:09/03:11
+
+* RSTAN optimization 
+:PROPERTIES:
+:ID:       39AC9B67-A9A8-4961-AE31-8DD3D6C29A9E
+:END:
+  This is to create a wrapper function for hubViz optimization using RSTAN. 
+  - A STAN model is coded in =hubviz.stan=, which needs to be compiled once. 
+  - The solution depends on the random initialization, so don't be suprised. This also happens in UMAP and tSNE.
+  With a bit change of the model, we can estiamte $\sigma_{w}$, but it usually finds a very small value of $\sigma_{w}$. This makes latent positions shrink to the origin a bit much, and also the pattern of latent position becomes less similar to the MCMC solution. If we want to suggest $\sigma_w$, it may be done using MCMC.
+
+  This is a function to visualize latent positisons.
+#+begin_src R
+library(ggplot2)
+library(ggrepel)
+
+mdsplot <- function( x, cname, xlim=NA, ylim=NA, lab = "Coordinate") {
+
+  ## extract objects
+  colname <- cname
+  position <- as.data.frame(x)
+	ndim <- dim(x)[2]
+  
+	rownames(position) <- colname
+  colnames(position) <- paste("position",1:ndim,sep="")
+
+  padding = 1.05
+  if (any(is.na(xlim))) {
+    x1 <- -max(abs(position[,1]))*padding
+    x2 <- max(abs(position[,1]))*padding
+  } else {
+    x1 <- xlim[1]
+    x2 <- xlim[2]
+  }
+  if (any(is.na(ylim))) {
+    y1 <- -max(abs(position[,2]))*padding
+    y2 <- max(abs(position[,2]))*padding
+  } else {
+    y1 <- ylim[1]
+    y2 <- ylim[2]
+  }
+  
+  ## plot
+  ggplot(position,aes(x=position1,y=position2))+
+  theme(text=element_text(size=20)) +
+  geom_point(color="red")+
+  xlim(x1,x2) + ylim(y1,y2) + 
+  xlab(paste(lab," 1",sep="")) + ylab(paste(lab," 2",sep="")) +
+  ##xlab("Position 1") + ylab("Position 2") +
+  geom_hline(yintercept = 0, color = "gray70", linetype=2) +
+  geom_vline(xintercept = 0, color = "gray70", linetype=2) + 
+  ##geom_text_repel(aes(y = position2 + 0.1), label=rownames(position), segment.color = "grey50")    
+  geom_text_repel(label=rownames(position), segment.color = "grey50", size=6)
+}
+#+end_src
+
+#+RESULTS:
+: Use suppressPackageStartupMessages() to eliminate package startup
+: messages.
+
+The below is code to compile =hubviz.stan= which formualte the hubViz model.
+#+begin_src R
+require(rstan)
+options(mc.cores = parallel::detectCores())
+# rstan_options(auto_write = TRUE)
+hvmod = stan_model('hubviz.stan', verbose = FALSE)
+#+end_src
+
+#+RESULTS:
+: Loading required package: rstan
+: Loading required package: StanHeaders
+: rstan (Version 2.19.2, GitRev: 2e1f913d3ca3)
+: For execution on a local, multicore CPU with excess RAM we recommend calling
+: options(mc.cores = parallel::detectCores()).
+: To avoid recompilation of unchanged Stan programs, we recommend calling
+: rstan_options(auto_write = TRUE)
+
+The below is a main function, which is basically a wrapper for RSTAN's LBFGS optimization function. 
+Users can define ~sigma_w~ (prior variance of latent positions), ~sigma_t~ (prior variance of $\theta$'s).
+No estimation of ~simga_w~ is considered. Results vary too much with estimating it.
+
+#+begin_src R
+opt_hubViz = function(Y, sigma_w = 10, sigma_t = 10, seed = sample.int(.Machine$integer.max, 1), mod = hvmod){
+
+## data, fixed parameters
+n = nrow(Y)
+p = ncol(Y)
+data_list = list(n, p, Y, sigma_t, sigma_w)
+names(data_list) = c("n", "p", "Y", "sigma_t", "sigma_w")
+ 
+## initialization
+set.seed(seed)
+w = sigma_w*matrix(rnorm(2*p),p,2)
+theta = sigma_t*rnorm(n)
+init_list = list(w, theta)
+names(init_list) = c("w", "theta")
+
+opt = optimizing(mod, data = data_list, init = init_list, algorithm = "LBFGS")
+out = list()
+out$x = opt$par[(n)+1:(1+p-1)]
+out$y = opt$par[(n)+(1+p):(1+2*p-1)]
+
+names(out$x) = NULL
+names(out$y) = NULL
+return(out)
+}
+#+end_src
+
+#+RESULTS:
+
+** Examples 
+To test Examples 1 and 2 in the hubViz paper.
+Using MCMC, Examples 1 and 2 take 1,000 and 100 seconds for the computation.
+So, it's some speed-wise improvment. Both UMAP and tSNE take < 1 second though...
+#+begin_src R
+load("../11. simulation/simulation2.RData")
+Y = bmat
+
+ptm <- proc.time()
+out = opt_hubViz(Y, sigma_w = 10, sigma_t = 10, seed = 1)
+proc.time() - ptm
+
+df = data.frame(out$x,out$y)
+mdsplot(df, 1:nrow(df))
+#+end_src
+
+#+RESULTS:
+:    user  system elapsed 
+:  19.758   0.078  19.871
+
+#+begin_src R
+load("../11. simulation/simulation3.RData")
+Y = bmat
+
+ptm <- proc.time()
+out = opt_hubViz(Y, sigma_w = 10, sigma_t = 10, seed = 1)
+proc.time() - ptm
+
+df = data.frame(out$x,out$y)
+mdsplot(df, 1:nrow(df))
+#+end_src
+
+#+RESULTS:
+:    user  system elapsed 
+:   0.815   0.000   0.815
+
+** scRNA-seq example
+#+begin_src R
+load("../scRNA-seq/scRNA-seq_ifnb_binary.RData")
+
+mm = list()
+mm[[1]] = gene.marker.bin
+mm[[2]] = gene.DE.bin
+mm[[3]] = gene.marker.bin.sub
+mm[[4]] = gene.DE.bin.sub
+
+names(mm) = c("gene.marker.bin","gene.DE.bin","gene.marker.bin.sub","gene.DE.bin.sub")
+#+end_src
+
+#+RESULTS:
+
+=i= should be 4 to use DE gene data under subsampling.
+#+begin_src R
+pdf_figure = 0
+i = 4
+tff = sprintf("../scRNA-seq/t_sne.%s.pdf",names(mm)[i])
+uff = sprintf("../scRNA-seq/umap.%s.pdf",names(mm)[i])
+dist.sub <- dist( t(mm[[i]]), method="binary" )
+cname = colnames(mm[[i]])
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R
+Y = mm[[i]]
+
+ptm <- proc.time()
+out = opt_hubViz(Y, sigma_w = 10, sigma_t = 10, seed = 1)
+proc.time() - ptm
+
+df = data.frame(out$x,out$y)
+mdsplot(df, cname)
+#+end_src
+
+#+RESULTS:
+:    user  system elapsed 
+:  53.444   0.081  53.522
+
+* CMD-STAN
+
+#+begin_src sh :async
+cd /opt/cmdstan
+make ~/workspace/lsjm-code/stan
+#+end_src
+
+#+RESULTS:
+: 7400d64266f603239ec0f2ad857c09f5
+
+#+begin_src sh :async
+cd ~/workspace/lsjm-code
+./vb optimize data file=sim1_Y.R output file=optim_output.csv
+#+end_src
+
+#+begin_src R
+out = as.matrix(readr::read_csv("vb_output.csv", skip=31))
+samp_x = out[,4:13]
+samp_y = out[,14:23]
+cname = colnames(mm[[i]])
+#+end_src

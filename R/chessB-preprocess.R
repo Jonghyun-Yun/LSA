@@ -29,21 +29,28 @@ tab_item = data.frame(chr = colnames(di)[-1], num = 1:nitem)
 dit$item = to_numID(dit$item, tab_item)
 
 time = pull(dit, RT)
-ncut = 5
+item = pull(dit, item)
+resp = pull(dit, resp)
+
+ncut = 2
 ## interval <- seq(from=0, to = max(time)+1,length.out = 8)
 pseq =  seq(from=0, to = 1, length.out = ncut + 1)
 sj = quantile(time, probs = pseq) %>% round()
 sj[1] = 0; sj[length(sj)] = sj[length(sj)] + 1
 
-segtime <- findInterval(time, sj)
-tdd = data.frame(segtime, item = dit$item, res = dit$resp)
 checksj = 0
-for (ii in 1:nitem) {
-  for (c in 0:1) {
-  checksj = checksj + all(table(tdd %>% filter(item == ii & res == c)) > 0)
-  }
+tab0 = table(findInterval(time[resp == 0], sj), item[resp==0])
+tab1 = table(findInterval(time[resp == 1], sj), item[resp==1])
+sjtab = list(tab0,tab1)
+  for (c in 1:2) {
+  checksj = checksj + sum(sjtab[[c]]==0) 
 }
-if (checksj < nitem * 2) stop("there exists an interval(s) with no observation.")
+if (checksj > 0) {
+print(tab0)
+print(tab1)
+  cat(checksj,"\n")
+  stop("there exists an interval(s) with no observation.")
+  }
 
 library(survival)
 status = rep(1, nrow(dt))
@@ -101,9 +108,9 @@ mvar = readr::read_csv("input/mvar.csv", col_names=FALSE) %>% as.matrix()
 I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
 
 ## lambda
-a_lambda = matrix(0.1,I,G)
-b_lambda = matrix(0.1,I,G)
-jump_lambda = matrix(0.5,I,G)
+a_lambda = matrix(1.0,I,G)
+b_lambda = matrix(1.0,I,G)
+jump_lambda = matrix(0.25,I,G)
 
 mu_beta = matrix(0.0,I,2)
 sigma_beta = matrix(sqrt(1.0),I,2)
@@ -111,7 +118,7 @@ jump_beta = matrix(0.25,I,2)
 
 mu_theta = matrix(0.0,N,2)
 sigma_theta = matrix(sqrt(1.0),N,2)
-jump_theta = matrix(1.0,N,2)
+jump_theta = matrix(0.25,N,2)
 
 a_sigma = 1.0
 b_sigma = 1.0
@@ -122,11 +129,11 @@ jump_gamma = matrix(0.05,1,2)
 
 mu_z = matrix(0.0,N,2)
 sigma_z = matrix(sqrt(1.0),N,2)
-jump_z = matrix(1.0,N,2)
+jump_z = matrix(0.5,N,2)
 
 mu_w = matrix(0.0,I,2)
 sigma_w = matrix(sqrt(1.0),I,2)
-jump_w = matrix(0.5,I,2)
+jump_w = matrix(0.25,I,2)
 
 readr::write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"input/pj_lambda.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"input/pj_beta.csv", col_names = FALSE)

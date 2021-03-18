@@ -20,26 +20,6 @@ print(p0)
 print(p1)
 dev.off(which = dev.cur())
 
-pdf("figure/z_pairs_plot.pdf")
-for (k in 1:min(N, 50)) {
-  p <- mcmc_pairs(mylist,
-    regex_pars = paste0("^z\\.[0-1]\\.", k, "\\."),
-    off_diag_args = list(size = 0.05)
-  )
-  print(p)
-}
-dev.off(which = dev.cur())
-
-pdf("figure/w_pairs_plot.pdf")
-for (i in 1:min(I, 50)) {
-  p <- mcmc_pairs(mylist,
-    regex_pars = paste0("^w\\.[0-1]\\.", i, "\\."),
-    off_diag_args = list(size = 0.05)
-  )
-  print(p)
-}
-dev.off(which = dev.cur())
-
 pdf("figure/beta_parcoord.pdf")
 p <- bayesplot::mcmc_parcoord(mylist,
   regex_pars = "^beta\\.[0-9]\\."
@@ -91,40 +71,6 @@ p <- mcmc_trace(mylist,
 print(p <- p + facet_text(size = 15))
 dev.off(which = dev.cur())
 
-pdf("figure/z_mcmc_trace_plot.pdf")
-p <- mcmc_trace(mylist,
-  regex_pars = "^z.[0-1]\\.[0-2]\\.",
-  ## transformations = "log",
-  facet_args = list(nrow = 2, labeller = label_parsed)
-)
-p + facet_text(size = 15)
-p <- mcmc_trace(mylist,
-  regex_pars = "^z.[0-1]\\.[3-6]\\.",
-  ## transformations = "log",
-  facet_args = list(nrow = 2, labeller = label_parsed)
-)
-p + facet_text(size = 15)
-p <- mcmc_trace(mylist,
-  regex_pars = "^z.[0-1]\\.[7-9]\\.",
-  ## transformations = "log",
-  facet_args = list(nrow = 2, labeller = label_parsed)
-)
-p + facet_text(size = 15)
-print(p)
-dev.off(which = dev.cur())
-
-## mcmc_intervals(mylist, pars=c("lambda.0.1.1")
-pdf("figure/w_mcmc_trace_plot.pdf")
-for (i in 1:min(I, 40)) {
-  p <- mcmc_trace(mylist,
-    regex_pars = paste0("^w\\.[0-1]\\.", i, "\\."),
-    ## transformations = "log",
-    facet_args = list(nrow = 2, labeller = label_parsed)
-  )
-  print(p <- p + facet_text(size = 15))
-}
-dev.off(which = dev.cur())
-
 colnames(df)[grepl("^w\\.1\\.", colnames(df))]
 
 
@@ -161,7 +107,7 @@ dev.off(which = dev.cur())
 
 pdf("figure/theta_mcmc_trace_plot.pdf")
 color_scheme_set("mix-blue-pink")
-for (k in 1:10) {
+for (k in 1:50) {
   p <- mcmc_trace(mylist,
     regex_pars = paste0("^theta\\.", k, "\\."),
     facet_args = list(nrow = 2, labeller = label_parsed)
