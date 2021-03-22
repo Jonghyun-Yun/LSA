@@ -1,6 +1,8 @@
 #ifndef __UPDATE_Z_H_
 #define __UPDATE_Z_H_
 
+#include <stan/math.hpp>
+
 Eigen::VectorXd update_z(const Eigen::MatrixXd::RowXpr &z, double &acc_z,
                          const Eigen::MatrixXd::RowXpr &mu_z,
                          const Eigen::MatrixXd::RowXpr &sigma_z,

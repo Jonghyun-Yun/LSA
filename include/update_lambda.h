@@ -1,6 +1,8 @@
 #ifndef __UPDATE_LAMBDA_H_
 #define __UPDATE_LAMBDA_H_
 
+#include <stan/math.hpp>
+
 double update_lambda(const double &a_lambda,
                      const double &b_lambda,
                      const int g, const double &beta,

@@ -1,5 +1,5 @@
-#include <stan/math.hpp>
 #include "update_z.h"
+#include <stan/math.hpp>
 
 Eigen::VectorXd update_z(const Eigen::MatrixXd::RowXpr &z, double &acc_z,
                          const Eigen::MatrixXd::RowXpr &mu_z,

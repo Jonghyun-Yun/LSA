@@ -199,11 +199,34 @@ int main(int argc, const char *argv[]) {
     return 0;
   }
 
+  // single beta covers two processes.
+  int SINGLE_BETA;
+  if (sarg[12] == "single_beta") {
+    SINGLE_BETA = 1;
+  } else if (sarg[12] == "double_beta") {
+    SINGLE_BETA = 2;
+  } else if (sarg[12] == "zero_beta") {
+    SINGLE_BETA = 0;
+  } else {
+    std::cout << "invalid arguemnt for SINGLE_BETA.\n" << std::endl;
+    return 0;
+  }
 
-  int chain_id = atoi(argv[12]);
-  int num_samples = atoi(argv[13]);
-  int num_warmup = atoi(argv[14]);
-  int thin = atoi(argv[15]);
+  // single beta covers two processes.
+  bool LAMBDA_0END;
+  if (sarg[13] == "lambda_0end") {
+    LAMBDA_0END = true;
+  } else if (sarg[13] == "lambda_free") {
+    LAMBDA_0END = false;
+  } else {
+    std::cout << "invalid arguemnt for LAMBDA_SUM.\n" << std::endl;
+    return 0;
+  }
+
+  int chain_id = atoi(argv[14]);
+  int num_samples = atoi(argv[15]);
+  int num_warmup = atoi(argv[16]);
+  int thin = atoi(argv[17]);
 
   // log-posterior
   double lp_;
@@ -406,6 +429,8 @@ int main(int argc, const char *argv[]) {
   Eigen::VectorXd gamma(2);
   Eigen::MatrixXd lambda(2 * I, G);
   Eigen::MatrixXd cum_lambda(2 * I, N);
+  Eigen::MatrixXd cum_lambda_cbind(I, 2*N);
+
 
   // accept_stat
   Eigen::MatrixXd acc_theta = Eigen::MatrixXd::Zero(N, 2);
@@ -477,6 +502,11 @@ int main(int argc, const char *argv[]) {
     gamma =  readCSV("input/init_gamma.csv", 2, 1);
   }
 
+  if (SINGLE_BETA == 0 && (beta.array().abs().sum() != 0)) {
+    std::cout << "beta should be zero." << std::endl;
+    return 0;
+  }
+
   if (ZERO_THETA && (stan::math::sum(theta.col(0)) != 0)) {
     std::cout << "theta.k.0 should be zero." << std::endl;
     return 0;
@@ -536,12 +566,12 @@ int main(int argc, const char *argv[]) {
     std::clock_t c_start = std::clock();
 
     if (RUN_PAR) {
-
+      if (!LAMBDA_0END) {
       // std::cout << "updating lambda...\n";
       // updating lambda...
       // constraint: \sum_g log(\lambda_icg) = 0; \lambda_icG is determined by previous segments
       tbb::parallel_for(
-          tbb::blocked_range3d<int>(0, 2, 0, I, 0, G-1),
+          tbb::blocked_range3d<int>(0, 2, 0, I, 0, G),
           [&](tbb::blocked_range3d<int> r) {
             for (int c = r.pages().begin(); c < r.pages().end(); ++c) {
               for (int i = r.rows().begin(); i < r.rows().end(); ++i) {
@@ -562,9 +592,28 @@ int main(int argc, const char *argv[]) {
               }
             }
           });
+      } else {
+        tbb::parallel_for(
+            tbb::blocked_range3d<int>(0, 2, 0, I, 0, G-1),
+            [&](tbb::blocked_range3d<int> r) {
+              for (int c = r.pages().begin(); c < r.pages().end(); ++c) {
+                for (int i = r.rows().begin(); i < r.rows().end(); ++i) {
+                  for (int g = r.cols().begin(); g < r.cols().end(); ++g) {
 
+                    // if (g < G - 1) {
+                    lambda((c * I) + i, g) = update_lambda(
+                        a_lambda(i, g), b_lambda(i, g), g, beta(i, c),
+                        theta.col(c), gamma(c), z.block(c * N, 0, N, 2),
+                        w.row(c * I + i), N, mNA.row(i), mlen(g), mseg.row(i),
+                        mH.row(i), mIY(c * I + i, g), rng);
+                  }
+                }
+              }
+            });
+      }
       // std::cout << "updating beta...\n";
       // updating beta...
+      if (SINGLE_BETA == 2) {
       tbb::parallel_for(
           tbb::blocked_range2d<int>(0, I, 0, 2),
           [&](tbb::blocked_range2d<int> r) {
@@ -580,8 +629,53 @@ int main(int argc, const char *argv[]) {
               }
             }
           });
+      } else if (SINGLE_BETA == 1) {
+        // SINGLE_BETA
+        tbb::parallel_for(
+            tbb::blocked_range<int>(0, I), [&](tbb::blocked_range<int> r) {
+              for (int i = r.begin(); i < r.end(); ++i) {
+                // single beta update, return cumulative labmda!
+                 cum_lambda_cbind.row(i) = update_single_beta(
+                    beta(i, 0), beta(i, 1), acc_beta(i, 1), mu_beta(i, 1),
+                    sigma_beta(i, 1), jump_beta(i, 1), lambda.row(i), lambda.row(I + i),
+                    theta, gamma, z, w.row(i), w.row(I + i), N, mNA.row(i),
+                    mlen, mseg.row(i), mH.row(i), rng);
+              }
+            });
+        cum_lambda.block(0, 0, I, N) = cum_lambda_cbind.block(0, 0, I, N);
+        cum_lambda.block(I, 0, I, N) = cum_lambda_cbind.block(0, N, I, N);
+        acc_beta.col(0) = acc_beta.col(1);
+      } else {
+      // SINGLE_BETA = 0; beta = 0. update cum_lambda.
+      tbb::parallel_for(
+          tbb::blocked_range2d<int>(0, I, 0, 2),
+          [&](tbb::blocked_range2d<int> r) {
+            for (int i = r.rows().begin(); i < r.rows().end(); ++i) {
+              for (int c = r.cols().begin(); c < r.cols().end(); ++c) {
+                cum_lambda.row(c * I + i) = update_cum_lambda(
+                    lambda.row(c * I + i), N,
+                    mNA.row(i), mlen, mseg.row(i), mH.row(i));
+              }
+            }
+          });
+      }
 
-      // std::cout << "updating theta...\n";
+      // std::cout << "------main0---------" << std::endl
+      //           << lambda(0, 0) << std::endl
+      //           << lambda(0, 1) << std::endl
+      //           << cum_lambda(0, 0) << std::endl
+      //           << cum_lambda_cbind(0,0)<< std::endl
+      //           << lambda(0,0) * mH(0,0) << std::endl
+      //           << "-----------------" << std::endl;
+
+      // std::cout << "------main1---------" << std::endl
+      //           << lambda(I, 0) << std::endl
+      //           << lambda(I, 1) << std::endl
+      //           << cum_lambda(I, 0) << std::endl
+      //           << cum_lambda_cbind(0,N)<< std::endl
+      //           << lambda(I,0) * mH(0,0) << std::endl
+      //           << "-----------------" << std::endl;
+      // // std::cout << "updating theta...\n";
       // updating theta...
       tbb::parallel_for(
         tbb::blocked_range2d<int>(0,N,0,2),
@@ -756,7 +850,7 @@ int main(int argc, const char *argv[]) {
       // updating lambda... with constraint: \sum_g \lambda_icg = 0
       for (int c = 0; c < 2; c++) {
         for (int i = 0; i < I; i++) {
-          for (int g = 0; g < G-1; g++) {
+          for (int g = 0; g < G; g++) {
 
             // if (g < G - 1) {
               lambda((c * I) + i, g) =
@@ -924,8 +1018,7 @@ int main(int argc, const char *argv[]) {
                          a_sigma, b_sigma, mu_gamma, sigma_gamma, mu_z, sigma_z, mu_w, sigma_w,
                          lambda, cum_lambda, beta, theta, sigma, gamma, z, w,
                          I, N, G, mNA, mlen, mseg, mH, mY, SINGLE_Z, SINGLE_W, UPDATE_GAMMA, ONE_FREE_GAMMA);
-      }
-      else {
+      } else {
         lp_ = fun_lp(a_lambda, b_lambda, mu_beta, sigma_beta, mu_theta, sigma_theta,
                      a_sigma, b_sigma, mu_gamma, sigma_gamma, mu_z, sigma_z, mu_w, sigma_w,
                      lambda, cum_lambda, beta, theta, sigma, gamma, z, w,
