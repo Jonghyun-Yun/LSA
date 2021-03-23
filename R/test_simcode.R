@@ -1,14 +1,21 @@
-out_dir <- "chessB_pn/"
+## out_dir <- "chessB_pn/"
 ## out_dir <- "chessB_no_latent/"
 ## out_dir <- "chessB_np/"
 
-mt = readr::read_csv(file="chessB_pn/input/mt.csv", col_names=F) %>% as.matrix()
-mi = readr::read_csv(file="chessB_pn/input/mi.csv", col_names=F) %>% as.matrix()
+## out_dir <- "chessB_pn_ncut2_zero_beta/"
+out_dir <- "chessB_no_latent_ncut2_zero_beta/"
+## out_dir <- "chessB_np_ncut2_zero_beta/"
+## out_dir <- "chessB_no_latent_ncut2_zero_beta/"
+out_dir <- "chessB_swdz_pp_ncut2_zero_beta/"
+out_dir <- "chessB_swdz_nn_ncut2_zero_beta/"
+## out_dir <- "chessB_double_pp_ncut2_zero_beta/"
+## out_dir <- "chessB_double_nn_ncut2_zero_beta/"
 
-num_chain <- 3
-double_z <- 0
+num_chain <- 2
+double_z <- 1
 double_w <- 0
 HAS_REF <- 0
+
 ## library(art)
 library(coda)
 library(dplyr)
@@ -24,6 +31,9 @@ registerDoParallel(2)
 
 ## setwd("/Users/yunj/Dropbox/research/lsjm-art/lsjm-code")
 
+mt = readr::read_csv(file="chessB_pn/input/mt.csv", col_names=F) %>% as.matrix()
+mi = readr::read_csv(file="chessB_pn/input/mi.csv", col_names=F) %>% as.matrix()
+
 source("R/art-functions.R")
 source("R/load-outputs.R")
 
@@ -37,7 +47,7 @@ mll  <- 99 * mi
 for (item in 1:I) {
   start_time <- proc.time()
   stk_tt <- foreach(chain = 1:1, .combine = "rbind") %do% {
-    out <- gethaz_item(mylist[[chain]], cname, item, N)
+    out <- gethaz_item(mylist[[chain]], cname, item, N, theta = NULL, double_w, double_z)
     time <- matrix(mt[item, ], nrow = num_iter, ncol = N, byrow=T)
     pp <- gen_surv_pp(out, time, sj) %>% array(dim = dim(time))
     ## cbind(time, pp)

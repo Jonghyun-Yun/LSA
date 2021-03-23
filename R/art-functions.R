@@ -37,37 +37,56 @@ tab_IY <- function(seg_g, G) {
   return(res)
 }
 
-gethaz_item <- function(sam, cname, item, N, theta = NULL) {
+gethaz_item <- function(sam, cname, item, N, theta = NULL, double_w, double_z) {
   num_iter <- nrow(sam)
-  d_zw <- matrix(0, num_iter, N)
+  d_zw <- list()
+  d_zw[[1]] = d_zw[[2]] = matrix(0, num_iter, N)
 
   for (k in 1:N) {
     ## distance calculation can be fully vectorized (and storing z), but I don't have time for this.
     z <- sam[, stringr::str_which(cname, paste0("^z\\.", 0, "\\.", k, "\\.[1-2]"))]
     w <- sam[, stringr::str_which(cname, paste0("^w\\.", 0, "\\.", item, "\\."))]
-    d_zw[, k] <- sqrt(rowSums((z - w)^2))
+    d_zw[[1]][, k] <- sqrt(rowSums((z - w)^2))
   }
-  beta <- sam[, stringr::str_which(cname, paste0("^beta\\.", item, "\\."))]
-
-  if (is.null(theta)) {
-    theta_temp <- sam[, stringr::str_which(cname, paste0("^theta\\."))] ## (theta.k.0 theta.k.1)
-    teq <- seq(1, ncol(theta_temp), 2)
-    gamma <- theta <- lambda <- rr <- list()
-    theta[[1]] <- theta_temp[, teq]
-    theta[[2]] <- theta_temp[, -teq]
+  if (!double_w & !double_z){
+  d_zw[[2]] = d_zw[[1]]
+} else if (double_w & double_z) {
+  for (k in 1:N) {
+    ## distance calculation can be fully vectorized (and storing z), but I don't have time for this.
+    z <- sam[, stringr::str_which(cname, paste0("^z\\.", 1, "\\.", k, "\\.[1-2]"))]
+    w <- sam[, stringr::str_which(cname, paste0("^w\\.", 1, "\\.", item, "\\."))]
+    d_zw[[2]][, k] <- sqrt(rowSums((z - w)^2))
   }
+} else if (!double_w & double_z) {
+  for (k in 1:N) {
+    ## distance calculation can be fully vectorized (and storing z), but I don't have time for this.
+    z <- sam[, stringr::str_which(cname, paste0("^z\\.", 1, "\\.", k, "\\.[1-2]"))]
+    w <- sam[, stringr::str_which(cname, paste0("^w\\.", 0, "\\.", item, "\\."))]
+    d_zw[[2]][, k] <- sqrt(rowSums((z - w)^2))
+  }
+}
 
-  gamma <- sam[1, stringr::str_which(cname, paste0("gamma\\."))]
+beta <- sam[, stringr::str_which(cname, paste0("^beta\\.", item, "\\."))]
 
-  lambda_temp <- sam[, stringr::str_which(cname, paste0("^lambda\\.[0-1]\\.", item, "\\."))]
-  leq <- seq(1, ncol(lambda_temp), 2)
-  lambda[[1]] <- lambda_temp[, leq]
-  lambda[[2]] <- lambda_temp[, -leq]
+if (is.null(theta)) {
+  theta_temp <- sam[, stringr::str_which(cname, paste0("^theta\\."))] ## (theta.k.0 theta.k.1)
+  teq <- seq(1, ncol(theta_temp), 2)
+  gamma <- theta <- lambda <- rr <- list()
+  theta[[1]] <- theta_temp[, teq]
+  theta[[2]] <- theta_temp[, -teq]
+}
 
-  for (cc in 1:2) rr[[cc]] <- exp(beta[, cc] + theta[[cc]] - gamma[c] * d_zw)
+gamma <- sam[1, stringr::str_which(cname, paste0("gamma\\."))]
 
-  res <- list(lambda = lambda, rr = rr, theta = theta)
-  return(res)
+lambda_temp <- sam[, stringr::str_which(cname, paste0("^lambda\\.[0-1]\\.", item, "\\."))]
+leq <- seq(1, ncol(lambda_temp), 2)
+lambda[[1]] <- lambda_temp[, leq]
+lambda[[2]] <- lambda_temp[, -leq]
+
+for (cc in 1:2) rr[[cc]] <- exp(beta[, cc] + theta[[cc]] - gamma[cc] * d_zw[[cc]])
+
+res <- list(lambda = lambda, rr = rr, theta = theta)
+return(res)
 }
 
 gen_surv_time <- function(out, sj, H, N, nn) {

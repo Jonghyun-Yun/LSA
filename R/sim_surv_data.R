@@ -2,10 +2,18 @@
 ## out_dir <- "chessB_np/"
 out_dir <- "chessB_no_latent/"
 
-num_chain <- 3
-double_z <- 0
-double_w <- 0
+## out_dir <- "chessB_pn_ncut2_zero_beta/"
+out_dir <- "chessB_no_latent_ncut2_zero_beta/"
+## out_dir <- "chessB_np_ncut2_zero_beta/"
+## out_dir <- "chessB_no_latent_ncut2_zero_beta/"
+out_dir <- "chessB_swdz_pp_ncut2_zero_beta/"
+out_dir <- "chessB_double_pp_ncut2_zero_beta/"
+
+num_chain <- 2
+double_w <- 1
+double_z <- 1
 HAS_REF <- 0
+
 ## library(art)
 library(coda)
 library(dplyr)
@@ -16,8 +24,8 @@ library(foreach)
 library(doParallel)
 ## library(timereg)
 ## registerDoParallel(cores = detectCores() - 1)
+stopImplicitCluster()
 registerDoParallel(2)
-## stopImplicitCluster()
 
 ## setwd("/Users/yunj/Dropbox/research/lsjm-art/lsjm-code")
 
@@ -29,8 +37,8 @@ num_iter <- nrow(mylist[[1]])
 sim_data <- list()
 for (item in 1:I) {
   start_time <- proc.time()
-  stk_tt <- foreach(chain = 1:3, .combine = "rbind") %dopar% {
-    out <- gethaz_item(mylist[[chain]], cname, item, N)
+  stk_tt <- foreach(chain = 1:num_chain, .combine = "rbind") %dopar% {
+    out <- gethaz_item(mylist[[chain]], cname, item, N, theta = NULL, double_w, double_z)
     time <- foreach(nn = 1:num_iter, .combine = "rbind") %do% {
       gen_surv_time(out, sj, H, N, nn)
     }

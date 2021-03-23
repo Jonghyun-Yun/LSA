@@ -2171,7 +2171,7 @@ sigma_w = matrix(sqrt(1.0),I,2)
 jump_w = matrix(0.25,I,2)
 #+END_SRC
 
-#+BEGIN_SRC R :results none :tangle R/chessB-preprocess.R
+#+BEGIN_SRC R :results none :tangle R/write-prior.R
 readr::write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"input/pj_lambda.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"input/pj_beta.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(rbind(mu_theta,sigma_theta,jump_theta)),"input/pj_theta.csv", col_names = FALSE)
@@ -2357,8 +2357,10 @@ mvar = readr::read_csv("input/mvar.csv", col_names=FALSE) %>% as.matrix()
 I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
 
 ## lambda
-a_lambda = matrix(0.0001,I,G)
-b_lambda = matrix(0.0001,I,G)
+l_c = 2
+a_lambda = matrix(((G - 1) / (0.7 * 30 * (G - 1:G + 0.5)))/l_c, I, G, byrow=T)
+b_lambda = matrix(1 / l_c,I,G)
+
 jump_lambda = matrix(0.5,I,G)
 
 mu_beta = matrix(0.0,I,2)
@@ -2377,112 +2379,14 @@ sigma_gamma = matrix(sqrt(10000.0),1,2)
 jump_gamma = matrix(0.01,1,2)
 
 mu_z = matrix(0.0,N,2)
-sigma_z = matrix(sqrt(10000.0),N,2)
-jump_z = matrix(0.5,N,2)
-
-mu_w = matrix(0.0,I,2)
-sigma_w = matrix(sqrt(10000.0),I,2)
-jump_w = matrix(0.15,I,2)
-#+END_SRC
-
-#+BEGIN_SRC R :results none :tangle R/chessB_noinfo-preprocess.R
-readr::write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"input/pj_lambda.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"input/pj_beta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_theta,sigma_theta,jump_theta)),"input/pj_theta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(a_sigma,b_sigma)),"input/pj_sigma.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_gamma,sigma_gamma,jump_gamma)),"input/pj_gamma.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_z,sigma_z,jump_z)),"input/pj_z.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_w,sigma_w,jump_w)),"input/pj_w.csv", col_names = FALSE)
-#+END_SRC
-
-#+BEGIN_SRC R :results none :tangle R/chessB_selectively_diffused-preprocess.R
-source("R/chessB-preprocess.R")
-
-mvar = readr::read_csv("input/mvar.csv", col_names=FALSE) %>% as.matrix()
-I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
-
-## lambda
-a_lambda = matrix(0.0001,I,G)
-b_lambda = matrix(0.0001,I,G)
-jump_lambda = matrix(0.5,I,G)
-
-mu_beta = matrix(0.0,I,2)
-sigma_beta = matrix(sqrt(10000.0),I,2)
-jump_beta = matrix(0.25,I,2)
-
-mu_theta = matrix(0.0,N,2)
-sigma_theta = matrix(sqrt(1.0),N,2)
-jump_theta = matrix(0.1,N,2)
-
-a_sigma = 1
-b_sigma = 1
-
-mu_gamma = matrix(0.0,1,2)
-sigma_gamma = matrix(sqrt(10000.0),1,2)
-jump_gamma = matrix(0.01,1,2)
-
-mu_z = matrix(0.0,N,2)
-sigma_z = matrix(sqrt(1.0),N,2)
-jump_z = matrix(0.5,N,2)
-
-mu_w = matrix(0.0,I,2)
-sigma_w = matrix(sqrt(10000.0),I,2)
-jump_w = matrix(0.15,I,2)
-#+END_SRC
-
-#+BEGIN_SRC R :results none :tangle R/chessB_selectively_diffused-preprocess.R
-readr::write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"input/pj_lambda.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"input/pj_beta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_theta,sigma_theta,jump_theta)),"input/pj_theta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(a_sigma,b_sigma)),"input/pj_sigma.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_gamma,sigma_gamma,jump_gamma)),"input/pj_gamma.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_z,sigma_z,jump_z)),"input/pj_z.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_w,sigma_w,jump_w)),"input/pj_w.csv", col_names = FALSE)
-#+END_SRC
-
-#+BEGIN_SRC R :results none :tangle R/chessB_selectively_diffused2-preprocess.R
-source("R/chessB-preprocess.R")
-
-mvar = readr::read_csv("input/mvar.csv", col_names=FALSE) %>% as.matrix()
-I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
-
-## lambda
-a_lambda = matrix(0.0001,I,G)
-b_lambda = matrix(0.0001,I,G)
-jump_lambda = matrix(0.5,I,G)
-
-mu_beta = matrix(0.0,I,2)
-sigma_beta = matrix(sqrt(10000.0),I,2)
-jump_beta = matrix(0.25,I,2)
-
-mu_theta = matrix(0.0,N,2)
-sigma_theta = matrix(sqrt(1.0),N,2)
-jump_theta = matrix(0.1,N,2)
-
-a_sigma = 1
-b_sigma = 1
-
-mu_gamma = matrix(0.0,1,2)
-sigma_gamma = matrix(sqrt(1.0),1,2)
-jump_gamma = matrix(0.01,1,2)
-
-mu_z = matrix(0.0,N,2)
 sigma_z = matrix(sqrt(1.0),N,2)
 jump_z = matrix(0.5,N,2)
 
 mu_w = matrix(0.0,I,2)
 sigma_w = matrix(sqrt(1.0),I,2)
 jump_w = matrix(0.15,I,2)
-#+END_SRC
 
-#+BEGIN_SRC R :results none :tangle R/chessB_selectively_diffused2-preprocess.R
-readr::write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"input/pj_lambda.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"input/pj_beta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_theta,sigma_theta,jump_theta)),"input/pj_theta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(a_sigma,b_sigma)),"input/pj_sigma.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_gamma,sigma_gamma,jump_gamma)),"input/pj_gamma.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_z,sigma_z,jump_z)),"input/pj_z.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_w,sigma_w,jump_w)),"input/pj_w.csv", col_names = FALSE)
+source("R/write-prior.R")
 #+END_SRC
 
 #+BEGIN_SRC R :results none :tangle R/chessB_fn-init.R
@@ -3426,8 +3330,8 @@ dev.off(which = dev.cur())
 ** Shell to run C++
 #+begin_src sh :tangle run.sh
 #!/usr/bin/env bash
-out_dir="chessB_pn_ncut2_zero_beta/"
-prename="R/chessB-preprocess.R"
+out_dir="chessB_pn_ncut2_zero_beta_noinfo/"
+prename="R/chessB_noinfo-preprocess.R"
 initname="R/chessB_pn-init.R"
 n_chain=2
 
@@ -3452,7 +3356,7 @@ cp $initname output/
 for ((v = 1; v <= $n_chain; v++))
 do
     Rscript $initname
-    ./main initialize parallel single_w single_z full latent no_gamma true false no_ars nonzero_theta zero_beta lambda_free $v 10000 10000 10
+    ./main initialize parallel single_w single_z full latent no_gamma true false no_ars nonzero_theta zero_beta lambda_free $v 1000 1000 10
 done
 ## explain comandline arguments:
  # continue initialize -> start new chains?
@@ -3474,18 +3378,18 @@ Rscript R/run-analysis.R $out_dir $n_chain
 echo "Outputs are moved to" $out_dir"."
 echo "================================"
 
-sh run_run.sh
-sh run_run_run.sh
-sh run_run_run_run.sh
-sh run_run_run_run_run.sh
-sh run_run_run_run_run_run.sh
+# sh run_run.sh
+# sh run_run_run.sh
+# sh run_run_run_run.sh
+# sh run_run_run_run_run.sh
+# sh run_run_run_run_run_run.sh
 #+end_src
 
 #+begin_src R :tangle run_run.sh
-out_dir="chessB_np_ncut2_zero_beta/"
+out_dir="chessB_np_ncut2_zero_beta_long/"
 prename="R/chessB-preprocess.R"
 initname="R/chessB_np-init.R"
-n_chain=2
+n_chain=1
 
 echo "================================"
 echo "Output dir:" $out_dir
@@ -3508,7 +3412,7 @@ cp $initname output/
 for ((v = 1; v <= $n_chain; v++))
 do
     Rscript $initname
-    ./main initialize parallel single_w single_z full latent no_gamma true false no_ars nonzero_theta zero_beta lambda_free $v 10000 10000 10
+    ./main initialize parallel single_w single_z full latent no_gamma true false no_ars nonzero_theta zero_beta lambda_free $v 20000 20000 10
 done
 ## explain comandline arguments:
  # continue initialize -> start new chains?
@@ -3791,8 +3695,8 @@ system(paste0("rsync -rv figure/*.pdf ", out_dir, "figure/"))
 #+END_SRC
 
 #+BEGIN_SRC R
-out_dir="chessB_double_pp_nonzero_theta_ncut2_lambda_free/"
-num_chain <- 2; double_z <- 1; double_w <- 1; HAS_REF <- 0;
+out_dir="chessB_pn_ncut2_zero_beta/"
+num_chain <- 2; double_z <- 0; double_w <- 0; HAS_REF <- 0;
 system(paste0("rm figure/*.pdf"))
 #+END_SRC
 
@@ -4131,10 +4035,18 @@ distance term, set =out_dir <- "chessB_no_latent/"= in =R/sim_surv_data.R=.
 ## out_dir <- "chessB_np/"
 out_dir <- "chessB_no_latent/"
 
-num_chain <- 3
-double_z <- 0
-double_w <- 0
+## out_dir <- "chessB_pn_ncut2_zero_beta/"
+out_dir <- "chessB_no_latent_ncut2_zero_beta/"
+## out_dir <- "chessB_np_ncut2_zero_beta/"
+## out_dir <- "chessB_no_latent_ncut2_zero_beta/"
+out_dir <- "chessB_swdz_pp_ncut2_zero_beta/"
+out_dir <- "chessB_double_pp_ncut2_zero_beta/"
+
+num_chain <- 2
+double_w <- 1
+double_z <- 1
 HAS_REF <- 0
+
 ## library(art)
 library(coda)
 library(dplyr)
@@ -4145,8 +4057,8 @@ library(foreach)
 library(doParallel)
 ## library(timereg)
 ## registerDoParallel(cores = detectCores() - 1)
+stopImplicitCluster()
 registerDoParallel(2)
-## stopImplicitCluster()
 
 ## setwd("/Users/yunj/Dropbox/research/lsjm-art/lsjm-code")
 
@@ -4155,37 +4067,56 @@ source("R/load-outputs.R")
 #+end_src
 
 #+begin_src R :tangle R/art-functions.R
-gethaz_item <- function(sam, cname, item, N, theta = NULL) {
+gethaz_item <- function(sam, cname, item, N, theta = NULL, double_w, double_z) {
   num_iter <- nrow(sam)
-  d_zw <- matrix(0, num_iter, N)
+  d_zw <- list()
+  d_zw[[1]] = d_zw[[2]] = matrix(0, num_iter, N)
 
   for (k in 1:N) {
     ## distance calculation can be fully vectorized (and storing z), but I don't have time for this.
     z <- sam[, stringr::str_which(cname, paste0("^z\\.", 0, "\\.", k, "\\.[1-2]"))]
     w <- sam[, stringr::str_which(cname, paste0("^w\\.", 0, "\\.", item, "\\."))]
-    d_zw[, k] <- sqrt(rowSums((z - w)^2))
+    d_zw[[1]][, k] <- sqrt(rowSums((z - w)^2))
   }
-  beta <- sam[, stringr::str_which(cname, paste0("^beta\\.", item, "\\."))]
-
-  if (is.null(theta)) {
-    theta_temp <- sam[, stringr::str_which(cname, paste0("^theta\\."))] ## (theta.k.0 theta.k.1)
-    teq <- seq(1, ncol(theta_temp), 2)
-    gamma <- theta <- lambda <- rr <- list()
-    theta[[1]] <- theta_temp[, teq]
-    theta[[2]] <- theta_temp[, -teq]
+  if (!double_w & !double_z){
+  d_zw[[2]] = d_zw[[1]]
+} else if (double_w & double_z) {
+  for (k in 1:N) {
+    ## distance calculation can be fully vectorized (and storing z), but I don't have time for this.
+    z <- sam[, stringr::str_which(cname, paste0("^z\\.", 1, "\\.", k, "\\.[1-2]"))]
+    w <- sam[, stringr::str_which(cname, paste0("^w\\.", 1, "\\.", item, "\\."))]
+    d_zw[[2]][, k] <- sqrt(rowSums((z - w)^2))
   }
+} else if (!double_w & double_z) {
+  for (k in 1:N) {
+    ## distance calculation can be fully vectorized (and storing z), but I don't have time for this.
+    z <- sam[, stringr::str_which(cname, paste0("^z\\.", 1, "\\.", k, "\\.[1-2]"))]
+    w <- sam[, stringr::str_which(cname, paste0("^w\\.", 0, "\\.", item, "\\."))]
+    d_zw[[2]][, k] <- sqrt(rowSums((z - w)^2))
+  }
+}
 
-  gamma <- sam[1, stringr::str_which(cname, paste0("gamma\\."))]
+beta <- sam[, stringr::str_which(cname, paste0("^beta\\.", item, "\\."))]
 
-  lambda_temp <- sam[, stringr::str_which(cname, paste0("^lambda\\.[0-1]\\.", item, "\\."))]
-  leq <- seq(1, ncol(lambda_temp), 2)
-  lambda[[1]] <- lambda_temp[, leq]
-  lambda[[2]] <- lambda_temp[, -leq]
+if (is.null(theta)) {
+  theta_temp <- sam[, stringr::str_which(cname, paste0("^theta\\."))] ## (theta.k.0 theta.k.1)
+  teq <- seq(1, ncol(theta_temp), 2)
+  gamma <- theta <- lambda <- rr <- list()
+  theta[[1]] <- theta_temp[, teq]
+  theta[[2]] <- theta_temp[, -teq]
+}
 
-  for (cc in 1:2) rr[[cc]] <- exp(beta[, cc] + theta[[cc]] - gamma[c] * d_zw)
+gamma <- sam[1, stringr::str_which(cname, paste0("gamma\\."))]
 
-  res <- list(lambda = lambda, rr = rr, theta = theta)
-  return(res)
+lambda_temp <- sam[, stringr::str_which(cname, paste0("^lambda\\.[0-1]\\.", item, "\\."))]
+leq <- seq(1, ncol(lambda_temp), 2)
+lambda[[1]] <- lambda_temp[, leq]
+lambda[[2]] <- lambda_temp[, -leq]
+
+for (cc in 1:2) rr[[cc]] <- exp(beta[, cc] + theta[[cc]] - gamma[cc] * d_zw[[cc]])
+
+res <- list(lambda = lambda, rr = rr, theta = theta)
+return(res)
 }
 #+end_src
 
@@ -4234,16 +4165,14 @@ gen_surv_pp <- function(out, time, sj) {
 }
 #+end_src
 
-#+RESULTS:
-
 #+begin_src R
 set.seed(1)
 num_iter <- nrow(mylist[[1]])
 sim_data <- list()
 for (item in 1:I) {
   start_time <- proc.time()
-  stk_tt <- foreach(chain = 1:3, .combine = "rbind") %dopar% {
-    out <- gethaz_item(mylist[[chain]], cname, item, N)
+  stk_tt <- foreach(chain = 1:num_chain, .combine = "rbind") %dopar% {
+    out <- gethaz_item(mylist[[chain]], cname, item, N, theta = NULL, double_w, double_z)
     time <- foreach(nn = 1:num_iter, .combine = "rbind") %do% {
       gen_surv_time(out, sj, H, N, nn)
     }
@@ -5708,17 +5637,24 @@ conclusion: =chessB_pn= works poor. =chessB_np= works a bit ok.
 
 ** with *no* time simulation
 #+begin_src R :results none :tangle R/test_simcode.R
-out_dir <- "chessB_pn/"
+## out_dir <- "chessB_pn/"
 ## out_dir <- "chessB_no_latent/"
 ## out_dir <- "chessB_np/"
 
-mt = readr::read_csv(file="chessB_pn/input/mt.csv", col_names=F) %>% as.matrix()
-mi = readr::read_csv(file="chessB_pn/input/mi.csv", col_names=F) %>% as.matrix()
+## out_dir <- "chessB_pn_ncut2_zero_beta/"
+out_dir <- "chessB_no_latent_ncut2_zero_beta/"
+## out_dir <- "chessB_np_ncut2_zero_beta/"
+## out_dir <- "chessB_no_latent_ncut2_zero_beta/"
+out_dir <- "chessB_swdz_pp_ncut2_zero_beta/"
+out_dir <- "chessB_swdz_nn_ncut2_zero_beta/"
+## out_dir <- "chessB_double_pp_ncut2_zero_beta/"
+## out_dir <- "chessB_double_nn_ncut2_zero_beta/"
 
-num_chain <- 3
-double_z <- 0
+num_chain <- 2
+double_z <- 1
 double_w <- 0
 HAS_REF <- 0
+
 ## library(art)
 library(coda)
 library(dplyr)
@@ -5733,6 +5669,9 @@ registerDoParallel(2)
 ## stopImplicitCluster()
 
 ## setwd("/Users/yunj/Dropbox/research/lsjm-art/lsjm-code")
+
+mt = readr::read_csv(file="chessB_pn/input/mt.csv", col_names=F) %>% as.matrix()
+mi = readr::read_csv(file="chessB_pn/input/mi.csv", col_names=F) %>% as.matrix()
 
 source("R/art-functions.R")
 source("R/load-outputs.R")
@@ -5749,7 +5688,7 @@ mll  <- 99 * mi
 for (item in 1:I) {
   start_time <- proc.time()
   stk_tt <- foreach(chain = 1:1, .combine = "rbind") %do% {
-    out <- gethaz_item(mylist[[chain]], cname, item, N)
+    out <- gethaz_item(mylist[[chain]], cname, item, N, theta = NULL, double_w, double_z)
     time <- matrix(mt[item, ], nrow = num_iter, ncol = N, byrow=T)
     pp <- gen_surv_pp(out, time, sj) %>% array(dim = dim(time))
     ## cbind(time, pp)
@@ -5799,53 +5738,44 @@ dev.off()
 #+begin_src R
 fname = "mll.RData"
 pname = "LogLoss_diff_by.pdf"
+lout = c("chessB_np/", "chessB_no_latent/", "chessB_pn/")
 #+end_src
 
 #+begin_src R :tangle R/draw_logloss_diff_by.R
-out_dir = "chessB_np/"
-load(paste0(out_dir,fname))
-dll = t(mll)
-colnames(dll) = row.names(mi) = 1:I
-row.names(dll) = colnames(mi) = 1:N
-d_long <- reshape2::melt(dll)
-mi_long <- reshape2::melt(t(mi))
-d_long = plyr::join(d_long, mi_long, by = c("Var1","Var2"))
+row.names(mi) = 1:I
+colnames(mi) = 1:N
+d_long <- reshape2::melt(t(mi))
 
-out_dir = "chessB_no_latent/"
+### lout: list of output directory
+
+for (out_dir in lout) {
 load(paste0(out_dir,fname))
 dll = t(mll)
 colnames(dll) = 1:I
 row.names(dll) = 1:N
-no_long <- reshape2::melt(dll)
-d_long = plyr::join(d_long, no_long, by = c("Var1","Var2"))
+d_add <- reshape2::melt(dll)
+d_long = plyr::join(d_long, d_add, by = c("Var1","Var2"))
+}
 
-out_dir = "chessB_pn/"
-load(paste0(out_dir,fname))
-dll = t(mll)
-colnames(dll) = 1:I
-row.names(dll) = 1:N
-np_long <- reshape2::melt(dll)
-d_long = plyr::join(d_long, np_long, by = c("Var1","Var2"))
-
-names(d_long) = c("person","item","LogLoss_np","res", "LogLoss_no", "LogLoss_pn")
+names(d_long) = c("person","item","res", "LogLoss_np", "LogLoss_no", "LogLoss_pn")
 d_long$LogLoss_diff_np = d_long$LogLoss_no - d_long$LogLoss_np
 d_long$LogLoss_diff_pn = d_long$LogLoss_no - d_long$LogLoss_pn
-
 d_long$res = factor(d_long$res, labels=c("incorrect","correct"))
+
 ll_boxp_np_by <- ggplot(d_long, aes(x=item,y=LogLoss_diff_np,fill=factor(item))) + facet_wrap(~res) +
-  geom_boxplot() + theme(legend.position = "none") + ggtitle("baseline - (-,+) log loss")+
+  geom_boxplot() + theme(legend.position = "none") + ggtitle("baseline - M1 log loss")+
   ylab("Difference in LogLoss")
 
 ll_boxp_pn_by <- ggplot(d_long, aes(x=item,y=LogLoss_diff_pn,fill=factor(item))) + facet_wrap(~res) +
-  geom_boxplot() + theme(legend.position = "none") + ggtitle("baseline - (+,-) log loss") +
+  geom_boxplot() + theme(legend.position = "none") + ggtitle("baseline - M2 log loss") +
     ylab("Difference in LogLoss")
 
 ll_boxp_np <- ggplot(d_long, aes(x=item,y=LogLoss_diff_np,fill=factor(item))) +
-  geom_boxplot() + theme(legend.position = "none") + ggtitle("baseline - (-,+) log loss")+
+  geom_boxplot() + theme(legend.position = "none") + ggtitle("baseline - M1 log loss")+
   ylab("Difference in LogLoss")
 
 ll_boxp_pn <- ggplot(d_long, aes(x=item,y=LogLoss_diff_pn,fill=factor(item))) +
-  geom_boxplot() + theme(legend.position = "none") + ggtitle("baseline - (+,-) log loss") +
+  geom_boxplot() + theme(legend.position = "none") + ggtitle("baseline - M2 log loss") +
     ylab("Difference in LogLoss")
 
 pdf(pname)
@@ -6074,6 +6004,10 @@ ll[1:5] %>% diff()
 ## out_dir = "chessb_no_latent/"
 
 lout = c("chessb_np/", "chessb_pn/", "chessb_no_latent/")
+
+lout = c("chessB_pn_ncut2_zero_beta/", "chessB_no_latent_ncut2_zero_beta/", "chessB_np_ncut2_zero_beta/","chessB_swdz_pp_ncut2_zero_beta/", "chessB_double_pp_ncut2_zero_beta/",
+"chessB_swdz_nn_ncut2_zero_beta/", "chessB_double_nn_ncut2_zero_beta/")
+
 for (out_dir in lout) {
 
 ## log loss using simulated time
@@ -6095,7 +6029,20 @@ save(mll,file = paste0(out_dir,"simll.RData"))
 
 #+begin_src R
 fname = "simll.RData"
-pname = "sim_logloss_diff_by.pdf"
+pname = "single_logloss_diff_by.pdf"
+
+lout = c("chessB_pn_ncut2_zero_beta/", "chessB_no_latent_ncut2_zero_beta/", "chessB_np_ncut2_zero_beta/")
+
+source("R/draw_logloss_diff_by.R")
+
+pname = "half_single_logloss_diff_by.pdf"
+lout = c("chessB_swdz_nn_ncut2_zero_beta/", "chessB_no_latent_ncut2_zero_beta/", "chessB_double_pp_ncut2_zero_beta/")
+
+source("R/draw_logloss_diff_by.R")
+
+pname = "double_logloss_diff_by.pdf"
+lout = c("chessB_double_nn_ncut2_zero_beta/", "chessB_no_latent_ncut2_zero_beta/", "chessB_double_pp_ncut2_zero_beta/")
+
 source("R/draw_logloss_diff_by.R")
 #+end_src
 

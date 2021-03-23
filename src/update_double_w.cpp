@@ -1,5 +1,5 @@
-#include <stan/math.hpp>
 #include "update_double_w.h"
+#include <stan/math.hpp>
 
 Eigen::VectorXd update_double_w(const Eigen::MatrixXd::RowXpr &w, double &acc_w,
                                 const Eigen::MatrixXd::RowXpr &mu_w,

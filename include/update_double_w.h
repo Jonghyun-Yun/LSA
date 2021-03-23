@@ -1,6 +1,8 @@
 #ifndef __UPDATE_DOUBLE_W_H_
 #define __UPDATE_DOUBLE_W_H_
 
+#include <stan/math.hpp>
+
 Eigen::VectorXd update_double_w(const Eigen::MatrixXd::RowXpr &w, double &acc_w,
                                 const Eigen::MatrixXd::RowXpr &mu_w,
                                 const Eigen::MatrixXd::RowXpr &sigma_w,
