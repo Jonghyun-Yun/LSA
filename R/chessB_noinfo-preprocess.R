@@ -7,7 +7,6 @@ I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
 l_c = 2
 a_lambda = matrix(((G - 1) / (0.7 * 30 * (G - 1:G + 0.5)))/l_c, I, G, byrow=T)
 b_lambda = matrix(1 / l_c,I,G)
-
 jump_lambda = matrix(0.5,I,G)
 
 mu_beta = matrix(0.0,I,2)
@@ -16,13 +15,13 @@ jump_beta = matrix(0.25,I,2)
 
 mu_theta = matrix(0.0,N,2)
 sigma_theta = matrix(sqrt(10000.0),N,2)
-jump_theta = matrix(0.1,N,2)
+jump_theta = matrix(0.2,N,2)
 
 a_sigma = 0.0001
 b_sigma = 0.0001
 
 mu_gamma = matrix(0.0,1,2)
-sigma_gamma = matrix(sqrt(10000.0),1,2)
+sigma_gamma = matrix(sqrt(1.0),1,2)
 jump_gamma = matrix(0.01,1,2)
 
 mu_z = matrix(0.0,N,2)

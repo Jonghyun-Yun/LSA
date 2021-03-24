@@ -2358,9 +2358,8 @@ I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
 
 ## lambda
 l_c = 2
-a_lambda = matrix(((G - 1) / (0.7 * 30 * (G - 1:G + 0.5)))/l_c, I, G, byrow=T)
+a_lambda = matrix(((G - 1) / (quantile(time, 0.75)  * (G - 1:G + 0.5)))/l_c, I, G, byrow=T)
 b_lambda = matrix(1 / l_c,I,G)
-
 jump_lambda = matrix(0.5,I,G)
 
 mu_beta = matrix(0.0,I,2)
@@ -2369,13 +2368,13 @@ jump_beta = matrix(0.25,I,2)
 
 mu_theta = matrix(0.0,N,2)
 sigma_theta = matrix(sqrt(10000.0),N,2)
-jump_theta = matrix(0.1,N,2)
+jump_theta = matrix(0.2,N,2)
 
 a_sigma = 0.0001
 b_sigma = 0.0001
 
 mu_gamma = matrix(0.0,1,2)
-sigma_gamma = matrix(sqrt(10000.0),1,2)
+sigma_gamma = matrix(sqrt(1.0),1,2)
 jump_gamma = matrix(0.01,1,2)
 
 mu_z = matrix(0.0,N,2)
@@ -3330,9 +3329,9 @@ dev.off(which = dev.cur())
 ** Shell to run C++
 #+begin_src sh :tangle run.sh
 #!/usr/bin/env bash
-out_dir="chessB_pn_ncut2_zero_beta_noinfo/"
+out_dir="chessB_swdz_ncut2_zero_beta_noinfo/"
 prename="R/chessB_noinfo-preprocess.R"
-initname="R/chessB_pn-init.R"
+initname="R/chessB-init.R"
 n_chain=2
 
 echo "================================"
@@ -3356,7 +3355,7 @@ cp $initname output/
 for ((v = 1; v <= $n_chain; v++))
 do
     Rscript $initname
-    ./main initialize parallel single_w single_z full latent no_gamma true false no_ars nonzero_theta zero_beta lambda_free $v 1000 1000 10
+    ./main initialize parallel single_w double_z full latent gamma false false no_ars nonzero_theta zero_beta lambda_free $v 10000 10000 10
 done
 ## explain comandline arguments:
  # continue initialize -> start new chains?
@@ -3374,7 +3373,7 @@ done
 
 mkdir -p $out_dir
 mv output/* $out_dir
-Rscript R/run-analysis.R $out_dir $n_chain
+Rscript R/run-analysis.R $out_dir $n_chain 0 1
 echo "Outputs are moved to" $out_dir"."
 echo "================================"
 
@@ -3386,10 +3385,10 @@ echo "================================"
 #+end_src
 
 #+begin_src R :tangle run_run.sh
-out_dir="chessB_np_ncut2_zero_beta_long/"
-prename="R/chessB-preprocess.R"
-initname="R/chessB_np-init.R"
-n_chain=1
+out_dir="chessB_double_ncut2_zero_beta_noinfo/"
+prename="R/chessB_noinfo-preprocess.R"
+initname="R/chessB-init.R"
+n_chain=2
 
 echo "================================"
 echo "Output dir:" $out_dir
@@ -3412,7 +3411,7 @@ cp $initname output/
 for ((v = 1; v <= $n_chain; v++))
 do
     Rscript $initname
-    ./main initialize parallel single_w single_z full latent no_gamma true false no_ars nonzero_theta zero_beta lambda_free $v 20000 20000 10
+    ./main initialize parallel double_w double_z full latent gamma true false no_ars nonzero_theta zero_beta lambda_free $v 10000 10000 10
 done
 ## explain comandline arguments:
  # continue initialize -> start new chains?
@@ -3430,7 +3429,7 @@ done
 
 mkdir -p $out_dir
 mv output/* $out_dir
-Rscript R/run-analysis.R $out_dir $n_chain
+Rscript R/run-analysis.R $out_dir $n_chain 1 1
 echo "Outputs are moved to" $out_dir"."
 echo "================================"
 #+end_src
