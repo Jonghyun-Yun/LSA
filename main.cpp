@@ -165,7 +165,7 @@ int main(int argc, const char *argv[]) {
     ONE_FREE_GAMMA = 1; // update gamma(c) for correct process
   } else if (sarg[9] == "incorrect") {
     ONE_FREE_GAMMA = 0; // update gamma(c) for incorrect process
-  } else if (sarg[9] == "false") {
+  } else if (sarg[9] == "both") {
     ONE_FREE_GAMMA = 99;
   } else {
     std::cout << "invalid arguemnt for ONE_FREE_GAMMA.\n" << std::endl;

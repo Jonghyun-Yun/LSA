@@ -102,7 +102,7 @@ double par_fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lamb
             }
         }
         else {
-            lp_ += lognormal_lpdf(stan::math::abs(gamma), mu_gamma, sigma_gamma); // gamma can be negative.
+            lp_ += lognormal_lpdf(gamma.array().abs(), mu_gamma, sigma_gamma); // gamma can be negative.
         }
     }
 

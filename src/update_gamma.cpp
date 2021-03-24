@@ -34,7 +34,7 @@ void update_gamma(Eigen::VectorXd &gamma, Eigen::VectorXd &acc_gamma,
     // }
 
     if (gamma(c) < 0) {
-      gamma_c = abs(gamma_(c)); // pretend gamma(c) is positive
+      gamma_c = abs(gamma(c)); // pretend gamma(c) is positive
     // std::cout << "Drawing...\n";
     gamma_s(c) = stan::math::lognormal_rng(stan::math::log(gamma_c), jump_gamma(c), rng);
 
