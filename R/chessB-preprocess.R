@@ -32,25 +32,11 @@ time = pull(dit, RT)
 item = pull(dit, item)
 resp = pull(dit, resp)
 
-ncut = 2
+ncut = 5
 ## interval <- seq(from=0, to = max(time)+1,length.out = 8)
 pseq =  seq(from=0, to = 1, length.out = ncut + 1)
 sj = quantile(time, probs = pseq) %>% round()
 sj[1] = 0; sj[length(sj)] = sj[length(sj)] + 1
-
-checksj = 0
-tab0 = table(findInterval(time[resp == 0], sj), item[resp==0])
-tab1 = table(findInterval(time[resp == 1], sj), item[resp==1])
-sjtab = list(tab0,tab1)
-  for (c in 1:2) {
-  checksj = checksj + sum(sjtab[[c]]==0) 
-}
-if (checksj > 0) {
-print(tab0)
-print(tab1)
-  cat(checksj,"\n")
-  stop("there exists an interval(s) with no observation.")
-  }
 
 library(survival)
 status = rep(1, nrow(dt))

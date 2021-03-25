@@ -17,3 +17,7 @@ eval_accuracy <- function(param, t) {
     .Call(`_art_eval_accuracy`, param, t)
 }
 
+eval_log_like <- function(param, T_F, t) {
+    .Call(`_art_eval_log_like`, param, T_F, t)
+}
+

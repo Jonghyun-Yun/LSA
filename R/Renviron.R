@@ -1,0 +1,15 @@
+library(art)
+library(coda)
+library(dplyr)
+library(stringr)
+library(magrittr)
+library(bayesplot)
+library(foreach)
+library(doParallel)
+##registerDoParallel(cores = detectCores() - 1)
+stopImplicitCluster()
+registerDoParallel(2)
+
+setwd("~/workspace/lsjm-code")
+
+source("R/art-functions.R")

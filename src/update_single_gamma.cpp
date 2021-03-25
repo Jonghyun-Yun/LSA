@@ -24,6 +24,9 @@ void update_single_gamma(Eigen::VectorXd &gamma, Eigen::VectorXd &acc_gamma,
     // log-acceptance ratio
     double logr_gamma = 0.0;
 
+    double gamma_1; // when gamma(1) < 0
+
+    if (gamma(1) > 0) {
     // std::cout << "Drawing...\n";
     gamma_s(1) = stan::math::lognormal_rng(stan::math::log(gamma(1)), jump_gamma(1), rng);
 
@@ -33,8 +36,25 @@ void update_single_gamma(Eigen::VectorXd &gamma, Eigen::VectorXd &acc_gamma,
         stan::math::lognormal_lpdf(gamma(1), mu_gamma(1), sigma_gamma(1)) +
         stan::math::lognormal_lpdf(gamma(1), stan::math::log(gamma_s(1)), jump_gamma(1)) -
         stan::math::lognormal_lpdf(gamma_s(1), stan::math::log(gamma(1)), jump_gamma(1));
+    } else {
+       gamma_1 = std::abs(gamma_1);
+       gamma_s(1) = stan::math::lognormal_rng(stan::math::log(gamma_1), jump_gamma(1), rng);
+    // prior and jumping rule
+    logr_gamma +=
+        stan::math::lognormal_lpdf(gamma_s(1), mu_gamma(1), sigma_gamma(1)) -
+        stan::math::lognormal_lpdf(gamma_1, mu_gamma(1), sigma_gamma(1)) +
+        stan::math::lognormal_lpdf(gamma_1, stan::math::log(gamma_s(1)), jump_gamma(1)) -
+        stan::math::lognormal_lpdf(gamma_s(1), stan::math::log(gamma_1), jump_gamma(1));
 
-    gamma_s(0) = -1.0 * gamma_s(1);
+        gamma_s(1) *= -1.0; // put it back to negative
+    }
+
+    // respect gamma(0) sign
+    if (gamma(0) < 0) {
+      gamma_s(0) = -1.0 * std::abs(gamma_s(1));
+    } else {
+      gamma_s(0) = std::abs(gamma_s(1));
+    }
 
     if (RUN_PAR) {
         

@@ -1,42 +1,5 @@
 source("R/prerequisite.R")
 
-pullit <- function(info, cl) {
-  it <- info %>% filter(Cluster_A == cl) # %>% dplyr::select(Item,Time)
-  item <- pull(it, Item)
-  time <- pull(it, Time)
-  return(cbind(item, time))
-}
-
-tabulate_id = function(chrid) {
-  ## reference table of charactor and numeric id
-  chr = sort(unique(chrid))
-  out = data.frame(chr = chr, num = seq_len(length(chr)))
-  return(out)
-}
-to_numID = function(x, tab) {
-  sapply(x, function(x) tab$num[which(tab$chr == x)])
-}
-
-to_chrID = function(x, tab) {
-  sapply(x, function(x) tab$chr[which(tab$num == x)])
-}
-
-tab_sj <- function(seg_g, G) {
-  res <- NULL
-  for (m in 0:(G - 1)) {
-    res <- c(res, sum(seg_g >= m))
-  }
-  return(res)
-}
-
-tab_IY <- function(seg_g, G) {
-  res <- NULL
-  for (m in 0:(G - 1)) {
-    res <- c(res, sum(seg_g == m))
-  }
-  return(res)
-}
-
 gethaz_item <- function(sam, cname, item, N, theta = NULL, double_w, double_z) {
   num_iter <- nrow(sam)
   d_zw <- list()
@@ -568,4 +531,41 @@ do_procrustes <- function(Xstar, mydf, is_list = FALSE, translation = TRUE, scal
     w <- posm[-(1:(2 * N)), ]
   }
   return(list(mydf = mydf, z0 = z0, z1 = z1, w = w))
+}
+
+pullit <- function(info, cl) {
+  it <- info %>% filter(Cluster_A == cl) # %>% dplyr::select(Item,Time)
+  item <- pull(it, Item)
+  time <- pull(it, Time)
+  return(cbind(item, time))
+}
+
+tabulate_id = function(chrid) {
+  ## reference table of charactor and numeric id
+  chr = sort(unique(chrid))
+  out = data.frame(chr = chr, num = seq_len(length(chr)))
+  return(out)
+}
+to_numID = function(x, tab) {
+  sapply(x, function(x) tab$num[which(tab$chr == x)])
+}
+
+to_chrID = function(x, tab) {
+  sapply(x, function(x) tab$chr[which(tab$num == x)])
+}
+
+tab_sj <- function(seg_g, G) {
+  res <- NULL
+  for (m in 0:(G - 1)) {
+    res <- c(res, sum(seg_g >= m))
+  }
+  return(res)
+}
+
+tab_IY <- function(seg_g, G) {
+  res <- NULL
+  for (m in 0:(G - 1)) {
+    res <- c(res, sum(seg_g == m))
+  }
+  return(res)
 }

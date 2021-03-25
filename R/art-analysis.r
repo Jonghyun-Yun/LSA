@@ -1,19 +1,4 @@
-library(art)
-library(coda)
-library(dplyr)
-library(stringr)
-library(magrittr)
-library(bayesplot)
-library(foreach)
-library(doParallel)
-##registerDoParallel(cores = detectCores() - 1)
-stopImplicitCluster()
-registerDoParallel(2)
-
-setwd("/Users/yunj/Dropbox/research/lsjm-art/lsjm-code")
-
-source("R/art-functions.R")
-
+source("R/Renviron.R")
 source('R/load-outputs.R')
 ## source('R/write_summary.R')
 source('R/visual-latent-space-plot.R')

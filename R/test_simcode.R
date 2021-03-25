@@ -1,21 +1,3 @@
-## out_dir <- "chessB_pn/"
-## out_dir <- "chessB_no_latent/"
-## out_dir <- "chessB_np/"
-
-## out_dir <- "chessB_pn_ncut2_zero_beta/"
-out_dir <- "chessB_no_latent_ncut2_zero_beta/"
-## out_dir <- "chessB_np_ncut2_zero_beta/"
-## out_dir <- "chessB_no_latent_ncut2_zero_beta/"
-out_dir <- "chessB_swdz_pp_ncut2_zero_beta/"
-out_dir <- "chessB_swdz_nn_ncut2_zero_beta/"
-## out_dir <- "chessB_double_pp_ncut2_zero_beta/"
-## out_dir <- "chessB_double_nn_ncut2_zero_beta/"
-
-num_chain <- 2
-double_z <- 1
-double_w <- 0
-HAS_REF <- 0
-
 ## library(art)
 library(coda)
 library(dplyr)
@@ -26,8 +8,8 @@ library(foreach)
 library(doParallel)
 ## library(timereg)
 ## registerDoParallel(cores = detectCores() - 1)
+stopImplicitCluster()
 registerDoParallel(2)
-## stopImplicitCluster()
 
 ## setwd("/Users/yunj/Dropbox/research/lsjm-art/lsjm-code")
 
@@ -42,7 +24,7 @@ source("R/load-outputs.R")
 set.seed(1)
 num_iter <- nrow(mylist[[1]])
 sim_data <- list()
-mll  <- 99 * mi
+mll  <- mauc <- matrix(0, num_iter, I)
 
 for (item in 1:I) {
   start_time <- proc.time()
@@ -52,8 +34,9 @@ for (item in 1:I) {
     pp <- gen_surv_pp(out, time, sj) %>% array(dim = dim(time))
     ## cbind(time, pp)
 
-  for (k in 1:N) {
-    mll[item, k] = MLmetrics::LogLoss(pp[, k], mi[item, k])
+  for (nn in 1:num_iter) {
+    mll[nn, item] = MLmetrics::LogLoss(pp[nn, ], mi[item, ])
+    mauc[nn, item] = MLmetrics::AUC(pp[nn, ], mi[item, ])
     }
 
   }
@@ -62,19 +45,26 @@ for (item in 1:I) {
   print(proc.time() - start_time)
 }
 
-save(mll,file = paste0(out_dir,"mll.RData"))
+mmet = list(mll=mll,mauc=mauc)
+save(mmet, file = paste0(out_dir,"mll_auc.RData"))
 
 dll = t(mll)
-colnames(dll) = row.names(mi) = 1:I
-row.names(dll) = colnames(mi) = 1:N
-d_long <- reshape2::melt(dll)
-mi_long <- reshape2::melt(t(mi))
-d_long = plyr::join(d_long, mi_long, by = c("Var1","Var2"))
-names(d_long) = c("person","item","LogLoss","res")
-d_long$res = factor(d_long$res, labels=c("incorrect","correct"))
-ll_boxp <- ggplot(d_long, aes(x=item,y=LogLoss,fill=factor(item))) +  facet_wrap(~res) +
+dauc = t(mauc)
+colnames(mauc) = colnames(mll) = row.names(mi) = 1:I
+## row.names(dauc) = row.names(dll) = colnames(mi) = 1:num_iter
+dauc = reshape2::melt(mauc)
+dll <- reshape2::melt(mll)
+## mi_long <- reshape2::melt(t(mi))
+dd = plyr::join(dll, dauc, by = c("Var1","Var2"))
+names(dd) = c("iter","item","LogLoss","AUC")
+
+ll_boxp <- ggplot(dd, aes(x=item,y=LogLoss,fill=factor(item))) + 
   geom_boxplot() + theme(legend.position = "none") + ylim(0, 10.5)
 
-pdf(paste0(out_dir,"LogLoss_by.pdf"))
+auc_boxp <- ggplot(dd, aes(x=item,y=AUC,fill=factor(item))) + 
+  geom_boxplot() + theme(legend.position = "none") + ylim(0, 1)
+
+pdf(paste0(out_dir,"cmetrics.pdf"))
 print(ll_boxp)
+print(auc_boxp)
 dev.off()

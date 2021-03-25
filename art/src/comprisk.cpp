@@ -132,3 +132,12 @@ Eigen::VectorXd eval_accuracy(Rcpp::List &param, Eigen::VectorXd t)
     }
     return res;
 }
+
+// [[Rcpp::export]]
+double eval_log_like(Rcpp::List &param, bool T_F, double t)
+{
+    comprisk f(param, T_F);
+    double res;
+    res = std::log(f(t));
+    return res;
+}

@@ -60,12 +60,26 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// eval_log_like
+double eval_log_like(Rcpp::List& param, bool T_F, double t);
+RcppExport SEXP _art_eval_log_like(SEXP paramSEXP, SEXP T_FSEXP, SEXP tSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::List& >::type param(paramSEXP);
+    Rcpp::traits::input_parameter< bool >::type T_F(T_FSEXP);
+    Rcpp::traits::input_parameter< double >::type t(tSEXP);
+    rcpp_result_gen = Rcpp::wrap(eval_log_like(param, T_F, t));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_art_cumcifun", (DL_FUNC) &_art_cumcifun, 4},
     {"_art_cumcicurve", (DL_FUNC) &_art_cumcicurve, 5},
     {"_art_eval_incirate", (DL_FUNC) &_art_eval_incirate, 3},
     {"_art_eval_accuracy", (DL_FUNC) &_art_eval_accuracy, 2},
+    {"_art_eval_log_like", (DL_FUNC) &_art_eval_log_like, 3},
     {NULL, NULL, 0}
 };
 

@@ -11,3 +11,6 @@ License: GPL (>= 2)
 Imports: Rcpp (>= 1.0.2), RcppEigen (>= 0.3.3.5.0), RcppNumerical, RcppParallel (>= 5.0.2), StanHeaders (>= 2.21.0)
 LinkingTo: Rcpp, RcppEigen, RcppNumerical, RcppParallel, StanHeaders
 SystemRequirements: GNU make
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
