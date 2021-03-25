@@ -1,0 +1,7 @@
+readr::write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"input/pj_lambda.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"input/pj_beta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_theta,sigma_theta,jump_theta)),"input/pj_theta.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(a_sigma,b_sigma)),"input/pj_sigma.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_gamma,sigma_gamma,jump_gamma)),"input/pj_gamma.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_z,sigma_z,jump_z)),"input/pj_z.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(rbind(mu_w,sigma_w,jump_w)),"input/pj_w.csv", col_names = FALSE)

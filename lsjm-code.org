@@ -1977,7 +1977,7 @@ time = pull(dit, RT)
 item = pull(dit, item)
 resp = pull(dit, resp)
 
-ncut = 2
+ncut = 4
 ## interval <- seq(from=0, to = max(time)+1,length.out = 8)
 pseq =  seq(from=0, to = 1, length.out = ncut + 1)
 sj = quantile(time, probs = pseq) %>% round()
@@ -1986,7 +1986,7 @@ sj[1] = 0; sj[length(sj)] = sj[length(sj)] + 1
 
 #+RESULTS:
 
-#+begin_src R :tangle R/chessB-preprocess.R
+#+begin_src R
 checksj = 0
 tab0 = table(findInterval(time[resp == 0], sj), item[resp==0])
 tab1 = table(findInterval(time[resp == 1], sj), item[resp==1])
@@ -2003,40 +2003,6 @@ print(tab1)
 #+end_src
 
 #+RESULTS:
-#+begin_example
-   
-      1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19
-  1   7  12  25   3   5   9   6   8  12   3   5  11  18   6   2  11   9  28   4
-  2   3   3  18  15  18  31  20  34  47  26  43  69  61  20  19  97  31  76  45
-  3   0   0   2  12   5  23  35  41  87  51  72  68  41 124  75  91 127  79 119
-   
-     20  21  22  23  24  25  26  27  28  29  30  31  32  33  34  35  36  37  38
-  1   7   8  16  15  23  15  12  19   2   7  31   2  11   8  94  56  68  78  61
-  2  23   8  33  40  72  21  66  96  38  34  89   0   4  27  73  72  66  84  96
-  3 198   5  15  18  99  44 124 116 153 115 100   2   0   8  16  28  23  64  50
-   
-     39  40
-  1 104  29
-  2  54  41
-  3  24 133
-   
-      1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19
-  1 216 219 174 149 188 138 108 104  21  30  70  25  39  18  32  12  19  13   5
-  2  24  17  31  62  31  44  59  51  58  89  49  49  62  48  94  32  30  27  19
-  3   1   0   1  10   4   6  23  13  26  52  12  29  30  35  29   8  35  28  59
-   
-     20  21  22  23  24  25  26  27  28  29  30  31  32  33  34  35  36  37  38
-  1   4 146  65  49   8  33  10   4   3  15  10 227 206 141  30  25  12  17   6
-  2   5  70  90  97  21  90  22   6  21  43  15  19  27  58  26  46  52   4  23
-  3  14  14  32  32  28  48  17  10  34  37   6   1   3   9  12  24  30   4  15
-   
-     39  40
-  1  34   5
-  2  26  10
-  3   9  33
-5 
-Error: there exists an interval(s) with no observation.
-#+end_example
 
 ** survSplit
 #+BEGIN_SRC R :results none :tangle R/chessB-preprocess.R
@@ -2198,13 +2164,53 @@ init_w = 0*matrix(rnorm(2*2*I), ncol = 2);
 init_z = 0*matrix(rnorm(2*2*N), ncol = 2);
 #+END_SRC
 
-#+BEGIN_SRC R :results none :tangle R/chessB-init.R
+#+BEGIN_SRC R :results none :tangle R/write-init.R
 readr::write_csv(as.data.frame(init_lambda), "input/init_lambda.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(init_beta), "input/init_beta.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(init_theta), "input/init_theta.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(init_gamma), "input/init_gamma.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
 readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
+#+END_SRC
+
+** diffused prior
+#+BEGIN_SRC R :results none :tangle R/chessB_noinfo-preprocess.R
+source("R/chessB-preprocess.R")
+
+mvar = readr::read_csv("input/mvar.csv", col_names=FALSE) %>% as.matrix()
+I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
+
+## lambda
+l_c = 2
+l_m = ((G - 1) / (quantile(time, 0.75)  * (G - 1:G + 0.5)))
+a_lambda = matrix(l_m/l_c, I, G, byrow=T)
+b_lambda = matrix(1 / l_c,I,G)
+jump_lambda = matrix(0.5,I,G)
+
+mu_beta = matrix(0.0,I,2)
+sigma_beta = matrix(sqrt(10000.0),I,2)
+jump_beta = matrix(0.25,I,2)
+
+mu_theta = matrix(0.0,N,2)
+sigma_theta = matrix(sqrt(10000.0),N,2)
+jump_theta = matrix(0.2,N,2)
+
+a_sigma = 0.0001
+b_sigma = 0.0001
+
+mu_gamma = matrix(0.0,1,2)
+sigma_gamma = matrix(sqrt(2.0),1,2)
+jump_gamma = matrix(0.01,1,2)
+
+mu_z = matrix(0.0,N,2)
+sigma_z = matrix(sqrt(1.0),N,2)
+jump_z = matrix(0.5,N,2)
+
+mu_w = matrix(0.0,I,2)
+sigma_w = matrix(sqrt(1.0),I,2)
+jump_w = matrix(0.15,I,2)
+
+source("R/write-prior.R")
 #+END_SRC
 
 ** Choose-a-move test B: pp Gamma(0) = 1, Gamma(1) = 1
@@ -2222,16 +2228,10 @@ init_theta = 0*matrix(rnorm(2*N), ncol = 2);
 init_gamma = 1*matrix(c(1, 1), ncol = 1);
 init_w = 0*matrix(rnorm(2*2*I), ncol = 2);
 init_z = 0*matrix(rnorm(2*2*N), ncol = 2);
+
+source("R/write-init.R")
 #+END_SRC
 
-#+BEGIN_SRC R :results none :tangle R/chessB_pp-init.R
-readr::write_csv(as.data.frame(init_lambda), "input/init_lambda.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_beta), "input/init_beta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_theta), "input/init_theta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_gamma), "input/init_gamma.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
-#+END_SRC
 
 ** Choose-a-move test B: np (default) Gamma(0) = -1, Gamma(1) = 1
 #+BEGIN_SRC R :results none :tangle R/chessB_np-init.R
@@ -2250,15 +2250,8 @@ init_gamma = 1*matrix(c(-1, 1), ncol = 1);
 
 init_w = 0*matrix(rnorm(2*2*I), ncol = 2);
 init_z = 0*matrix(rnorm(2*2*N), ncol = 2);
-#+END_SRC
 
-#+BEGIN_SRC R :results none :tangle R/chessB_np-init.R
-readr::write_csv(as.data.frame(init_lambda), "input/init_lambda.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_beta), "input/init_beta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_theta), "input/init_theta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_gamma), "input/init_gamma.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
+source("R/write-init.R")
 #+END_SRC
 
 ** Choose-a-move test B: nn Gamma(0) = -1, Gamma(1) = -1
@@ -2278,15 +2271,8 @@ init_gamma = 1*matrix(c(-1, -1), ncol = 1);
 
 init_w = 0*matrix(rnorm(2*2*I), ncol = 2);
 init_z = 0*matrix(rnorm(2*2*N), ncol = 2);
-#+END_SRC
 
-#+BEGIN_SRC R :results none :tangle R/chessB_nn-init.R
-readr::write_csv(as.data.frame(init_lambda), "input/init_lambda.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_beta), "input/init_beta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_theta), "input/init_theta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_gamma), "input/init_gamma.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
+source("R/write-init.R")
 #+END_SRC
 
 ** Choose-a-move test B: pn Gamma(0) = 1, Gamma(1) = -1
@@ -2306,15 +2292,8 @@ init_gamma = 1*matrix(c(1, -1), ncol = 1);
 
 init_w = 0*matrix(rnorm(2*2*I), ncol = 2);
 init_z = 0*matrix(rnorm(2*2*N), ncol = 2);
-#+END_SRC
 
-#+BEGIN_SRC R :results none :tangle R/chessB_pn-init.R
-readr::write_csv(as.data.frame(init_lambda), "input/init_lambda.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_beta), "input/init_beta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_theta), "input/init_theta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_gamma), "input/init_gamma.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
+source("R/write-init.R")
 #+END_SRC
 
 ** Choose-a-move test B: no_latent Gamma(0) = 0, Gamma(1) = 0
@@ -2334,61 +2313,14 @@ init_gamma = 0*matrix(c(1, -1), ncol = 1);
 
 init_w = 0*matrix(rnorm(2*2*I), ncol = 2);
 init_z = 0*matrix(rnorm(2*2*N), ncol = 2);
-#+END_SRC
 
-#+BEGIN_SRC R :results none :tangle R/chessB_no_latent-init.R
-readr::write_csv(as.data.frame(init_lambda), "input/init_lambda.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_beta), "input/init_beta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_theta), "input/init_theta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_gamma), "input/init_gamma.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
+source("R/write-init.R")
 #+END_SRC
 
 ** Choose-a-move test B: fn (free gamma0) Gamma(0) > 0, Gamma(1) = -1
 :PROPERTIES:
 :ID:       f4cdf66c-59ff-4569-9fec-04baa3f2b694
 :END:
-
-#+BEGIN_SRC R :results none :tangle R/chessB_noinfo-preprocess.R
-source("R/chessB-preprocess.R")
-
-mvar = readr::read_csv("input/mvar.csv", col_names=FALSE) %>% as.matrix()
-I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
-
-## lambda
-l_c = 3
-l_m = ((G - 1) / (quantile(time, 0.75)  * (G - 1:G + 0.5)))
-a_lambda = matrix(l_m/l_c, I, G, byrow=T)
-b_lambda = matrix(1 / l_c,I,G)
-jump_lambda = matrix(0.5,I,G)
-
-mu_beta = matrix(0.0,I,2)
-sigma_beta = matrix(sqrt(10000.0),I,2)
-jump_beta = matrix(0.25,I,2)
-
-mu_theta = matrix(0.0,N,2)
-sigma_theta = matrix(sqrt(10000.0),N,2)
-jump_theta = matrix(0.2,N,2)
-
-a_sigma = 0.0001
-b_sigma = 0.0001
-
-mu_gamma = matrix(0.0,1,2)
-sigma_gamma = matrix(sqrt(1.0),1,2)
-jump_gamma = matrix(0.01,1,2)
-
-mu_z = matrix(0.0,N,2)
-sigma_z = matrix(sqrt(1.0),N,2)
-jump_z = matrix(0.5,N,2)
-
-mu_w = matrix(0.0,I,2)
-sigma_w = matrix(sqrt(1.0),I,2)
-jump_w = matrix(0.15,I,2)
-
-source("R/write-prior.R")
-#+END_SRC
-
 #+BEGIN_SRC R :results none :tangle R/chessB_fn-init.R
 mvar = as.matrix( readr::read_csv("input/mvar.csv", col_names=F) )
 I = mvar[1]
@@ -2405,15 +2337,8 @@ init_gamma = 1*matrix(c(1, -1), ncol = 1);
 
 init_w = 1*matrix(rnorm(2*2*I), ncol = 2);
 init_z = 1*matrix(rnorm(2*2*N), ncol = 2);
-#+END_SRC
 
-#+BEGIN_SRC R :results none :tangle R/chessB_fn-init.R
-readr::write_csv(as.data.frame(init_lambda), "input/init_lambda.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_beta), "input/init_beta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_theta), "input/init_theta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_gamma), "input/init_gamma.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
+source("R/write-init.R")
 #+END_SRC
 
 ** Choose-a-move test B: fp (free gamma0) Gamma(0) > 0, Gamma(1) = 1
@@ -2436,15 +2361,8 @@ init_gamma = 1*matrix(c(1, 1), ncol = 1);
 
 init_w = 1*matrix(rnorm(2*2*I), ncol = 2);
 init_z = 1*matrix(rnorm(2*2*N), ncol = 2);
-#+END_SRC
 
-#+BEGIN_SRC R :results none :tangle R/chessB_fp-init.R
-readr::write_csv(as.data.frame(init_lambda), "input/init_lambda.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_beta), "input/init_beta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_theta), "input/init_theta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_gamma), "input/init_gamma.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
+source("R/write-init.R")
 #+END_SRC
 
 ** Choose-a-move test B: pf (free gamma1) Gamma(0) = 1, Gamma(1) > 0
@@ -2467,15 +2385,8 @@ init_gamma = 1*matrix(c(1, 1), ncol = 1);
 
 init_w = 1*matrix(rnorm(2*2*I), ncol = 2);
 init_z = 1*matrix(rnorm(2*2*N), ncol = 2);
-#+END_SRC
 
-#+BEGIN_SRC R :results none :tangle R/chessB_pf-init.R
-readr::write_csv(as.data.frame(init_lambda), "input/init_lambda.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_beta), "input/init_beta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_theta), "input/init_theta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_gamma), "input/init_gamma.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
+source("R/write-init.R")
 #+END_SRC
 
 ** Choose-a-move test B: nf (free gamma1) Gamma(0) = -1, Gamma(1) > 0
@@ -2498,15 +2409,8 @@ init_gamma = 1*matrix(c(-1, 1), ncol = 1);
 
 init_w = 1*matrix(rnorm(2*2*I), ncol = 2);
 init_z = 1*matrix(rnorm(2*2*N), ncol = 2);
-#+END_SRC
 
-#+BEGIN_SRC R :results none :tangle R/chessB_nf-init.R
-readr::write_csv(as.data.frame(init_lambda), "input/init_lambda.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_beta), "input/init_beta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_theta), "input/init_theta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_gamma), "input/init_gamma.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
+source("R/write-init.R")
 #+END_SRC
 
 ** Choose-a-move test B: nn (free gamma1) Gamma(0) = -1, Gamma(1) = -1
@@ -2526,15 +2430,8 @@ init_gamma = 1*matrix(c(-1, -1), ncol = 1);
 
 init_w = 1*matrix(rnorm(2*I), nrow = 2*I, ncol = 2, byrow=TRUE);
 init_z = 1*matrix(rnorm(2*2*N), ncol = 2);
-#+END_SRC
 
-#+BEGIN_SRC R :results none :tangle R/chessB_double_nn-init.R
-readr::write_csv(as.data.frame(init_lambda), "input/init_lambda.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_beta), "input/init_beta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_theta), "input/init_theta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_gamma), "input/init_gamma.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
+source("R/write-init.R")
 #+END_SRC
 
 ** Choose-a-move test B: pp (free gamma1) Gamma(0) = 1, Gamma(1) = 1
@@ -2554,15 +2451,8 @@ init_gamma = 1*matrix(c(1, 1), ncol = 1);
 
 init_w = 1*matrix(rnorm(2*I), nrow = 2*I, ncol = 2, byrow=TRUE);
 init_z = 1*matrix(rnorm(2*2*N), ncol = 2);
-#+END_SRC
 
-#+BEGIN_SRC R :results none :tangle R/chessB_double_pp-init.R
-readr::write_csv(as.data.frame(init_lambda), "input/init_lambda.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_beta), "input/init_beta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_theta), "input/init_theta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_gamma), "input/init_gamma.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_w), "input/init_w.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(init_z), "input/init_z.csv", col_names = FALSE)
+source("R/write-init.R")
 #+END_SRC
 
 * Duolingo                                                          :ARCHIVE:
@@ -3330,9 +3220,9 @@ dev.off(which = dev.cur())
 ** Shell to run C++
 #+begin_src sh :tangle run.sh
 #!/usr/bin/env bash
-out_dir="chessB_double_nn_ncut2_zero_beta_noinfo_lc3/"
+out_dir="chessB_double_pp_ncut4_zero_beta_noinfo_lc2/"
 prename="R/chessB_noinfo-preprocess.R"
-initname="R/chessB_nn-init.R"
+initname="R/chessB_pp-init.R"
 n_chain=2
 
 echo "================================"
@@ -3356,261 +3246,7 @@ cp $initname output/
 for ((v = 1; v <= $n_chain; v++))
 do
     Rscript $initname
-    ./main initialize parallel double_w double_z full latent gamma true both no_ars nonzero_theta zero_beta lambda_free $v 10000 10000 10
-done
-## explain comandline arguments:
- # continue initialize -> start new chains?
- # parallel serial -> parallel computation?
- # single_w double_w
- # single_z double_z
- # full sparse -> missing or not
- # latent no_latent -> update latent space?
- # gamma no_gamma -> update gamma?
- # true false -> can I play with the gamma sign?
- # correct incorrect false -> gamma for what process?
- # do_ars no_ars -> ARS for gamma
- # zero_theta nonzero_theta -> theta.k.0 are zero
- # double_beta single_beta
-
-mkdir -p $out_dir
-mv output/* $out_dir
-Rscript R/run-analysis.R $out_dir $n_chain 0 1
-echo "Outputs are moved to" $out_dir"."
-echo "================================"
-
-# sh run_run.sh
-# sh run_run_run.sh
-# sh run_run_run_run.sh
-# sh run_run_run_run_run.sh
-# sh run_run_run_run_run_run.sh
-#+end_src
-
-#+begin_src R :tangle run_run.sh
-out_dir="chessB_double_ncut2_zero_beta_noinfo/"
-prename="R/chessB_noinfo-preprocess.R"
-initname="R/chessB-init.R"
-n_chain=2
-
-echo "================================"
-echo "Output dir:" $out_dir
-echo "preprocessing:" $prename
-echo "initializing:" $initname
-echo "n_chain:" $n_chain
-echo "================================"
-
-export STAN_NUM_THREADS=2
-mkdir -p output
-rm output/*
-rm input/*
-
-Rscript $prename
-cp input/{mvar,mlen}.csv output/
-cp run.sh output/
-cp $prename output/
-cp $initname output/
-
-for ((v = 1; v <= $n_chain; v++))
-do
-    Rscript $initname
-    ./main initialize parallel double_w double_z full latent gamma true false no_ars nonzero_theta zero_beta lambda_free $v 10000 10000 10
-done
-## explain comandline arguments:
- # continue initialize -> start new chains?
- # parallel serial -> parallel computation?
- # single_w double_w
- # single_z double_z
- # full sparse -> missing or not
- # latent no_latent -> update latent space?
- # gamma no_gamma -> update gamma?
- # true false -> can I play with the gamma sign?
- # correct incorrect false -> gamma for what process?
- # do_ars no_ars -> ARS for gamma
- # zero_theta nonzero_theta -> theta.k.0 are zero
- # double_beta single_beta
-
-mkdir -p $out_dir
-mv output/* $out_dir
-Rscript R/run-analysis.R $out_dir $n_chain 1 1
-echo "Outputs are moved to" $out_dir"."
-echo "================================"
-#+end_src
-
-#+begin_src R :tangle run_run_run.sh
-out_dir="chessB_double_pp_ncut2_zero_beta/"
-prename="R/chessB-preprocess.R"
-initname="R/chessB_double_pp-init.R"
-n_chain=2
-
-echo "================================"
-echo "Output dir:" $out_dir
-echo "preprocessing:" $prename
-echo "initializing:" $initname
-echo "n_chain:" $n_chain
-echo "================================"
-
-export STAN_NUM_THREADS=2
-mkdir -p output
-rm output/*
-rm input/*
-
-Rscript $prename
-cp input/{mvar,mlen}.csv output/
-cp run.sh output/
-cp $prename output/
-cp $initname output/
-
-for ((v = 1; v <= $n_chain; v++))
-do
-    Rscript $initname
-    ./main initialize parallel double_w double_z full latent no_gamma true false no_ars nonzero_theta zero_beta lambda_free $v 10000 10000 10
-done
-## explain comandline arguments:
- # continue initialize -> start new chains?
- # parallel serial -> parallel computation?
- # single_w double_w
- # single_z double_z
- # full sparse -> missing or not
- # latent no_latent -> update latent space?
- # gamma no_gamma -> update gamma?
- # true false -> can I play with the gamma sign?
- # correct incorrect false -> gamma for what process?
- # do_ars no_ars -> ARS for gamma
- # zero_theta nonzero_theta -> theta.k.0 are zero
- # double_beta single_beta
-
-mkdir -p $out_dir
-mv output/* $out_dir
-Rscript R/run-analysis.R $out_dir $n_chain 1 1
-echo "Outputs are moved to" $out_dir"."
-echo "================================"
-#+end_src
-
-#+begin_src R :tangle run_run_run_run.sh
-out_dir="chessB_double_nn_ncut2_zero_beta/"
-prename="R/chessB-preprocess.R"
-initname="R/chessB_double_nn-init.R"
-n_chain=2
-
-echo "================================"
-echo "Output dir:" $out_dir
-echo "preprocessing:" $prename
-echo "initializing:" $initname
-echo "n_chain:" $n_chain
-echo "================================"
-
-export STAN_NUM_THREADS=2
-mkdir -p output
-rm output/*
-rm input/*
-
-Rscript $prename
-cp input/{mvar,mlen}.csv output/
-cp run.sh output/
-cp $prename output/
-cp $initname output/
-
-for ((v = 1; v <= $n_chain; v++))
-do
-    Rscript $initname
-    ./main initialize parallel double_w double_z full latent no_gamma true false no_ars nonzero_theta zero_beta lambda_free $v 10000 10000 10
-done
-## explain comandline arguments:
- # continue initialize -> start new chains?
- # parallel serial -> parallel computation?
- # single_w double_w
- # single_z double_z
- # full sparse -> missing or not
- # latent no_latent -> update latent space?
- # gamma no_gamma -> update gamma?
- # true false -> can I play with the gamma sign?
- # correct incorrect false -> gamma for what process?
- # do_ars no_ars -> ARS for gamma
- # zero_theta nonzero_theta -> theta.k.0 are zero
- # double_beta single_beta
-
-mkdir -p $out_dir
-mv output/* $out_dir
-Rscript R/run-analysis.R $out_dir $n_chain 1 1
-echo "Outputs are moved to" $out_dir"."
-echo "================================"
-#+end_src
-#+begin_src R :tangle run_run_run_run_run.sh
-out_dir="chessB_swdz_nn_ncut2_zero_beta/"
-prename="R/chessB-preprocess.R"
-initname="R/chessB_double_nn-init.R"
-n_chain=2
-
-echo "================================"
-echo "Output dir:" $out_dir
-echo "preprocessing:" $prename
-echo "initializing:" $initname
-echo "n_chain:" $n_chain
-echo "================================"
-
-export STAN_NUM_THREADS=2
-mkdir -p output
-rm output/*
-rm input/*
-
-Rscript $prename
-cp input/{mvar,mlen}.csv output/
-cp run.sh output/
-cp $prename output/
-cp $initname output/
-
-for ((v = 1; v <= $n_chain; v++))
-do
-    Rscript $initname
-    ./main initialize parallel single_w double_z full latent no_gamma true false no_ars nonzero_theta zero_beta lambda_free $v 10000 10000 10
-done
-## explain comandline arguments:
- # continue initialize -> start new chains?
- # parallel serial -> parallel computation?
- # single_w double_w
- # single_z double_z
- # full sparse -> missing or not
- # latent no_latent -> update latent space?
- # gamma no_gamma -> update gamma?
- # true false -> can I play with the gamma sign?
- # correct incorrect false -> gamma for what process?
- # do_ars no_ars -> ARS for gamma
- # zero_theta nonzero_theta -> theta.k.0 are zero
- # double_beta single_beta
-
-mkdir -p $out_dir
-mv output/* $out_dir
-Rscript R/run-analysis.R $out_dir $n_chain 0 1
-echo "Outputs are moved to" $out_dir"."
-echo "================================"
-#+end_src
-#+begin_src R :tangle run_run_run_run_run_run.sh
-out_dir="chessB_swdz_pp_ncut2_zero_beta/"
-prename="R/chessB-preprocess.R"
-initname="R/chessB_double_pp-init.R"
-n_chain=2
-
-echo "================================"
-echo "Output dir:" $out_dir
-echo "preprocessing:" $prename
-echo "initializing:" $initname
-echo "n_chain:" $n_chain
-echo "================================"
-
-export STAN_NUM_THREADS=2
-mkdir -p output
-rm output/*
-rm input/*
-
-Rscript $prename
-cp input/{mvar,mlen}.csv output/
-cp run.sh output/
-cp $prename output/
-cp $initname output/
-
-for ((v = 1; v <= $n_chain; v++))
-do
-    Rscript $initname
-    ./main initialize parallel single_w double_z full latent no_gamma true false no_ars nonzero_theta zero_beta lambda_free $v 100 100 10
+    ./main initialize parallel double_w double_z full latent gamma true both no_ars nonzero_theta zero_beta lambda_free $v 20000 20000 10
 done
 ## explain comandline arguments:
  # continue initialize -> start new chains?
@@ -3633,29 +3269,55 @@ echo "Outputs are moved to" $out_dir"."
 echo "================================"
 #+end_src
 
-#+begin_src sh
+#+begin_src R :tangle no_latent.sh
 #!/usr/bin/env bash
-out_dir="chessB_fn_noinfo_no_ARS/"
+out_dir="chessB_double_no_ncut4_zero_beta_noinfo_lc2/"
+prename="R/chessB_noinfo-preprocess.R"
+initname="R/chessB_no_latent-init.R"
+n_chain=2
+
+echo "================================"
+echo "Output dir:" $out_dir
+echo "preprocessing:" $prename
+echo "initializing:" $initname
+echo "n_chain:" $n_chain
+echo "================================"
 
 export STAN_NUM_THREADS=2
 mkdir -p output
 rm output/*
-cp $out_dir\* ./output/
+rm input/*
 
-Rscript "R/chessB_fn-preprocess.R"
+Rscript $prename
 cp input/{mvar,mlen}.csv output/
 cp run.sh output/
+cp $prename output/
+cp $initname output/
 
-for v in {1..3}
+for ((v = 1; v <= $n_chain; v++))
 do
-    Rscript "R/chessB_fn-init.R"
-    ./main continue parallel single_w single_z full latent gamma true incorrect no_ars $v 500 500 5
+    Rscript $initname
+    ./main initialize parallel double_w double_z full no_latent no_gamma true both no_ars nonzero_theta zero_beta lambda_free $v 20000 20000 10
 done
+## explain comandline arguments:
+ # continue initialize -> start new chains?
+ # parallel serial -> parallel computation?
+ # single_w double_w
+ # single_z double_z
+ # full sparse -> missing or not
+ # latent no_latent -> update latent space?
+ # gamma no_gamma -> update gamma?
+ # true false -> can I play with the gamma sign?
+ # correct incorrect false -> gamma for what process?
+ # do_ars no_ars -> ARS for gamma
+ # zero_theta nonzero_theta -> theta.k.0 are zero
+ # double_beta single_beta
 
 mkdir -p $out_dir
-cp R/chessB_fn-init.R $out_dir
 mv output/* $out_dir
-Rscript R/run-analysis.R $out_dir
+Rscript R/run-analysis.R $out_dir $n_chain 0 0
+echo "Outputs are moved to" $out_dir"."
+echo "================================"
 #+end_src
 
 * Using R
@@ -3695,12 +3357,13 @@ system(paste0("rsync -rv figure/*.pdf ", out_dir, "figure/"))
 #+END_SRC
 
 #+BEGIN_SRC R
-out_dir="chessB_pn_ncut2_zero_beta/"
-num_chain <- 2; double_z <- 0; double_w <- 0; HAS_REF <- 0;
+out_dir="chessB_pp_ncut2_zero_beta_noinfo_lc2/"
+num_chain <- 1; double_z <- 1; double_w <- 1; HAS_REF <- 0;
 system(paste0("rm figure/*.pdf"))
 #+END_SRC
 
 #+RESULTS:
+: rm: figure/*.pdf: No such file or directory
 
 #+BEGIN_SRC R :results none
 source("R/art-analysis.R")
@@ -3709,64 +3372,6 @@ source("R/art-analysis.R")
 #+BEGIN_SRC R :results none
 system(paste0("mkdir -p ", out_dir, "figure/"))
 system(paste0("rsync -rv figure/*.pdf ", out_dir,"figure/"))
-#+END_SRC
-
-#+BEGIN_SRC R
-out_dir <- "verbal_pn/"
-num_chain <- 3; double_z <- 0; double_w <- 0; HAS_REF <- 0;
-system(paste0("rm figure/*.pdf"))
-source("R/art-analysis.R")
-## system(paste0("mkdir -p ", out_dir, "figure/"))
-## system(paste0("rsync -rv figure/*.pdf ", out_dir,"figure/"))
-#+END_SRC
-
-#+BEGIN_SRC R
-out_dir <- "opusIII_pn/"
-num_chain <- 3; double_z <- 0; double_w <- 0; HAS_REF <- 0;
-system(paste0("rm figure/*.pdf"))
-source("R/art-analysis.R")
-## system(paste0("mkdir -p ", out_dir, "figure/"))
-## system(paste0("rsync -rv figure/*.pdf ", out_dir,"figure/"))
-#+END_SRC
-
-#+BEGIN_SRC R
-out_dir <- "pisa-KR-sci2018-singleZ-singleW/"
-system(paste0("rm figure/*.pdf"))
-source("R/art-analysis.R")
-system(paste0("mkdir -p ", out_dir, "figure/"))
-system(paste0("rsync -rv figure/*.pdf ", out_dir,"figure/"))
-
-ref_dir <- "pisa-singleZ-singleW/"
-HAS_REF <- 1
-
-out_dir <- "pisa-KR-singleZ-singleW/"
-system(paste0("rm figure/*.pdf"))
-source("R/art-analysis.R")
-system(paste0("mkdir -p ", out_dir, "figure/"))
-system(paste0("rsync -rv figure/*.pdf ", out_dir,"figure/"))
-
-HAS_REF <- 0
-#+END_SRC
-
-#+BEGIN_SRC R
-num_chain <- 3; double_z <- 0; double_w <- 0;
-
-out_dir <- "pisa-singleZ-singleW/"
-system(paste0("rm figure/*.pdf"))
-source("R/art-analysis.R")
-system(paste0("mv figure/*.pdf ", out_dir,"figure/"))
-
-out_dir <- "opusIII-singleZ-singleW/"
-system(paste0("rm figure/*.pdf"))
-source("R/art-analysis.R")
-system(paste0("mkdir -p ", out_dir, "figure/"))
-system(paste0("mv figure/*.pdf figure/",out_dir))
-
-out_dir <- "verbal-singleZ-singleW/"
-system(paste0("rm figure/*.pdf"))
-source("R/art-analysis.R")
-system(paste0("mkdir -p ", out_dir, "figure/"))
-system(paste0("mv figure/*.pdf figure/",out_dir))
 #+END_SRC
 
 #+begin_src R
@@ -5636,7 +5241,7 @@ to test my code
 conclusion: =chessB_pn= works poor. =chessB_np= works a bit ok.
 
 ** with *no* time simulation
-#+begin_src R :results none :tangle R/test_simcode.R
+#+begin_src R :results none
 ## out_dir <- "chessB_pn/"
 ## out_dir <- "chessB_no_latent/"
 ## out_dir <- "chessB_np/"
@@ -5649,12 +5254,17 @@ out_dir <- "chessB_swdz_pp_ncut2_zero_beta/"
 out_dir <- "chessB_swdz_nn_ncut2_zero_beta/"
 ## out_dir <- "chessB_double_pp_ncut2_zero_beta/"
 ## out_dir <- "chessB_double_nn_ncut2_zero_beta/"
+## out_dir="chessB_pp_ncut2_zero_beta_noinfo_lc2/"
+out_dir="chessB_no_latent_ncut2_zero_beta_noinfo_lc2/"
+## out_dir="chessB_nn_ncut2_zero_beta_noinfo_lc2/"
 
-num_chain <- 2
+num_chain <- 1
 double_z <- 1
-double_w <- 0
+double_w <- 1
 HAS_REF <- 0
+#+end_src
 
+#+begin_src R :results none :tangle R/test_simcode.R
 ## library(art)
 library(coda)
 library(dplyr)
@@ -5665,8 +5275,8 @@ library(foreach)
 library(doParallel)
 ## library(timereg)
 ## registerDoParallel(cores = detectCores() - 1)
+stopImplicitCluster()
 registerDoParallel(2)
-## stopImplicitCluster()
 
 ## setwd("/Users/yunj/Dropbox/research/lsjm-art/lsjm-code")
 
@@ -5683,7 +5293,7 @@ source("R/load-outputs.R")
 set.seed(1)
 num_iter <- nrow(mylist[[1]])
 sim_data <- list()
-mll  <- 99 * mi
+mll  <- mauc <- matrix(0, num_iter, I)
 
 for (item in 1:I) {
   start_time <- proc.time()
@@ -5693,8 +5303,9 @@ for (item in 1:I) {
     pp <- gen_surv_pp(out, time, sj) %>% array(dim = dim(time))
     ## cbind(time, pp)
 
-  for (k in 1:N) {
-    mll[item, k] = MLmetrics::LogLoss(pp[, k], mi[item, k])
+  for (nn in 1:num_iter) {
+    mll[nn, item] = MLmetrics::LogLoss(pp[nn, ], mi[item, ])
+    mauc[nn, item] = MLmetrics::AUC(pp[nn, ], mi[item, ])
     }
 
   }
@@ -5715,24 +5326,481 @@ save(mll,file = paste0(out_dir,"mll.RData"))
 
 #+begin_src R :tangle R/test_simcode.R
 dll = t(mll)
-colnames(dll) = row.names(mi) = 1:I
-row.names(dll) = colnames(mi) = 1:N
-d_long <- reshape2::melt(dll)
-mi_long <- reshape2::melt(t(mi))
-d_long = plyr::join(d_long, mi_long, by = c("Var1","Var2"))
-names(d_long) = c("person","item","LogLoss","res")
-d_long$res = factor(d_long$res, labels=c("incorrect","correct"))
-ll_boxp <- ggplot(d_long, aes(x=item,y=LogLoss,fill=factor(item))) +  facet_wrap(~res) +
+dauc = t(mauc)
+colnames(mauc) = colnames(mll) = row.names(mi) = 1:I
+## row.names(dauc) = row.names(dll) = colnames(mi) = 1:num_iter
+dauc = reshape2::melt(mauc)
+dll <- reshape2::melt(mll)
+## mi_long <- reshape2::melt(t(mi))
+dd = plyr::join(dll, dauc, by = c("Var1","Var2"))
+names(dd) = c("iter","item","LogLoss","AUC")
+
+ll_boxp <- ggplot(dd, aes(x=item,y=LogLoss,fill=factor(item))) + 
   geom_boxplot() + theme(legend.position = "none") + ylim(0, 10.5)
+
+auc_boxp <- ggplot(dd, aes(x=item,y=AUC,fill=factor(item))) + 
+  geom_boxplot() + theme(legend.position = "none") + ylim(0, 1)
 
 pdf(paste0(out_dir,"LogLoss_by.pdf"))
 print(ll_boxp)
+print(auc_boxp)
 dev.off()
 #+end_src
 
+
 #+RESULTS:
-: quartz
+: quartz 
 :      2
+
+#+begin_src R :results none
+out_dir="chessB_no_latent_ncut2_zero_beta_noinfo_lc2/"
+## out_dir="chessB_nn_ncut2_zero_beta_noinfo_lc2/"
+
+num_chain <- 1
+double_z <- 0
+double_w <- 0
+HAS_REF <- 0
+
+source("R/test_simcode.R")
+ddd = dd
+
+## out_dir="chessB_no_latent_ncut2_zero_beta_noinfo_lc2/"
+out_dir="chessB_nn_ncut2_zero_beta_noinfo_lc2/"
+## out_dir="chessB_pp_ncut2_zero_beta_noinfo_lc2/"
+
+num_chain <- 1
+double_z <- 1
+double_w <- 1
+HAS_REF <- 0
+
+source("R/test_simcode.R")
+ddd$LogLossM1 = dd$LogLoss
+ddd$AUCM1 = dd$AUC
+
+ddd$DLogLoss = ddd$LogLoss - ddd$LogLossM1
+ddd$DAUC = ddd$AUC - ddd$AUCM1
+
+## logloss (smaller, better)
+ll_boxp <- ggplot(ddd, aes(x=item,y=DLogLoss,fill=factor(item))) + 
+  geom_boxplot() + theme(legend.position = "none") + ylim(-1, 1)
+
+## AUC (larger, better)
+auc_boxp <- ggplot(ddd, aes(x=item,y=DAUC,fill=factor(item))) + 
+  geom_boxplot() + theme(legend.position = "none") + ylim(-1, 1)
+
+pdf(paste0(out_dir,"diff_metrics.pdf"))
+print(ll_boxp)
+print(auc_boxp)
+dev.off()
+
+cat("Plot(s) are saved in",out_dir,"\n")
+cat("=================================")
+#+end_src
+
+#+RESULTS:
+#+begin_example
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m─────────────────────────────────────────────────────────────────────────────────[39m
+cols(
+  .default = col_double()
+)
+[36mℹ[39m Use [90m[40m[90m[40m`spec()`[40m[90m[49m[39m for the full column specifications.
+
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m─────────────────────────────────────────────────────────────────────────────────[39m
+cols(
+  .default = col_double()
+)
+[36mℹ[39m Use [90m[40m[90m[40m`spec()`[40m[90m[49m[39m for the full column specifications.
+
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m─────────────────────────────────────────────────────────────────────────────────[39m
+cols(
+  X1 = [32mcol_double()[39m,
+  X2 = [32mcol_double()[39m,
+  X3 = [32mcol_double()[39m,
+  X4 = [32mcol_double()[39m
+)
+
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m─────────────────────────────────────────────────────────────────────────────────[39m
+cols(
+  X1 = [32mcol_double()[39m
+)
+
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m─────────────────────────────────────────────────────────────────────────────────[39m
+cols(
+  .default = col_double()
+)
+[36mℹ[39m Use [90m[40m[90m[40m`spec()`[40m[90m[49m[39m for the full column specifications.
+
+
+elapsed time to simulate item 1 
+   user  system elapsed 
+  0.274   0.008   0.283 
+
+elapsed time to simulate item 2 
+   user  system elapsed 
+  0.204   0.004   0.207 
+
+elapsed time to simulate item 3 
+   user  system elapsed 
+  0.199   0.008   0.207 
+
+elapsed time to simulate item 4 
+   user  system elapsed 
+  0.159   0.002   0.161 
+
+elapsed time to simulate item 5 
+   user  system elapsed 
+  0.178   0.005   0.182 
+
+elapsed time to simulate item 6 
+   user  system elapsed 
+  0.175   0.004   0.180 
+
+elapsed time to simulate item 7 
+   user  system elapsed 
+  0.161   0.001   0.163 
+
+elapsed time to simulate item 8 
+   user  system elapsed 
+  0.178   0.003   0.181 
+
+elapsed time to simulate item 9 
+   user  system elapsed 
+  0.177   0.002   0.179 
+
+elapsed time to simulate item 10 
+   user  system elapsed 
+  0.178   0.002   0.180 
+
+elapsed time to simulate item 11 
+   user  system elapsed 
+  0.184   0.004   0.188 
+
+elapsed time to simulate item 12 
+   user  system elapsed 
+  0.171   0.006   0.176 
+
+elapsed time to simulate item 13 
+   user  system elapsed 
+  0.161   0.001   0.162 
+
+elapsed time to simulate item 14 
+   user  system elapsed 
+  0.176   0.003   0.180 
+
+elapsed time to simulate item 15 
+   user  system elapsed 
+  0.182   0.005   0.187 
+
+elapsed time to simulate item 16 
+   user  system elapsed 
+  0.176   0.002   0.179 
+
+elapsed time to simulate item 17 
+   user  system elapsed 
+  0.182   0.003   0.184 
+
+elapsed time to simulate item 18 
+   user  system elapsed 
+  0.179   0.002   0.180 
+
+elapsed time to simulate item 19 
+   user  system elapsed 
+  0.182   0.003   0.186 
+
+elapsed time to simulate item 20 
+   user  system elapsed 
+  0.160   0.002   0.162 
+
+elapsed time to simulate item 21 
+   user  system elapsed 
+  0.178   0.003   0.181 
+
+elapsed time to simulate item 22 
+   user  system elapsed 
+  0.175   0.004   0.180 
+
+elapsed time to simulate item 23 
+   user  system elapsed 
+  0.160   0.002   0.163 
+
+elapsed time to simulate item 24 
+   user  system elapsed 
+  0.186   0.002   0.189 
+
+elapsed time to simulate item 25 
+   user  system elapsed 
+  0.178   0.003   0.182 
+
+elapsed time to simulate item 26 
+   user  system elapsed 
+  0.183   0.002   0.186 
+
+elapsed time to simulate item 27 
+   user  system elapsed 
+  0.190   0.004   0.194 
+
+elapsed time to simulate item 28 
+   user  system elapsed 
+  0.177   0.004   0.181 
+
+elapsed time to simulate item 29 
+   user  system elapsed 
+  0.164   0.002   0.165 
+
+elapsed time to simulate item 30 
+   user  system elapsed 
+  0.181   0.003   0.184 
+
+elapsed time to simulate item 31 
+   user  system elapsed 
+  0.175   0.002   0.178 
+
+elapsed time to simulate item 32 
+   user  system elapsed 
+  0.183   0.003   0.185 
+
+elapsed time to simulate item 33 
+   user  system elapsed 
+  0.361   0.030   0.391 
+
+elapsed time to simulate item 34 
+   user  system elapsed 
+  0.162   0.003   0.166 
+
+elapsed time to simulate item 35 
+   user  system elapsed 
+  0.158   0.004   0.163 
+
+elapsed time to simulate item 36 
+   user  system elapsed 
+  0.171   0.006   0.177 
+
+elapsed time to simulate item 37 
+   user  system elapsed 
+  0.154   0.003   0.157 
+
+elapsed time to simulate item 38 
+   user  system elapsed 
+  0.170   0.008   0.178 
+
+elapsed time to simulate item 39 
+   user  system elapsed 
+  0.155   0.002   0.157 
+
+elapsed time to simulate item 40 
+   user  system elapsed 
+  0.152   0.003   0.156
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m─────────────────────────────────────────────────────────────────────────────────[39m
+cols(
+  .default = col_double()
+)
+[36mℹ[39m Use [90m[40m[90m[40m`spec()`[40m[90m[49m[39m for the full column specifications.
+
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m─────────────────────────────────────────────────────────────────────────────────[39m
+cols(
+  .default = col_double()
+)
+[36mℹ[39m Use [90m[40m[90m[40m`spec()`[40m[90m[49m[39m for the full column specifications.
+
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m─────────────────────────────────────────────────────────────────────────────────[39m
+cols(
+  X1 = [32mcol_double()[39m,
+  X2 = [32mcol_double()[39m,
+  X3 = [32mcol_double()[39m,
+  X4 = [32mcol_double()[39m
+)
+
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m─────────────────────────────────────────────────────────────────────────────────[39m
+cols(
+  X1 = [32mcol_double()[39m
+)
+
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m─────────────────────────────────────────────────────────────────────────────────[39m
+cols(
+  .default = col_double()
+)
+[36mℹ[39m Use [90m[40m[90m[40m`spec()`[40m[90m[49m[39m for the full column specifications.
+
+
+elapsed time to simulate item 1 
+   user  system elapsed 
+  0.392   0.006   0.399 
+
+elapsed time to simulate item 2 
+   user  system elapsed 
+  0.349   0.005   0.354 
+
+elapsed time to simulate item 3 
+   user  system elapsed 
+  0.344   0.003   0.348 
+
+elapsed time to simulate item 4 
+   user  system elapsed 
+  0.348   0.003   0.352 
+
+elapsed time to simulate item 5 
+   user  system elapsed 
+  0.344   0.004   0.348 
+
+elapsed time to simulate item 6 
+   user  system elapsed 
+  0.360   0.005   0.365 
+
+elapsed time to simulate item 7 
+   user  system elapsed 
+  0.347   0.003   0.351 
+
+elapsed time to simulate item 8 
+   user  system elapsed 
+  0.339   0.003   0.343 
+
+elapsed time to simulate item 9 
+   user  system elapsed 
+  0.348   0.004   0.351 
+
+elapsed time to simulate item 10 
+   user  system elapsed 
+  0.364   0.009   0.373 
+
+elapsed time to simulate item 11 
+   user  system elapsed 
+  0.346   0.002   0.349 
+
+elapsed time to simulate item 12 
+   user  system elapsed 
+  0.346   0.005   0.351 
+
+elapsed time to simulate item 13 
+   user  system elapsed 
+  0.345   0.004   0.349 
+
+elapsed time to simulate item 14 
+   user  system elapsed 
+  0.357   0.004   0.362 
+
+elapsed time to simulate item 15 
+   user  system elapsed 
+  0.351   0.004   0.355 
+
+elapsed time to simulate item 16 
+   user  system elapsed 
+  0.347   0.004   0.352 
+
+elapsed time to simulate item 17 
+   user  system elapsed 
+  0.346   0.004   0.351 
+
+elapsed time to simulate item 18 
+   user  system elapsed 
+  0.346   0.003   0.349 
+
+elapsed time to simulate item 19 
+   user  system elapsed 
+  0.352   0.004   0.356 
+
+elapsed time to simulate item 20 
+   user  system elapsed 
+  0.361   0.003   0.366 
+
+elapsed time to simulate item 21 
+   user  system elapsed 
+  0.354   0.004   0.358 
+
+elapsed time to simulate item 22 
+   user  system elapsed 
+  0.348   0.003   0.351 
+
+elapsed time to simulate item 23 
+   user  system elapsed 
+  0.503   0.010   0.514 
+
+elapsed time to simulate item 24 
+   user  system elapsed 
+  0.345   0.002   0.347 
+
+elapsed time to simulate item 25 
+   user  system elapsed 
+  0.349   0.007   0.357 
+
+elapsed time to simulate item 26 
+   user  system elapsed 
+  0.330   0.003   0.333 
+
+elapsed time to simulate item 27 
+   user  system elapsed 
+  0.345   0.006   0.351 
+
+elapsed time to simulate item 28 
+   user  system elapsed 
+  0.344   0.006   0.350 
+
+elapsed time to simulate item 29 
+   user  system elapsed 
+  0.338   0.002   0.341 
+
+elapsed time to simulate item 30 
+   user  system elapsed 
+  0.347   0.005   0.351 
+
+elapsed time to simulate item 31 
+   user  system elapsed 
+  0.340   0.005   0.345 
+
+elapsed time to simulate item 32 
+   user  system elapsed 
+  0.343   0.005   0.348 
+
+elapsed time to simulate item 33 
+   user  system elapsed 
+  0.342   0.004   0.346 
+
+elapsed time to simulate item 34 
+   user  system elapsed 
+  0.342   0.003   0.346 
+
+elapsed time to simulate item 35 
+   user  system elapsed 
+  0.358   0.008   0.366 
+
+elapsed time to simulate item 36 
+   user  system elapsed 
+  0.331   0.002   0.333 
+
+elapsed time to simulate item 37 
+   user  system elapsed 
+  0.344   0.005   0.348 
+
+elapsed time to simulate item 38 
+   user  system elapsed 
+  0.339   0.005   0.345 
+
+elapsed time to simulate item 39 
+   user  system elapsed 
+  0.335   0.002   0.337 
+
+elapsed time to simulate item 40 
+   user  system elapsed 
+  0.344   0.004   0.348
+Warning message:
+Removed 8257 rows containing non-finite values (stat_boxplot).
+Warning message:
+Removed 5932 rows containing non-finite values (stat_boxplot).
+quartz 
+     2
+Plot(s) are saved in chessB_nn_ncut2_zero_beta_noinfo_lc2/
+=================================
+#+end_example
+
 [[pdf:LogLoss_diff.pdf::1]]
 [[pdf:LogLoss_diff_by.pdf::1]]
 #+begin_src R
