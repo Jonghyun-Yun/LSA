@@ -73,6 +73,22 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// get_loglike
+NumericVector get_loglike(NumericMatrix lambda_, NumericMatrix theta_, NumericMatrix z_, NumericMatrix w_, NumericMatrix gamma_, List& param_);
+RcppExport SEXP _art_get_loglike(SEXP lambda_SEXP, SEXP theta_SEXP, SEXP z_SEXP, SEXP w_SEXP, SEXP gamma_SEXP, SEXP param_SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type lambda_(lambda_SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type theta_(theta_SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type z_(z_SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type w_(w_SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type gamma_(gamma_SEXP);
+    Rcpp::traits::input_parameter< List& >::type param_(param_SEXP);
+    rcpp_result_gen = Rcpp::wrap(get_loglike(lambda_, theta_, z_, w_, gamma_, param_));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_art_cumcifun", (DL_FUNC) &_art_cumcifun, 4},
@@ -80,6 +96,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_art_eval_incirate", (DL_FUNC) &_art_eval_incirate, 3},
     {"_art_eval_accuracy", (DL_FUNC) &_art_eval_accuracy, 2},
     {"_art_eval_log_like", (DL_FUNC) &_art_eval_log_like, 3},
+    {"_art_get_loglike", (DL_FUNC) &_art_get_loglike, 6},
     {NULL, NULL, 0}
 };
 

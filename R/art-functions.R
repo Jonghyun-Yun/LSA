@@ -34,7 +34,7 @@ beta <- sam[, stringr::str_which(cname, paste0("^beta\\.", item, "\\."))]
 if (is.null(theta)) {
   theta_temp <- sam[, stringr::str_which(cname, paste0("^theta\\."))] ## (theta.k.0 theta.k.1)
   teq <- seq(1, ncol(theta_temp), 2)
-  gamma <- theta <- lambda <- rr <- list()
+  gamma <- theta <- lambda <- rr <- log_rr <- list()
   theta[[1]] <- theta_temp[, teq]
   theta[[2]] <- theta_temp[, -teq]
 }
@@ -46,9 +46,12 @@ leq <- seq(1, ncol(lambda_temp), 2)
 lambda[[1]] <- lambda_temp[, leq]
 lambda[[2]] <- lambda_temp[, -leq]
 
-for (cc in 1:2) rr[[cc]] <- exp(beta[, cc] + theta[[cc]] - gamma[cc] * d_zw[[cc]])
+for (cc in 1:2) {
+ log_rr[[cc]] <- beta[, cc] + theta[[cc]] - gamma[cc] * d_zw[[cc]]
+ rr[[cc]] <- exp(log_rr[[cc]])
+}
 
-res <- list(lambda = lambda, rr = rr, theta = theta)
+res <- list(lambda = lambda, rr = rr, log_rr = log_rr,  theta = theta)
 return(res)
 }
 

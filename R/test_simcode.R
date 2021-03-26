@@ -1,22 +1,8 @@
-## library(art)
-library(coda)
-library(dplyr)
-library(stringr)
-library(magrittr)
-library(bayesplot)
-library(foreach)
-library(doParallel)
-## library(timereg)
-## registerDoParallel(cores = detectCores() - 1)
-stopImplicitCluster()
-registerDoParallel(2)
-
-## setwd("/Users/yunj/Dropbox/research/lsjm-art/lsjm-code")
+source("R/Renvirion.R")
 
 mt = readr::read_csv(file="chessB_pn/input/mt.csv", col_names=F) %>% as.matrix()
 mi = readr::read_csv(file="chessB_pn/input/mi.csv", col_names=F) %>% as.matrix()
 
-source("R/art-functions.R")
 source("R/load-outputs.R")
 
 ## save(mylist, file = paste0(out_dir,"mylist"))

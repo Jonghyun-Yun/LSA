@@ -3251,7 +3251,7 @@ cp $initname output/
 for ((v = 1; v <= $n_chain; v++))
 do
     Rscript $initname
-    ./main initialize parallel single_w single_z full latent gamma true both no_ars nonzero_theta zero_beta lambda_free $v 10000 10000 10
+    ./main initialize parallel single_w single_z full latent gamma true single no_ars nonzero_theta zero_beta lambda_free $v 10000 10000 10
 done
 ## explain comandline arguments:
  # continue initialize -> start new chains?
@@ -3262,7 +3262,7 @@ done
  # latent no_latent -> update latent space?
  # gamma no_gamma -> update gamma?
  # true false -> can I play with the gamma sign?
- # correct incorrect false -> gamma for what process?
+ # correct incorrect single both -> gamma for what process?
  # do_ars no_ars -> ARS for gamma
  # zero_theta nonzero_theta -> theta.k.0 are zero
  # double_beta single_beta
@@ -3273,14 +3273,16 @@ Rscript R/run-analysis.R $out_dir $n_chain 0 0
 echo "Outputs are moved to" $out_dir"."
 echo "================================"
 
-sh run_np.sh
+# sh run_nn.sh
+# sh run_swdz_nn.sh
+# sh run_swdz_pp.sh
 #+end_src
 
-#+begin_src sh :tangle run_np.sh
+#+begin_src sh :tangle run_nn.sh
 #!/usr/bin/env bash
-out_dir="chessB_np_ncut5_zero_beta_noinfo_lc2/"
+out_dir="chessB_nn_ncut5_zero_beta_noinfo_lc2/"
 prename="R/chessB_noinfo-preprocess.R"
-initname="R/chessB_np-init.R"
+initname="R/chessB_nn-init.R"
 n_chain=2
 
 echo "================================"
@@ -3304,7 +3306,7 @@ cp $initname output/
 for ((v = 1; v <= $n_chain; v++))
 do
     Rscript $initname
-    ./main initialize parallel single_w single_z full latent gamma true both no_ars nonzero_theta zero_beta lambda_free $v 10000 10000 10
+    ./main initialize parallel single_w single_z full latent gamma true single no_ars nonzero_theta zero_beta lambda_free $v 10000 10000 10
 done
 ## explain comandline arguments:
  # continue initialize -> start new chains?
@@ -3323,6 +3325,106 @@ done
 mkdir -p $out_dir
 mv output/* $out_dir
 Rscript R/run-analysis.R $out_dir $n_chain 0 0
+echo "Outputs are moved to" $out_dir"."
+echo "================================"
+#+end_src
+#+begin_src sh :tangle run_swdz_nn.sh
+#!/usr/bin/env bash
+out_dir="chessB_swdz_nn_double_gamma_ncut5_zero_beta_noinfo_lc2/"
+prename="R/chessB_noinfo-preprocess.R"
+initname="R/chessB_nn-init.R"
+n_chain=2
+
+echo "================================"
+echo "Output dir:" $out_dir
+echo "preprocessing:" $prename
+echo "initializing:" $initname
+echo "n_chain:" $n_chain
+echo "================================"
+
+export STAN_NUM_THREADS=2
+mkdir -p output
+rm output/*
+rm input/*
+
+Rscript $prename
+cp input/{mvar,mlen}.csv output/
+cp run.sh output/
+cp $prename output/
+cp $initname output/
+
+for ((v = 1; v <= $n_chain; v++))
+do
+    Rscript $initname
+    ./main initialize parallel single_w double_z full latent gamma true both no_ars nonzero_theta zero_beta lambda_free $v 10000 10000 10
+done
+## explain comandline arguments:
+ # continue initialize -> start new chains?
+ # parallel serial -> parallel computation?
+ # single_w double_w
+ # single_z double_z
+ # full sparse -> missing or not
+ # latent no_latent -> update latent space?
+ # gamma no_gamma -> update gamma?
+ # true false -> can I play with the gamma sign?
+ # correct incorrect false -> gamma for what process?
+ # do_ars no_ars -> ARS for gamma
+ # zero_theta nonzero_theta -> theta.k.0 are zero
+ # double_beta single_beta
+
+mkdir -p $out_dir
+mv output/* $out_dir
+Rscript R/run-analysis.R $out_dir $n_chain 0 1
+echo "Outputs are moved to" $out_dir"."
+echo "================================"
+#+end_src
+#+begin_src sh :tangle run_swdz_pp.sh
+#!/usr/bin/env bash
+out_dir="chessB_swdz_pp_double_gamma_ncut5_zero_beta_noinfo_lc2/"
+prename="R/chessB_noinfo-preprocess.R"
+initname="R/chessB_pp-init.R"
+n_chain=2
+
+echo "================================"
+echo "Output dir:" $out_dir
+echo "preprocessing:" $prename
+echo "initializing:" $initname
+echo "n_chain:" $n_chain
+echo "================================"
+
+export STAN_NUM_THREADS=2
+mkdir -p output
+rm output/*
+rm input/*
+
+Rscript $prename
+cp input/{mvar,mlen}.csv output/
+cp run.sh output/
+cp $prename output/
+cp $initname output/
+
+for ((v = 1; v <= $n_chain; v++))
+do
+    Rscript $initname
+    ./main initialize parallel single_w double_z full latent gamma true double no_ars nonzero_theta zero_beta lambda_free $v 10000 10000 10
+done
+## explain comandline arguments:
+ # continue initialize -> start new chains?
+ # parallel serial -> parallel computation?
+ # single_w double_w
+ # single_z double_z
+ # full sparse -> missing or not
+ # latent no_latent -> update latent space?
+ # gamma no_gamma -> update gamma?
+ # true false -> can I play with the gamma sign?
+ # correct incorrect false -> gamma for what process?
+ # do_ars no_ars -> ARS for gamma
+ # zero_theta nonzero_theta -> theta.k.0 are zero
+ # double_beta single_beta
+
+mkdir -p $out_dir
+mv output/* $out_dir
+Rscript R/run-analysis.R $out_dir $n_chain 0 1
 echo "Outputs are moved to" $out_dir"."
 echo "================================"
 #+end_src
@@ -3413,14 +3515,118 @@ system(paste0("mkdir -p ", out_dir, "figure/"))
 system(paste0("rsync -rv figure/*.pdf ", out_dir, "figure/"))
 #+END_SRC
 
-#+BEGIN_SRC R :async
-out_dir="chessB_double_no_ncut4_zero_beta_noinfo_lc2/"
-num_chain <- 2; double_z <- 0; double_w <- 0; HAS_REF <- 0;
+#+BEGIN_SRC R
+out_dir="chessB_swdz_nn_ncut5_zero_beta_noinfo_lc2/"
+num_chain <- 2; double_z <- 1; double_w <- 0; HAS_REF <- 0;
 system(paste0("rm figure/*.pdf"))
 source("R/art-analysis.R")
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+
+Attaching package: 'dplyr'
+
+The following objects are masked from 'package:stats':
+
+    filter, lag
+
+The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union
+
+This is bayesplot version 1.7.2
+- Online documentation and vignettes at mc-stan.org/bayesplot
+- bayesplot theme set to bayesplot::theme_default()
+   ,* Does _not_ affect other ggplot2 plots
+   ,* See ?bayesplot_theme_set for details on theme setting
+Loading required package: iterators
+Loading required package: parallel
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+cols(
+  X1 = [32mcol_double()[39m,
+  X2 = [32mcol_double()[39m,
+  X3 = [32mcol_double()[39m,
+  X4 = [32mcol_double()[39m
+)
+
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+cols(
+  X1 = [32mcol_double()[39m
+)
+
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+cols(
+  .default = col_double()
+)
+[36mℹ[39m Use [90m[40m[90m[40m`spec()`[40m[90m[49m[39m for the full column specifications.
+
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+cols(
+  .default = col_double()
+)
+[36mℹ[39m Use [90m[40m[90m[40m`spec()`[40m[90m[49m[39m for the full column specifications.
+#+end_example
+
+#+BEGIN_SRC R
 system(paste0("mkdir -p ", out_dir, "figure/"))
 system(paste0("rsync -rv figure/*.pdf ", out_dir,"figure/"))
 #+END_SRC
+
+#+RESULTS:
+#+begin_example
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+cols(
+  X1 = [32mcol_double()[39m,
+  X2 = [32mcol_double()[39m,
+  X3 = [32mcol_double()[39m,
+  X4 = [32mcol_double()[39m
+)
+
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+cols(
+  X1 = [32mcol_double()[39m
+)
+
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+cols(
+  .default = col_double()
+)
+[36mℹ[39m Use [30m[47m[30m[47m`spec()`[47m[30m[49m[39m for the full column specifications.
+
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+cols(
+  .default = col_double()
+)
+[36mℹ[39m Use [30m[47m[30m[47m`spec()`[47m[30m[49m[39m for the full column specifications.
+sending incremental file list
+beta_mcmc_trace_plot.pdf
+beta_parcoord.pdf
+dist_mcmc_trace_plot.pdf
+gamma_mcmc_trace_plot.pdf
+lambda_mcmc_interval_plot.pdf
+lambda_mcmc_trace_plot.pdf
+lambda_parcoord.pdf
+latent_space_hpd.pdf
+latent_space_mean.pdf
+latent_space_med.pdf
+latent_space_mode.pdf
+lp_sigma_mcmc_trace_plot.pdf
+theta_mcmc_trace_plot.pdf
+theta_parcoord.pdf
+w_parcoord_plot.pdf
+
+sent 6,525,288 bytes  received 301 bytes  13,051,178.00 bytes/sec
+total size is 6,522,594  speedup is 1.00
+#+end_example
 
 #+begin_src R
 ## install.packages("coda")
@@ -3442,7 +3648,7 @@ install.packages(c("ggplot2","ggrepel","fda","funFEM"))
 
 #+BEGIN_SRC R :results none
 ## Rcpp::sourceCpp("comprisk.cpp")
-install.packages("art_1.0.tar.gz", repos = NULL, type="source")
+install.packages("art_0.1.tar.gz", repos = NULL, type="source")
 detach(package:art)
 library(art)
 #+END_SRC
@@ -3693,30 +3899,25 @@ out_dir <- "chessB_no_latent/"
 out_dir <- "chessB_no_latent_ncut2_zero_beta/"
 ## out_dir <- "chessB_np_ncut2_zero_beta/"
 ## out_dir <- "chessB_no_latent_ncut2_zero_beta/"
-out_dir <- "chessB_swdz_pp_ncut2_zero_beta/"
-out_dir <- "chessB_double_pp_ncut2_zero_beta/"
+out_dir <- "chessB_swdz_pp_ncut5_zero_beta/"
+## out_dir <- "chessB_double_pp_ncut2_zero_beta/"
+
+out_dir <- "chessB_double_nn_ncut5_zero_beta_noinfo_lc2/"
+out_dir <- "chessB_double_no_ncut5_zero_beta_noinfo_lc2/"
+out_dir <- "chessB_double_pp_ncut5_zero_beta_noinfo_lc2/"
+out_dir <- "chessB_nn_ncut5_zero_beta_noinfo_lc2/"
+out_dir <- "chessB_np_ncut5_zero_beta_noinfo_lc2/"
+out_dir <- "chessB_pn_ncut5_zero_beta_noinfo_lc2/"
+out_dir <- "chessB_pp_ncut5_zero_beta_noinfo_lc2/"
+out_dir <- "chessB_swdz_nn_ncut5_zero_beta_noinfo_lc2/"
+out_dir <- "chessB_swdz_pp_ncut5_zero_beta_noinfo_lc2/"
 
 num_chain <- 2
-double_w <- 1
+double_w <- 0
 double_z <- 1
 HAS_REF <- 0
 
-## library(art)
-library(coda)
-library(dplyr)
-library(stringr)
-library(magrittr)
-library(bayesplot)
-library(foreach)
-library(doParallel)
-## library(timereg)
-## registerDoParallel(cores = detectCores() - 1)
-stopImplicitCluster()
-registerDoParallel(2)
-
-## setwd("/Users/yunj/Dropbox/research/lsjm-art/lsjm-code")
-
-source("R/art-functions.R")
+source("R/Renviron.R")
 source("R/load-outputs.R")
 #+end_src
 
@@ -3755,21 +3956,24 @@ beta <- sam[, stringr::str_which(cname, paste0("^beta\\.", item, "\\."))]
 if (is.null(theta)) {
   theta_temp <- sam[, stringr::str_which(cname, paste0("^theta\\."))] ## (theta.k.0 theta.k.1)
   teq <- seq(1, ncol(theta_temp), 2)
-  gamma <- theta <- lambda <- rr <- list()
+  gamma <- theta <- lambda <- rr <- log_rr <- list()
   theta[[1]] <- theta_temp[, teq]
   theta[[2]] <- theta_temp[, -teq]
 }
 
-gamma <- sam[1, stringr::str_which(cname, paste0("gamma\\."))]
+gamma <- sam[, stringr::str_which(cname, paste0("gamma\\."))]
 
 lambda_temp <- sam[, stringr::str_which(cname, paste0("^lambda\\.[0-1]\\.", item, "\\."))]
 leq <- seq(1, ncol(lambda_temp), 2)
 lambda[[1]] <- lambda_temp[, leq]
 lambda[[2]] <- lambda_temp[, -leq]
 
-for (cc in 1:2) rr[[cc]] <- exp(beta[, cc] + theta[[cc]] - gamma[cc] * d_zw[[cc]])
+for (cc in 1:2) {
+ log_rr[[cc]] <- beta[, cc] + theta[[cc]] - gamma[,cc] * d_zw[[cc]]
+ rr[[cc]] <- exp(log_rr[[cc]])
+}
 
-res <- list(lambda = lambda, rr = rr, theta = theta)
+res <- list(lambda = lambda, rr = rr, log_rr = log_rr,  theta = theta)
 return(res)
 }
 #+end_src
@@ -3818,6 +4022,130 @@ gen_surv_pp <- function(out, time, sj) {
   return(pp)
 }
 #+end_src
+
+#+begin_src R
+sam = mylist[[1]]
+
+## distance calculation can be fully vectorized (and storing z), but I don't have time for this.
+z <- sam[, stringr::str_which(cname, paste0("^z\\.[0-1]\\."))] %>% as.matrix()
+w <- sam[, stringr::str_which(cname, paste0("^w\\.[0-1]\\."))]%>% as.matrix()
+## beta <- sam[, stringr::str_which(cname, paste0("^beta\\.", item, "\\."))]
+
+theta <- sam[, stringr::str_which(cname, paste0("^theta\\."))] %>% as.matrix()## (theta.k.0 theta.k.1)
+gamma <- sam[, stringr::str_which(cname, paste0("gamma\\."))]%>% as.matrix()
+
+lambda <- sam[, stringr::str_which(cname, paste0("^lambda\\.[0-1]\\."))]%>% as.matrix()
+
+source("R/chessB_noinfo-preprocess.R")
+
+mi = readr::read_csv(file="chessB_pn/input/mi.csv", col_names=F) %>% as.matrix()
+param = list(I=as.integer(I), N=as.integer(N), G=as.integer(G), seg = as.matrix(mseg), H = as.matrix(mh), len = as.integer(mlen), sj = as.numeric(sj), Y = mi)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+Using response as value column: use value.var to override.
+Using time as value column: use value.var to override.
+Using seg_g as value column: use value.var to override.
+Using len as value column: use value.var to override.
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+cols(
+  X1 = [32mcol_double()[39m,
+  X2 = [32mcol_double()[39m,
+  X3 = [32mcol_double()[39m,
+  X4 = [32mcol_double()[39m
+)
+
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+cols(
+  X1 = [32mcol_double()[39m,
+  X2 = [32mcol_double()[39m,
+  X3 = [32mcol_double()[39m,
+  X4 = [32mcol_double()[39m
+)
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+cols(
+  .default = col_double()
+)
+[36mℹ[39m Use [90m[40m[90m[40m`spec()`[40m[90m[49m[39m for the full column specifications.
+#+end_example
+
+#+begin_src R
+get_loglike(lambda, theta, z, w, gamma, param)
+#+end_src
+
+#+RESULTS:
+: Error in get_loglike(lambda, theta, z, w, gamma, param) : 
+:   could not find function "get_loglike"
+
+#+begin_src R
+## see get_hazitem() for "out"
+mH <- reshape2::melt(t(mh))
+
+chain = 1
+ii = 1
+out <- gethaz_item(mylist[[chain]], cname, ii, N, theta = NULL, double_w, double_z)
+
+seg_i = unlist(mseg[ii,])
+H_i = mh[ii,]
+
+resp_i = mi[ii,]
+time_i = mt[ii,]
+
+num_iter = nrow(mylist[[chain]])
+
+get_like <- function(out, resp_i, time_i, sj, H_i, seg_i, loglike = NULL) {
+
+  rr = out$rr
+  log_rr = out$log_rr
+  lambda = out$lambda
+
+  num_iter = nrow(rr[[1]])
+  loglike = numeric(num_iter)
+
+  slam = hlam = list()
+
+  for (cc in 1:2) {
+
+  hlam[[cc]] = t( t(lambda[[cc]]) * mlen)
+  slam[[cc]] = rbind(0, apply(hlam[[cc]],  1,  cumsum))
+
+  for (nn in 1:num_iter) {
+    loglike[nn] = loglike[nn] - sum((slam[[cc]][(seg_i+1), nn] + H_i * out$lambda[[cc]][nn, (seg_i+1)]) * rr[[cc]][nn, ]) + sum(log_rr[[cc]][nn, ][resp_i == (cc - 1)] ) # log(S(t)) + log(h(t)) for event cc
+  }
+
+}
+return(loglike)
+  }
+#+end_src
+
+#+RESULTS:
+#+begin_example
+Using response as value column: use value.var to override.
+Using time as value column: use value.var to override.
+Using seg_g as value column: use value.var to override.
+Using len as value column: use value.var to override.
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+cols(
+  X1 = [32mcol_double()[39m,
+  X2 = [32mcol_double()[39m,
+  X3 = [32mcol_double()[39m,
+  X4 = [32mcol_double()[39m
+)
+
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+cols(
+  X1 = [32mcol_double()[39m,
+  X2 = [32mcol_double()[39m,
+  X3 = [32mcol_double()[39m,
+  X4 = [32mcol_double()[39m
+)
+#+end_example
 
 #+begin_src R
 set.seed(1)
@@ -3970,10 +4298,6 @@ for (c in 0:1) {
 
 cnames <- c(cnames, "sigma", "lp_")
 #+end_src
-
-#+RESULTS:
-: Error: 'chessB_double_nn_nonzero_theta_ncut2mvar.csv' does not exist in current working directory ('/Users/yunj/Dropbox/research/lsjm-art/lsjm-code').
-: Error: 'chessB_double_nn_nonzero_theta_ncut2mlen.csv' does not exist in current working directory ('/Users/yunj/Dropbox/research/lsjm-art/lsjm-code').
 
 #+BEGIN_SRC R :tangle R/load-outputs.R
 ## mythin = 10
@@ -5306,6 +5630,7 @@ out_dir <- "chessB_swdz_nn_ncut2_zero_beta/"
 ## out_dir="chessB_pp_ncut2_zero_beta_noinfo_lc2/"
 out_dir="chessB_no_latent_ncut2_zero_beta_noinfo_lc2/"
 ## out_dir="chessB_nn_ncut2_zero_beta_noinfo_lc2/"
+out_dir="chessB_nn_ncut5_zero_beta_noinfo_lc2/"
 
 num_chain <- 1
 double_z <- 1
@@ -5314,25 +5639,11 @@ HAS_REF <- 0
 #+end_src
 
 #+begin_src R :results none :tangle R/test_simcode.R
-## library(art)
-library(coda)
-library(dplyr)
-library(stringr)
-library(magrittr)
-library(bayesplot)
-library(foreach)
-library(doParallel)
-## library(timereg)
-## registerDoParallel(cores = detectCores() - 1)
-stopImplicitCluster()
-registerDoParallel(2)
-
-## setwd("/Users/yunj/Dropbox/research/lsjm-art/lsjm-code")
+source("R/Renviron.R")
 
 mt = readr::read_csv(file="chessB_pn/input/mt.csv", col_names=F) %>% as.matrix()
 mi = readr::read_csv(file="chessB_pn/input/mi.csv", col_names=F) %>% as.matrix()
 
-source("R/art-functions.R")
 source("R/load-outputs.R")
 
 ## save(mylist, file = paste0(out_dir,"mylist"))
@@ -5410,6 +5721,7 @@ ddd = dd
 out_dir="chessB_double_no_ncut5_zero_beta_noinfo_lc2/"
 ## out_dir="chessB_double_pp_ncut5_zero_beta_noinfo_lc2/"
 out_dir="chessB_double_nn_ncut5_zero_beta_noinfo_lc2/"
+out_dir="chessB_np_ncut5_zero_beta_noinfo_lc2/"
 
 num_chain <- 2
 double_z <- 1
@@ -6121,7 +6433,7 @@ devtools::build('~/Dropbox/research/lsjm-art/lsjm-code/art')
 #+end_src
 
 #+begin_src R
-install.packages("art_1.0.tar.gz", repos = NULL, type="source")
+install.packages("art_0.1.tar.gz", repos = NULL, type="source")
 library(art)
 #+end_src
 
@@ -6480,11 +6792,32 @@ Using libraries at paths:
 - /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
 - /usr/local/lib/R/4.0/site-library
 - /usr/local/Cellar/r/4.0.3/lib/R/library
+
+
+/usr/local/bin/ccache /usr/local/opt/llvm/bin/clang++ -std=c++14 -I"/usr/local/Cellar/r/4.0.3/lib/R/include" -DNDEBUG  -I'/usr/local/lib/R/4.0/site-library/Rcpp/include' -I'/usr/local/lib/R/4.0/site-library/RcppEigen/include' -I'/usr/local/lib/R/4.0/site-library/RcppNumerical/include' -I'/usr/local/lib/R/4.0/site-library/RcppParallel/include' -I'/usr/local/lib/R/4.0/site-library/StanHeaders/include' -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -I/usr/local/include -I/usr/local/opt/llvm/include -I/usr/local/opt/openssl/include -I/usr/local/opt/gettext/include	-I/usr/local/opt/tcl-tk/include   -I'/usr/local/lib/R/4.0/site-library/RcppParallel/include' -D_REENTRANT -DSTAN_THREADS   -I"/usr/local/lib/R/4.0/site-library/StanHeaders/include/src" -fPIC  -g -O3 -Wall -pedantic -mtune=native -pipe -c loglike.cpp -o loglike.o
+In file included from loglike.cpp:1:
+In file included from /usr/local/lib/R/4.0/site-library/Rcpp/include/Rcpp.h:57:
+/usr/local/lib/R/4.0/site-library/Rcpp/include/Rcpp/DataFrame.h:136:18: warning: unused variable 'data' [-Wunused-variable]
+            SEXP data = Parent::get__();
+                 ^
+1 warning generated.
 Using libraries at paths:
 - /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
 - /usr/local/lib/R/4.0/site-library
 - /usr/local/Cellar/r/4.0.3/lib/R/library
-/usr/local/bin/ccache /usr/local/opt/llvm/bin/clang++ -std=c++14 -dynamiclib -Wl,-headerpad_max_install_names -undefined dynamic_lookup -single_module -multiply_defined suppress -L/usr/local/Cellar/r/4.0.3/lib/R/lib -L/usr/local/opt/gettext/lib -L/usr/local/opt/readline/lib -L/usr/local/lib -L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib -o art.so RcppExports.o comprisk.o init.o -L/usr/local/lib/R/4.0/site-library/RcppParallel/lib/ -Wl,-rpath,/usr/local/lib/R/4.0/site-library/RcppParallel/lib/ -ltbb -ltbbmalloc -L/usr/local/Cellar/r/4.0.3/lib/R/lib -lR -lintl -Wl,-framework -Wl,CoreFoundation
+Using libraries at paths:
+- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
+- /usr/local/lib/R/4.0/site-library
+- /usr/local/Cellar/r/4.0.3/lib/R/library
+Using libraries at paths:
+- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
+- /usr/local/lib/R/4.0/site-library
+- /usr/local/Cellar/r/4.0.3/lib/R/library
+Using libraries at paths:
+- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
+- /usr/local/lib/R/4.0/site-library
+- /usr/local/Cellar/r/4.0.3/lib/R/library
+/usr/local/bin/ccache /usr/local/opt/llvm/bin/clang++ -std=c++14 -dynamiclib -Wl,-headerpad_max_install_names -undefined dynamic_lookup -single_module -multiply_defined suppress -L/usr/local/Cellar/r/4.0.3/lib/R/lib -L/usr/local/opt/gettext/lib -L/usr/local/opt/readline/lib -L/usr/local/lib -L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib -o art.so RcppExports.o comprisk.o init.o loglike.o -L/usr/local/lib/R/4.0/site-library/RcppParallel/lib/ -Wl,-rpath,/usr/local/lib/R/4.0/site-library/RcppParallel/lib/ -ltbb -ltbbmalloc -L/usr/local/Cellar/r/4.0.3/lib/R/lib -lR -lintl -Wl,-framework -Wl,CoreFoundation
 installing to /usr/local/lib/R/4.0/site-library/00LOCK-art/00new/art/libs
 ,** R
 ,** byte-compile and prepare package for lazy loading

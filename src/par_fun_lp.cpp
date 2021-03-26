@@ -93,13 +93,15 @@ double par_fun_lp(const Eigen::MatrixXd &a_lambda, const Eigen::MatrixXd &b_lamb
     if (UPDATE_GAMMA) {
         if (SINGLE_Z && SINGLE_W) {
             // abs to play with sign
-            if (ONE_FREE_GAMMA == 99) {
+            if ((ONE_FREE_GAMMA == 99) || (ONE_FREE_GAMMA == 51)) {
                 lp_ += lognormal_lpdf(std::abs(gamma(1)), mu_gamma(1), sigma_gamma(1));
             }
             else {
                 lp_ += lognormal_lpdf(std::abs(gamma(ONE_FREE_GAMMA)),
                                       mu_gamma(ONE_FREE_GAMMA), sigma_gamma(ONE_FREE_GAMMA));
             }
+        } else if (ONE_FREE_GAMMA == 51) {
+            lp_ += lognormal_lpdf(std::abs(gamma(1)), mu_gamma(1), sigma_gamma(1));
         }
         else {
             lp_ += lognormal_lpdf(gamma.array().abs(), mu_gamma, sigma_gamma); // gamma can be negative.

@@ -37,7 +37,7 @@ void update_single_gamma(Eigen::VectorXd &gamma, Eigen::VectorXd &acc_gamma,
         stan::math::lognormal_lpdf(gamma(1), stan::math::log(gamma_s(1)), jump_gamma(1)) -
         stan::math::lognormal_lpdf(gamma_s(1), stan::math::log(gamma(1)), jump_gamma(1));
     } else {
-       gamma_1 = std::abs(gamma_1);
+       gamma_1 = std::abs(gamma(1));
        gamma_s(1) = stan::math::lognormal_rng(stan::math::log(gamma_1), jump_gamma(1), rng);
     // prior and jumping rule
     logr_gamma +=

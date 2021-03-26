@@ -25,7 +25,7 @@ cp $initname output/
 for ((v = 1; v <= $n_chain; v++))
 do
     Rscript $initname
-    ./main initialize parallel single_w single_z full latent gamma true both no_ars nonzero_theta zero_beta lambda_free $v 10000 10000 10
+    ./main initialize parallel single_w single_z full latent gamma true single no_ars nonzero_theta zero_beta lambda_free $v 1000 1000 10
 done
 ## explain comandline arguments:
  # continue initialize -> start new chains?

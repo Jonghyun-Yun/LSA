@@ -12,6 +12,7 @@ ddd = dd
 out_dir="chessB_double_no_ncut5_zero_beta_noinfo_lc2/"
 ## out_dir="chessB_double_pp_ncut5_zero_beta_noinfo_lc2/"
 out_dir="chessB_double_nn_ncut5_zero_beta_noinfo_lc2/"
+out_dir="chessB_np_ncut5_zero_beta_noinfo_lc2/"
 
 num_chain <- 2
 double_z <- 1

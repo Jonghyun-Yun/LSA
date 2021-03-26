@@ -167,6 +167,8 @@ int main(int argc, const char *argv[]) {
     ONE_FREE_GAMMA = 0; // update gamma(c) for incorrect process
   } else if (sarg[9] == "both") {
     ONE_FREE_GAMMA = 99;
+  } else if (sarg[9] == "single") {
+    ONE_FREE_GAMMA = 51;
   } else {
     std::cout << "invalid arguemnt for ONE_FREE_GAMMA.\n" << std::endl;
     return 0;
@@ -714,6 +716,10 @@ int main(int argc, const char *argv[]) {
                            cum_lambda, beta, theta, z, w, I, N, G, mNA, mlen,
                            mseg, mH, mY, rng);
             }
+          } else if (ONE_FREE_GAMMA == 51){
+              update_single_gamma(gamma, acc_gamma, mu_gamma, sigma_gamma,
+                                  jump_gamma, cum_lambda, beta, theta, z, w, I,
+                                  N, G, mNA, mlen, mseg, mH, mY, RUN_PAR, rng);
           } else {
             if (DO_ARS) {
               gamma_full_conditional log_density(
