@@ -113,23 +113,6 @@ cmake -H. -BDebug -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=YES
 ln -s Debug/compile_commands.json
 #+end_src
 
-#+RESULTS:
-| -- | The         | C     | compiler | identification | is        | AppleClang                                                                                 | 11.0.0.11000033                                |         |
-| -- | The         | CXX   | compiler | identification | is        | AppleClang                                                                                 | 11.0.0.11000033                                |         |
-| -- | Detecting   | C     | compiler | ABI            | info      |                                                                                            |                                                |         |
-| -- | Detecting   | C     | compiler | ABI            | info      | -                                                                                          | done                                           |         |
-| -- | Check       | for   | working  | C              | compiler: | /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc  | -                                              | skipped |
-| -- | Detecting   | C     | compile  | features       |           |                                                                                            |                                                |         |
-| -- | Detecting   | C     | compile  | features       | -         | done                                                                                       |                                                |         |
-| -- | Detecting   | CXX   | compiler | ABI            | info      |                                                                                            |                                                |         |
-| -- | Detecting   | CXX   | compiler | ABI            | info      | -                                                                                          | done                                           |         |
-| -- | Check       | for   | working  | CXX            | compiler: | /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ | -                                              | skipped |
-| -- | Detecting   | CXX   | compile  | features       |           |                                                                                            |                                                |         |
-| -- | Detecting   | CXX   | compile  | features       | -         | done                                                                                       |                                                |         |
-| -- | Configuring | done  |          |                |           |                                                                                            |                                                |         |
-| -- | Generating  | done  |          |                |           |                                                                                            |                                                |         |
-| -- | Build       | files | have     | been           | written   | to:                                                                                        | /Users/yunj/OneDrive/workspace/lsjm-code/Debug |         |
-
 * CCLS issue
 ** https://github.com/MaskRay/ccls/issues/622#issuecomment-623115650
 
@@ -261,6 +244,20 @@ clean:
   make
   gbd main
   #+END_SRC
+
+
+* Debug: LLDB
+  #+begin_src emacs-lisp :results none
+(dap-register-debug-template
+   "LLDB::lsjm-main"
+  (list :type "lldb"
+        :request "launch"
+        :name "LLDB::lsjm-main"
+        :arguments "initialize parallel single_w single_z full latent gamma true both no_ars nonzero_theta zero_beta lambda_free 1 10000 10000 10"
+        :target "/Users/yunj/workspace/lsjm-code/Debug/main"
+        :cwd "/Users/yunj/workspace/lsjm-code/"
+        ))
+  #+end_src
 
 * Check if CCLS works
 To see if ccls works:
