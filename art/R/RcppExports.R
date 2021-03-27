@@ -25,3 +25,7 @@ get_loglike <- function(lambda_, theta_, z_, w_, gamma_, param_) {
     .Call(`_art_get_loglike`, lambda_, theta_, z_, w_, gamma_, param_)
 }
 
+rcpp_gen_surv_pp <- function(lambda_, theta_, z_, w_, gamma_, param_, item) {
+    .Call(`_art_rcpp_gen_surv_pp`, lambda_, theta_, z_, w_, gamma_, param_, item)
+}
+

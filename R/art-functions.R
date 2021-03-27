@@ -1,6 +1,6 @@
 source("R/prerequisite.R")
 
-gethaz_item <- function(sam, cname, item, N, theta = NULL, double_w, double_z) {
+gethaz_item <- function(sam, cname, item, N, double_w, double_z) {
   num_iter <- nrow(sam)
   d_zw <- list()
   d_zw[[1]] = d_zw[[2]] = matrix(0, num_iter, N)
@@ -31,23 +31,21 @@ gethaz_item <- function(sam, cname, item, N, theta = NULL, double_w, double_z) {
 
 beta <- sam[, stringr::str_which(cname, paste0("^beta\\.", item, "\\."))]
 
-if (is.null(theta)) {
-  theta_temp <- sam[, stringr::str_which(cname, paste0("^theta\\."))] ## (theta.k.0 theta.k.1)
-  teq <- seq(1, ncol(theta_temp), 2)
-  gamma <- theta <- lambda <- rr <- log_rr <- list()
-  theta[[1]] <- theta_temp[, teq]
-  theta[[2]] <- theta_temp[, -teq]
-}
+theta_temp <- sam[, stringr::str_which(cname, paste0("^theta\\."))] ## (theta.k.0 theta.k.1)
+teq <- seq(1, ncol(theta_temp), 2)
+gamma <- theta <- lambda <- rr <- log_rr <- list()
+theta[[1]] <- theta_temp[, teq]
+theta[[2]] <- theta_temp[, -teq]
 
-gamma <- sam[1, stringr::str_which(cname, paste0("gamma\\."))]
+gamma <- sam[, stringr::str_which(cname, paste0("gamma\\."))]
 
 lambda_temp <- sam[, stringr::str_which(cname, paste0("^lambda\\.[0-1]\\.", item, "\\."))]
-leq <- seq(1, ncol(lambda_temp), 2)
+leq <- 1:(ncol(lambda_temp)/2)
 lambda[[1]] <- lambda_temp[, leq]
 lambda[[2]] <- lambda_temp[, -leq]
 
 for (cc in 1:2) {
- log_rr[[cc]] <- beta[, cc] + theta[[cc]] - gamma[cc] * d_zw[[cc]]
+ log_rr[[cc]] <- beta[, cc] + theta[[cc]] - gamma[,cc] * d_zw[[cc]]
  rr[[cc]] <- exp(log_rr[[cc]])
 }
 
@@ -95,6 +93,29 @@ gen_surv_pp <- function(out, time, sj) {
 
   return(pp)
 }
+
+get_ll <- function(out, resp_i, time_i, sj, H_i, seg_i, loglike = NULL) {
+
+  rr = out$rr
+  log_rr = out$log_rr
+  lambda = out$lambda
+
+  num_iter = nrow(rr[[1]])
+  loglike = numeric(num_iter)
+
+  slam = hlam = list()
+
+  for (cc in 1:2) {
+
+  hlam[[cc]] = t( t(lambda[[cc]]) * mlen)
+  slam[[cc]] = rbind(0, apply(hlam[[cc]],  1,  cumsum))
+
+  for (nn in 1:num_iter) {
+    loglike[nn] = loglike[nn] - sum((slam[[cc]][(seg_i+1), nn] + H_i * out$lambda[[cc]][nn, (seg_i+1)]) * rr[[cc]][nn, ]) + sum(log_rr[[cc]][nn, ][resp_i == (cc - 1)] ) # log(S(t)) + log(h(t)) for event cc
+  }
+}
+return(loglike)
+  }
 
 ## calculate baseline hazard and hazard ratio
 ## slow iteration
@@ -179,14 +200,14 @@ my_procrustes <- function(Xstar, dlist, is_list = FALSE, my_translation = TRUE, 
     mm <- foreach(k = 1:num_samples) %dopar% {
       pout <- MCMCpack::procrustes(w0[, , k], w0star)
       w0[, , k] <- pout$X.new
-      z0[, , k] <- z0[, , k] %*% pout$R
+      z0[, , k] <- z0[, , k] %*% pout$R + rep(pout$tt, each = num_z)
 
       if (!no_w1) {
         pout <- MCMCpack::procrustes(w1[, , k], w1star)
         w1[, , k] <- pout$X.new
       }
       if (!no_z1) {
-        z1[, , k] <- z1[, , k] %*% pout$R
+        z1[, , k] <- z1[, , k] %*% pout$R + rep(pout$tt, each = num_z)
       }
       rbind(z0[, , k], z1[, , k], w0[, , k], w1[, , k])
     }
@@ -246,6 +267,16 @@ getparam <- function(posm, sj, i, k) {
     return(res)
   }
 }
+
+## concat summary results to one line string
+concat_summary = function(obj, d) {
+  res = NULL
+  summ = round(summary(obj),d)
+  for (k in 1:6) {
+    res = paste0(res, names(summ)[k],": ",summ[k], " ")
+  }
+  return(res)
+ }
 
 fun_hazard_surv <- function(t, i, k, posm, cname, sj) {
   z <- posm[stringr::str_which(cname, paste0("z\\.[0-1]\\.", k, "\\.[1-2]"))] %>% matrix(ncol = 2)

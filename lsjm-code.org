@@ -3515,9 +3515,9 @@ system(paste0("mkdir -p ", out_dir, "figure/"))
 system(paste0("rsync -rv figure/*.pdf ", out_dir, "figure/"))
 #+END_SRC
 
-#+BEGIN_SRC R
-out_dir="chessB_swdz_nn_ncut5_zero_beta_noinfo_lc2/"
-num_chain <- 2; double_z <- 1; double_w <- 0; HAS_REF <- 0;
+#+BEGIN_SRC R :results none
+out_dir="chessB_np_ncut5_zero_beta_noinfo_lc2/"
+num_chain <- 2; double_z <- 0; double_w <- 0; HAS_REF <- 0;
 system(paste0("rm figure/*.pdf"))
 source("R/art-analysis.R")
 #+END_SRC
@@ -3570,63 +3570,14 @@ cols(
   .default = col_double()
 )
 [36mℹ[39m Use [90m[40m[90m[40m`spec()`[40m[90m[49m[39m for the full column specifications.
+
+Error in grepl("^z\\.0\\.", cname) : object 'cname' not found
 #+end_example
 
 #+BEGIN_SRC R
 system(paste0("mkdir -p ", out_dir, "figure/"))
 system(paste0("rsync -rv figure/*.pdf ", out_dir,"figure/"))
 #+END_SRC
-
-#+RESULTS:
-#+begin_example
-
-[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
-cols(
-  X1 = [32mcol_double()[39m,
-  X2 = [32mcol_double()[39m,
-  X3 = [32mcol_double()[39m,
-  X4 = [32mcol_double()[39m
-)
-
-
-[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
-cols(
-  X1 = [32mcol_double()[39m
-)
-
-
-[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
-cols(
-  .default = col_double()
-)
-[36mℹ[39m Use [30m[47m[30m[47m`spec()`[47m[30m[49m[39m for the full column specifications.
-
-
-[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
-cols(
-  .default = col_double()
-)
-[36mℹ[39m Use [30m[47m[30m[47m`spec()`[47m[30m[49m[39m for the full column specifications.
-sending incremental file list
-beta_mcmc_trace_plot.pdf
-beta_parcoord.pdf
-dist_mcmc_trace_plot.pdf
-gamma_mcmc_trace_plot.pdf
-lambda_mcmc_interval_plot.pdf
-lambda_mcmc_trace_plot.pdf
-lambda_parcoord.pdf
-latent_space_hpd.pdf
-latent_space_mean.pdf
-latent_space_med.pdf
-latent_space_mode.pdf
-lp_sigma_mcmc_trace_plot.pdf
-theta_mcmc_trace_plot.pdf
-theta_parcoord.pdf
-w_parcoord_plot.pdf
-
-sent 6,525,288 bytes  received 301 bytes  13,051,178.00 bytes/sec
-total size is 6,522,594  speedup is 1.00
-#+end_example
 
 #+begin_src R
 ## install.packages("coda")
@@ -3676,7 +3627,7 @@ source("R/Renviron.R")
 source('R/load-outputs.R')
 ## source('R/write_summary.R')
 source('R/visual-latent-space-plot.R')
-source('R/visual-trace-plot.R')
+## source('R/visual-trace-plot.R')
 ## source('R/CIF_posm.R')
 ## source('R/CIF.R')
 #+END_SRC
@@ -3903,26 +3854,55 @@ out_dir <- "chessB_swdz_pp_ncut5_zero_beta/"
 ## out_dir <- "chessB_double_pp_ncut2_zero_beta/"
 
 out_dir <- "chessB_double_nn_ncut5_zero_beta_noinfo_lc2/"
-out_dir <- "chessB_double_no_ncut5_zero_beta_noinfo_lc2/"
 out_dir <- "chessB_double_pp_ncut5_zero_beta_noinfo_lc2/"
-out_dir <- "chessB_nn_ncut5_zero_beta_noinfo_lc2/"
-out_dir <- "chessB_np_ncut5_zero_beta_noinfo_lc2/"
-out_dir <- "chessB_pn_ncut5_zero_beta_noinfo_lc2/"
-out_dir <- "chessB_pp_ncut5_zero_beta_noinfo_lc2/"
-out_dir <- "chessB_swdz_nn_ncut5_zero_beta_noinfo_lc2/"
-out_dir <- "chessB_swdz_pp_ncut5_zero_beta_noinfo_lc2/"
+## out_dir <- "chessB_nn_ncut5_zero_beta_noinfo_lc2/"
+## out_dir <- "chessB_pn_ncut5_zero_beta_noinfo_lc2/"
+## out_dir <- "chessB_pp_ncut5_zero_beta_noinfo_lc2/"
+## out_dir <- "chessB_swdz_nn_ncut5_zero_beta_noinfo_lc2/"
+## out_dir <- "chessB_swdz_pp_ncut5_zero_beta_noinfo_lc2/"
+## out_dir <- "chessB_no_latent_ncut5_zero_beta_noinfo_lc2/"
+out_dir = "chessB_np_ncut5_zero_beta_noinfo_lc2/"
+out_dir="chessB_np_ncut5_zero_beta_noinfo_lc2/"
 
 num_chain <- 2
-double_w <- 0
-double_z <- 1
 HAS_REF <- 0
 
 source("R/Renviron.R")
 source("R/load-outputs.R")
 #+end_src
 
+
+#+begin_src R :results none :tangle R/wrap_param.R
+source("R/chessB_noinfo-preprocess.R")
+mi = readr::read_csv(file="chessB_pn/input/mi.csv", col_names=F) %>% as.matrix()
+sam = mylist[[1]]
+
+## distance calculation can be fully vectorized (and storing z), but I don't have time for this.
+z <- sam[, stringr::str_which(cname, paste0("^z\\.[0-1]\\."))] %>% as.matrix()
+w <- sam[, stringr::str_which(cname, paste0("^w\\.[0-1]\\."))]%>% as.matrix()
+## beta <- sam[, stringr::str_which(cname, paste0("^beta\\.", item, "\\."))]
+
+## correction for single z or w
+if (ncol(z) < 2 * 2 * N) z = cbind(z,z)
+if (ncol(w) < 2 * 2 * I) w = cbind(w,w)
+
+theta <- sam[, stringr::str_which(cname, paste0("^theta\\."))] %>% as.matrix()## (theta.k.0 theta.k.1)
+gamma <- sam[, stringr::str_which(cname, paste0("gamma\\."))]%>% as.matrix()
+
+lambda <- sam[, stringr::str_which(cname, paste0("^lambda\\.[0-1]\\."))]%>% as.matrix()
+
+param = list(I=as.integer(I), N=as.integer(N), G=as.integer(G), seg = as.matrix(mseg), H = as.matrix(mh), len = as.integer(mlen), sj = as.numeric(sj), Y = mi)
+#+end_src
+
+#+begin_src R
+library(art)
+ddpp = get_loglike(lambda, theta, z, w, gamma, param)
+#+end_src
+
+#+RESULTS:
+
 #+begin_src R :tangle R/art-functions.R
-gethaz_item <- function(sam, cname, item, N, theta = NULL, double_w, double_z) {
+gethaz_item <- function(sam, cname, item, N, double_w, double_z) {
   num_iter <- nrow(sam)
   d_zw <- list()
   d_zw[[1]] = d_zw[[2]] = matrix(0, num_iter, N)
@@ -3953,18 +3933,16 @@ gethaz_item <- function(sam, cname, item, N, theta = NULL, double_w, double_z) {
 
 beta <- sam[, stringr::str_which(cname, paste0("^beta\\.", item, "\\."))]
 
-if (is.null(theta)) {
-  theta_temp <- sam[, stringr::str_which(cname, paste0("^theta\\."))] ## (theta.k.0 theta.k.1)
-  teq <- seq(1, ncol(theta_temp), 2)
-  gamma <- theta <- lambda <- rr <- log_rr <- list()
-  theta[[1]] <- theta_temp[, teq]
-  theta[[2]] <- theta_temp[, -teq]
-}
+theta_temp <- sam[, stringr::str_which(cname, paste0("^theta\\."))] ## (theta.k.0 theta.k.1)
+teq <- seq(1, ncol(theta_temp), 2)
+gamma <- theta <- lambda <- rr <- log_rr <- list()
+theta[[1]] <- theta_temp[, teq]
+theta[[2]] <- theta_temp[, -teq]
 
 gamma <- sam[, stringr::str_which(cname, paste0("gamma\\."))]
 
 lambda_temp <- sam[, stringr::str_which(cname, paste0("^lambda\\.[0-1]\\.", item, "\\."))]
-leq <- seq(1, ncol(lambda_temp), 2)
+leq <- 1:(ncol(lambda_temp)/2)
 lambda[[1]] <- lambda_temp[, leq]
 lambda[[2]] <- lambda_temp[, -leq]
 
@@ -3977,6 +3955,8 @@ res <- list(lambda = lambda, rr = rr, log_rr = log_rr,  theta = theta)
 return(res)
 }
 #+end_src
+
+#+RESULTS:
 
 #+begin_src R :tangle R/art-functions.R
 gen_surv_time <- function(out, sj, H, N, nn) {
@@ -4023,71 +4003,16 @@ gen_surv_pp <- function(out, time, sj) {
 }
 #+end_src
 
-#+begin_src R
-sam = mylist[[1]]
-
-## distance calculation can be fully vectorized (and storing z), but I don't have time for this.
-z <- sam[, stringr::str_which(cname, paste0("^z\\.[0-1]\\."))] %>% as.matrix()
-w <- sam[, stringr::str_which(cname, paste0("^w\\.[0-1]\\."))]%>% as.matrix()
-## beta <- sam[, stringr::str_which(cname, paste0("^beta\\.", item, "\\."))]
-
-theta <- sam[, stringr::str_which(cname, paste0("^theta\\."))] %>% as.matrix()## (theta.k.0 theta.k.1)
-gamma <- sam[, stringr::str_which(cname, paste0("gamma\\."))]%>% as.matrix()
-
-lambda <- sam[, stringr::str_which(cname, paste0("^lambda\\.[0-1]\\."))]%>% as.matrix()
-
-source("R/chessB_noinfo-preprocess.R")
-
-mi = readr::read_csv(file="chessB_pn/input/mi.csv", col_names=F) %>% as.matrix()
-param = list(I=as.integer(I), N=as.integer(N), G=as.integer(G), seg = as.matrix(mseg), H = as.matrix(mh), len = as.integer(mlen), sj = as.numeric(sj), Y = mi)
-#+end_src
-
 #+RESULTS:
-#+begin_example
-Using response as value column: use value.var to override.
-Using time as value column: use value.var to override.
-Using seg_g as value column: use value.var to override.
-Using len as value column: use value.var to override.
-
-[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
-cols(
-  X1 = [32mcol_double()[39m,
-  X2 = [32mcol_double()[39m,
-  X3 = [32mcol_double()[39m,
-  X4 = [32mcol_double()[39m
-)
-
-
-[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
-cols(
-  X1 = [32mcol_double()[39m,
-  X2 = [32mcol_double()[39m,
-  X3 = [32mcol_double()[39m,
-  X4 = [32mcol_double()[39m
-)
-
-[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
-cols(
-  .default = col_double()
-)
-[36mℹ[39m Use [90m[40m[90m[40m`spec()`[40m[90m[49m[39m for the full column specifications.
-#+end_example
-
-#+begin_src R
-get_loglike(lambda, theta, z, w, gamma, param)
-#+end_src
-
-#+RESULTS:
-: Error in get_loglike(lambda, theta, z, w, gamma, param) : 
-:   could not find function "get_loglike"
 
 #+begin_src R
 ## see get_hazitem() for "out"
-mH <- reshape2::melt(t(mh))
-
 chain = 1
-ii = 1
-out <- gethaz_item(mylist[[chain]], cname, ii, N, theta = NULL, double_w, double_z)
+sam = mylist[[chain]][seq(1, nrow(mylist[[chain]]), 50), ]
+num_iter = nrow(sam)
+
+mloglike = foreach(ii = 1:I, .combine="cbind") %dopar% {
+out <- gethaz_item(sam, cname, ii, N, theta = NULL, double_w, double_z)
 
 seg_i = unlist(mseg[ii,])
 H_i = mh[ii,]
@@ -4095,9 +4020,15 @@ H_i = mh[ii,]
 resp_i = mi[ii,]
 time_i = mt[ii,]
 
-num_iter = nrow(mylist[[chain]])
+get_ll(out, resp_i, time_i, sj, H_i, seg_i, loglike = NULL)
+}
 
-get_like <- function(out, resp_i, time_i, sj, H_i, seg_i, loglike = NULL) {
+loglike = rowSums(mloglike)
+
+#+end_src
+
+#+begin_src R :tangle R/art-functions.R
+get_ll <- function(out, resp_i, time_i, sj, H_i, seg_i, loglike = NULL) {
 
   rr = out$rr
   log_rr = out$log_rr
@@ -4116,36 +4047,13 @@ get_like <- function(out, resp_i, time_i, sj, H_i, seg_i, loglike = NULL) {
   for (nn in 1:num_iter) {
     loglike[nn] = loglike[nn] - sum((slam[[cc]][(seg_i+1), nn] + H_i * out$lambda[[cc]][nn, (seg_i+1)]) * rr[[cc]][nn, ]) + sum(log_rr[[cc]][nn, ][resp_i == (cc - 1)] ) # log(S(t)) + log(h(t)) for event cc
   }
-
 }
 return(loglike)
   }
+
 #+end_src
 
 #+RESULTS:
-#+begin_example
-Using response as value column: use value.var to override.
-Using time as value column: use value.var to override.
-Using seg_g as value column: use value.var to override.
-Using len as value column: use value.var to override.
-
-[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
-cols(
-  X1 = [32mcol_double()[39m,
-  X2 = [32mcol_double()[39m,
-  X3 = [32mcol_double()[39m,
-  X4 = [32mcol_double()[39m
-)
-
-
-[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
-cols(
-  X1 = [32mcol_double()[39m,
-  X2 = [32mcol_double()[39m,
-  X3 = [32mcol_double()[39m,
-  X4 = [32mcol_double()[39m
-)
-#+end_example
 
 #+begin_src R
 set.seed(1)
@@ -4168,6 +4076,10 @@ for (item in 1:I) {
 
 save(sim_data, file = paste0(out_dir, "surv_sim.RData"))
 #+end_src
+
+#+RESULTS:
+: Error in { : 
+:   task 1 failed - "task 1 failed - "dims [product 1255] do not match the length of object [10040]""
 
 #+begin_src R :tangle R/art-functions.R
 ## calculate baseline hazard and hazard ratio
@@ -4258,6 +4170,8 @@ sj <- c(0, cumsum(sj))
 H <- sj[2:(G + 1)] - sj[1:G]
 
 cnames <- c(".chain", ".iteration")
+
+## CSVFormat prints by row-major order!
 for (c in 0:1) {
   for (i in 1:I) {
     for (g in 1:G) {
@@ -4284,6 +4198,7 @@ for (c in 0:1) {
     }
   }
 }
+
 for (c in 0:1) {
   for (i in 1:I) {
     for (d in 1:2) {
@@ -4314,15 +4229,26 @@ for (cid in 1:num_chain) {
   dlist[[cid]] <- readr::read_csv(paste0(out_dir, "sample_chain", cid, ".csv"), col_names = F, skip = 0) %>% as.data.frame()
   ## dlist[[cid]] = readr::read_csv(paste0(out_dir,"sample_chain",cid,".csv"), col_names=F) %>% as.data.frame()
   colnames(dlist[[cid]]) <- cnames
-  if (!double_z && !double_w) {
-    dlist[[cid]] <- dlist[[cid]][, no_z1 & no_w1] ## remove duplicates when single_z and single_w
-  } else if (!double_w) {
-    dlist[[cid]] <- dlist[[cid]][, no_w1] ## remove duplicates when single_w
-  } else if (!double_z) {
-    dlist[[cid]] <- dlist[[cid]][, no_z1] ## remove duplicates when single_z
-  }
+  ## if (!double_z && !double_w) {
+  ##   dlist[[cid]] <- dlist[[cid]][, no_z1 & no_w1] ## remove duplicates when single_z and single_w
+  ## } else if (!double_w) {
+  ##   dlist[[cid]] <- dlist[[cid]][, no_w1] ## remove duplicates when single_w
+  ## } else if (!double_z) {
+  ##   dlist[[cid]] <- dlist[[cid]][, no_z1] ## remove duplicates when single_z
+  ## }
 }
 
+## determine double z,w
+ double_z = 1
+ double_w = 1
+
+z0 = dlist[[1]][,grepl("^z\\.0\\.", cnames)]
+z1 = dlist[[1]][,grepl("^z\\.1\\.", cnames)]
+w0 = dlist[[1]][,grepl("^w\\.0\\.", cnames)]
+w1 = dlist[[1]][,grepl("^w\\.1\\.", cnames)]
+
+if (sum((z0-z1)^2) < 1.0e-20) double_z = 0
+if (sum((w0-w1)^2) < 1.0e-20) double_w = 0
 ## mylist[[cid]] = mcmc(df, start = mystart, end = myend, thin = mythin)
 #+END_SRC
 
@@ -4393,14 +4319,14 @@ my_procrustes <- function(Xstar, dlist, is_list = FALSE, my_translation = TRUE, 
     mm <- foreach(k = 1:num_samples) %dopar% {
       pout <- MCMCpack::procrustes(w0[, , k], w0star)
       w0[, , k] <- pout$X.new
-      z0[, , k] <- z0[, , k] %*% pout$R
+      z0[, , k] <- z0[, , k] %*% pout$R + rep(pout$tt, each = num_z)
 
       if (!no_w1) {
         pout <- MCMCpack::procrustes(w1[, , k], w1star)
         w1[, , k] <- pout$X.new
       }
       if (!no_z1) {
-        z1[, , k] <- z1[, , k] %*% pout$R
+        z1[, , k] <- z1[, , k] %*% pout$R + rep(pout$tt, each = num_z)
       }
       rbind(z0[, , k], z1[, , k], w0[, , k], w1[, , k])
     }
@@ -4563,8 +4489,8 @@ mylist <- mcmc.list()
 for (cid in 1:num_chain) {
   for (c in 0:1) {
     for (k in 1:N) {
-      z <- mydf[[cid]][, stringr::str_which(cname, paste0("z\\.", c * double_z, "\\.", k, "\\.[1-2]"))]
-      w <- mydf[[cid]][, stringr::str_which(cname, paste0("w\\.", c * double_w, "\\.", item, "\\."))]
+      z <- mydf[[cid]][, stringr::str_which(cname, paste0("z\\.", c,  "\\.", k, "\\.[1-2]"))]
+      w <- mydf[[cid]][, stringr::str_which(cname, paste0("w\\.", c,  "\\.", item, "\\."))]
       mydf[[cid]][[paste0("dist_z.", c, ".", k, "_", "w.", c, ".", item)]] <- sqrt(rowSums((z - w)^2))
     }
   }
@@ -5628,13 +5554,12 @@ out_dir <- "chessB_swdz_nn_ncut2_zero_beta/"
 ## out_dir <- "chessB_double_pp_ncut2_zero_beta/"
 ## out_dir <- "chessB_double_nn_ncut2_zero_beta/"
 ## out_dir="chessB_pp_ncut2_zero_beta_noinfo_lc2/"
-out_dir="chessB_no_latent_ncut2_zero_beta_noinfo_lc2/"
+out_dir="chessB_no_latent_ncut5_zero_beta_noinfo_lc2/"
 ## out_dir="chessB_nn_ncut2_zero_beta_noinfo_lc2/"
-out_dir="chessB_nn_ncut5_zero_beta_noinfo_lc2/"
+## out_dir="chessB_nn_ncut5_zero_beta_noinfo_lc2/"
+## out_dir="chessB_np_ncut5_zero_beta_noinfo_lc2/"
 
 num_chain <- 1
-double_z <- 1
-double_w <- 1
 HAS_REF <- 0
 #+end_src
 
@@ -5650,32 +5575,36 @@ source("R/load-outputs.R")
 #+end_src
 
 #+begin_src R :results none :tangle R/test_simcode.R
+source("R/wrap_param.R")
+
 set.seed(1)
 num_iter <- nrow(mylist[[1]])
 sim_data <- list()
 mll  <- mauc <- matrix(0, num_iter, I)
 
-for (item in 1:I) {
+for (ii in 1:I) {
   start_time <- proc.time()
-  stk_tt <- foreach(chain = 1:1, .combine = "rbind") %do% {
-    out <- gethaz_item(mylist[[chain]], cname, item, N, theta = NULL, double_w, double_z)
-    time <- matrix(mt[item, ], nrow = num_iter, ncol = N, byrow=T)
-    pp <- gen_surv_pp(out, time, sj) %>% array(dim = dim(time))
+  ## stk_tt <- foreach(chain = 1:1, .combine = "rbind") %do% {
+    ## out <- gethaz_item(mylist[[chain]], cname, ii, N, double_w, double_z)
+    ## time <- matrix(mt[ii, ], nrow = num_iter, ncol = N, byrow=T)
+    ## pp <- gen_surv_pp(out, time, sj) %>% array(dim = dim(time))
+    pp <- art::rcpp_gen_surv_pp(lambda, theta, z, w, gamma, param, ii)
     ## cbind(time, pp)
 
   for (nn in 1:num_iter) {
-    mll[nn, item] = MLmetrics::LogLoss(pp[nn, ], mi[item, ])
-    mauc[nn, item] = MLmetrics::AUC(pp[nn, ], mi[item, ])
+    mll[nn, ii] = MLmetrics::LogLoss(pp[nn, ], mi[ii, ])
+    mauc[nn, ii] = MLmetrics::AUC(pp[nn, ], mi[ii, ])
     }
 
-  }
-  sim_data[[item]] <- stk_tt
-  cat("\nelapsed time to simulate item", item, "\n")
+  ## }
+  ## sim_data[[item]] <- stk_tt
+  cat("\nelapsed time to simulate item", ii, "\n")
   print(proc.time() - start_time)
 }
 
-mmet = list(mll=mll,mauc=mauc)
-save(mmet, file = paste0(out_dir,"mll_auc.RData"))
+mlike = art::get_loglike(lambda, theta, z, w, gamma, param)
+mmet = list(mll=mll,mauc=mauc,mlike=mlike)
+## save(mmet, file = paste0(out_dir,"mll_auc.RData"))
 #+end_src
 
 #+begin_src R :tangle R/test_simcode.R
@@ -5689,43 +5618,67 @@ dll <- reshape2::melt(mll)
 dd = plyr::join(dll, dauc, by = c("Var1","Var2"))
 names(dd) = c("iter","item","LogLoss","AUC")
 
+save(dd, file = paste0(out_dir,"dll_auc.RData"))
+
 ll_boxp <- ggplot(dd, aes(x=item,y=LogLoss,fill=factor(item))) + 
-  geom_boxplot() + theme(legend.position = "none") + ylim(0, 10.5)
+  geom_boxplot() + theme(legend.position = "none") + ylim(0, 1)
 
 auc_boxp <- ggplot(dd, aes(x=item,y=AUC,fill=factor(item))) + 
   geom_boxplot() + theme(legend.position = "none") + ylim(0, 1)
 
-pdf(paste0(out_dir,"cmetrics.pdf"))
+llike_boxp <- ggplot(data.frame(LogLike = mlike), aes(y=LogLike)) + geom_boxplot() + theme(legend.position = "none") + ggtitle(concat_summary(mlike,0)) + theme(plot.title = element_text(size=10))
+
+pdf(paste0(out_dir,"figure/cmetrics.pdf"))
 print(ll_boxp)
 print(auc_boxp)
+print(llike_boxp)
 dev.off()
 #+end_src
 
+#+RESULTS:
+: pdf
+:   3
+
+#+begin_src R :tangle R/art-functions.R
+## concat summary results to one line string
+concat_summary = function(obj, d) {
+  res = NULL
+  summ = round(summary(obj),d)
+  for (k in 1:6) {
+    res = paste0(res, names(summ)[k],": ",summ[k], " ")
+  }
+  return(res)
+ }
+#+end_src
 
 #+RESULTS:
-: quartz 
-:      2
 
 #+begin_src R :results none :tangle R/diff_metrics.R
-out_dir="chessB_double_no_ncut5_zero_beta_noinfo_lc2/"
+out_dir="chessB_no_latent_ncut5_zero_beta_noinfo_lc2/"
 ## out_dir="chessB_nn_ncut2_zero_beta_noinfo_lc2/"
 
-num_chain <- 2
-double_z <- 0
-double_w <- 0
+num_chain <- 1
 HAS_REF <- 0
 
-source("R/test_simcode.R")
-ddd = dd
+## fname = paste0(out_dir,"dll_auc.RData")
+## if (file.exists(fname)) load(file = fname) else source("R/test_simcode.R")
 
-out_dir="chessB_double_no_ncut5_zero_beta_noinfo_lc2/"
+ddd = dd # baseline to ddd
+
+## out_dir="chessB_double_no_ncut5_zero_beta_noinfo_lc2/"
 ## out_dir="chessB_double_pp_ncut5_zero_beta_noinfo_lc2/"
-out_dir="chessB_double_nn_ncut5_zero_beta_noinfo_lc2/"
+## out_dir="chessB_double_nn_ncut5_zero_beta_noinfo_lc2/"
 out_dir="chessB_np_ncut5_zero_beta_noinfo_lc2/"
+out_dir="chessB_pn_ncut5_zero_beta_noinfo_lc2/"
+out_dir="chessB_pp_ncut5_zero_beta_noinfo_lc2/"
+## out_dir="chessB_nn_ncut5_zero_beta_noinfo_lc2/"
+## out_dir="chessB_swdz_nn_ncut5_zero_beta_noinfo_lc2/"
+## out_dir="chessB_swdz_pp_ncut5_zero_beta_noinfo_lc2/"
 
-num_chain <- 2
-double_z <- 1
-double_w <- 1
+## fname = paste0(out_dir,"dll_auc.RData")
+## if (file.exists(fname)) load(file = fname) else source("R/test_simcode.R")
+
+num_chain <- 1
 HAS_REF <- 0
 
 source("R/test_simcode.R")
@@ -5734,11 +5687,11 @@ ddd$dAUC = ddd$AUC - dd$AUC
 
 ## logloss (smaller, better)
 ll_boxp <- ggplot(ddd, aes(x=item,y=dLogLoss,fill=factor(item))) +
-  geom_boxplot() + theme(legend.position = "none") + ylim(-1, 1)
+  geom_boxplot() + theme(legend.position = "none") + ylim(-0.25, 0.25)
 
 ## AUC (larger, better)
 auc_boxp <- ggplot(ddd, aes(x=item,y=dAUC,fill=factor(item))) +
-  geom_boxplot() + theme(legend.position = "none") + ylim(-1, 1)
+  geom_boxplot() + theme(legend.position = "none") + ylim(-0.25, 0.25)
 
 pdf(paste0(out_dir,"dmetrics.pdf"))
 print(ll_boxp)

@@ -1032,6 +1032,7 @@ int main(int argc, const char *argv[]) {
       }
 
       // save samples to a csv file
+      // NOTE: row-major order
       // NOTE: DO NOT change the stream order unless you want to change it everywhere (R script too!)
       osample << chain_id << ", " << ii + iter_lastline
               << ", " << lambda.format(CSVFormat)

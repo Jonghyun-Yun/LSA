@@ -9,6 +9,7 @@ using namespace Numer;
   
 typedef Eigen::Map<Eigen::MatrixXd> MapMatd;
 typedef Eigen::Map<Eigen::VectorXd> MapVecd;
+typedef Eigen::Map<Eigen::VectorXi> MapVeci;
 
 class comprisk: public Func
 {
@@ -19,7 +20,7 @@ class comprisk: public Func
         Eigen::VectorXd gamma;
         Eigen::MatrixXd z;
         Eigen::MatrixXd w;
-        Eigen::VectorXd sj;
+        Eigen::VectorXi sj;
         Eigen::VectorXd H;
         bool T_F; // T_F = 1: incidence rate for true response
         int G;
@@ -31,7 +32,7 @@ class comprisk: public Func
             gamma( Rcpp::as<MapVecd>(list_["gamma"]) ),
             z( Rcpp::as<MapMatd>(list_["z"]) ),
             w( Rcpp::as<MapMatd>(list_["w"]) ),
-            sj( Rcpp::as<MapVecd>(list_["sj"]) ),
+            sj( Rcpp::as<MapVeci>(list_["sj"]) ),
             H( Rcpp::as<MapVecd>(list_["H"]) ),
             T_F( T_F_ ) {
             G = H.size();

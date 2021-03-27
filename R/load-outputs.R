@@ -8,6 +8,8 @@ sj <- c(0, cumsum(sj))
 H <- sj[2:(G + 1)] - sj[1:G]
 
 cnames <- c(".chain", ".iteration")
+
+## CSVFormat prints by row-major order!
 for (c in 0:1) {
   for (i in 1:I) {
     for (g in 1:G) {
@@ -34,6 +36,7 @@ for (c in 0:1) {
     }
   }
 }
+
 for (c in 0:1) {
   for (i in 1:I) {
     for (d in 1:2) {
@@ -62,15 +65,26 @@ for (cid in 1:num_chain) {
   dlist[[cid]] <- readr::read_csv(paste0(out_dir, "sample_chain", cid, ".csv"), col_names = F, skip = 0) %>% as.data.frame()
   ## dlist[[cid]] = readr::read_csv(paste0(out_dir,"sample_chain",cid,".csv"), col_names=F) %>% as.data.frame()
   colnames(dlist[[cid]]) <- cnames
-  if (!double_z && !double_w) {
-    dlist[[cid]] <- dlist[[cid]][, no_z1 & no_w1] ## remove duplicates when single_z and single_w
-  } else if (!double_w) {
-    dlist[[cid]] <- dlist[[cid]][, no_w1] ## remove duplicates when single_w
-  } else if (!double_z) {
-    dlist[[cid]] <- dlist[[cid]][, no_z1] ## remove duplicates when single_z
-  }
+  ## if (!double_z && !double_w) {
+  ##   dlist[[cid]] <- dlist[[cid]][, no_z1 & no_w1] ## remove duplicates when single_z and single_w
+  ## } else if (!double_w) {
+  ##   dlist[[cid]] <- dlist[[cid]][, no_w1] ## remove duplicates when single_w
+  ## } else if (!double_z) {
+  ##   dlist[[cid]] <- dlist[[cid]][, no_z1] ## remove duplicates when single_z
+  ## }
 }
 
+## determine double z,w
+ double_z = 1
+ double_w = 1
+
+z0 = dlist[[1]][,grepl("^z\\.0\\.", cnames)]
+z1 = dlist[[1]][,grepl("^z\\.1\\.", cnames)]
+w0 = dlist[[1]][,grepl("^w\\.0\\.", cnames)]
+w1 = dlist[[1]][,grepl("^w\\.1\\.", cnames)]
+
+if (sum((z0-z1)^2) < 1.0e-20) double_z = 0
+if (sum((w0-w1)^2) < 1.0e-20) double_w = 0
 ## mylist[[cid]] = mcmc(df, start = mystart, end = myend, thin = mythin)
 
 if (!HAS_REF) {
@@ -97,8 +111,8 @@ mylist <- mcmc.list()
 for (cid in 1:num_chain) {
   for (c in 0:1) {
     for (k in 1:N) {
-      z <- mydf[[cid]][, stringr::str_which(cname, paste0("z\\.", c * double_z, "\\.", k, "\\.[1-2]"))]
-      w <- mydf[[cid]][, stringr::str_which(cname, paste0("w\\.", c * double_w, "\\.", item, "\\."))]
+      z <- mydf[[cid]][, stringr::str_which(cname, paste0("z\\.", c,  "\\.", k, "\\.[1-2]"))]
+      w <- mydf[[cid]][, stringr::str_which(cname, paste0("w\\.", c,  "\\.", item, "\\."))]
       mydf[[cid]][[paste0("dist_z.", c, ".", k, "_", "w.", c, ".", item)]] <- sqrt(rowSums((z - w)^2))
     }
   }
