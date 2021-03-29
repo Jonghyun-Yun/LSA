@@ -1,0 +1,50 @@
+out_dir, DIC1, DIC2
+chessB_swdz_pp_ncut5_zero_beta_noinfo_lc2/, 66725.62, 69726.98 
+chessB_double_pp_ncut5_zero_beta_noinfo_lc2/ 
+=============================
+chessB_double_nn_ncut5_zero_beta_noinfo_lc2/ 
+=============================
+chessB_np_ncut5_zero_beta_noinfo_lc2/ 
+=============================
+chessB_pn_ncut5_zero_beta_noinfo_lc2/ 
+=============================
+chessB_swdz_nn_ncut5_zero_beta_noinfo_lc2/ 
+=============================
+chessB_swdz_pp_ncut5_zero_beta_noinfo_lc2/ 
+=============================
+chessB_no_latent_ncut5_zero_beta_noinfo_lc2/ 
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+ -33607  -33520  -33505  -33506  -33492  -33441 
+=============================
+chessB_double_pp_ncut5_zero_beta_noinfo_lc2/ 
+=============================
+chessB_double_nn_ncut5_zero_beta_noinfo_lc2/ 
+=============================
+chessB_double_np_ncut5_zero_beta_noinfo_lc2/ 
+=============================
+chessB_double_pn_ncut5_zero_beta_noinfo_lc2/ 
+=============================
+chessB_np_ncut5_zero_beta_noinfo_lc2/ 
+=============================
+chessB_pn_ncut5_zero_beta_noinfo_lc2/ 
+=============================
+chessB_double_pp_ncut5_zero_beta_noinfo_lc2/ 
+=============================
+chessB_double_nn_ncut5_zero_beta_noinfo_lc2/ 
+=============================
+chessB_double_np_ncut5_zero_beta_noinfo_lc2/ 
+=============================
+chessB_double_pn_ncut5_zero_beta_noinfo_lc2/ 
+=============================
+chessB_np_ncut5_zero_beta_noinfo_lc2/ 
+=============================
+chessB_pn_ncut5_zero_beta_noinfo_lc2/ 
+=============================
+chessB_pp_ncut5_zero_beta_noinfo_lc2/ 
+=============================
+chessB_nn_ncut5_zero_beta_noinfo_lc2/ 
+=============================
+chessB_swdz_nn_ncut5_zero_beta_noinfo_lc2/ 
+=============================
+chessB_swdz_pp_ncut5_zero_beta_noinfo_lc2/ 
+=============================

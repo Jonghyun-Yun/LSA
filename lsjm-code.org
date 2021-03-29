@@ -2081,31 +2081,40 @@ readr::write_csv(as.data.frame(mIY),"input/mIY.csv", col_names = FALSE)
 #+end_src
 
 ** boxplot
-#+BEGIN_SRC R :results none
-dit %>% group_by(item) %>% summarise(F = sum(resp == 0), T = sum(resp == 1))
+#+BEGIN_SRC R :results code
+myacc = dit %>% group_by(item) %>% summarise(F = sum(resp == 0), T = sum(resp == 1)) %>% mutate(accuracy = T / (T +F))
 #+END_SRC
+
+#+RESULTS:
+#+begin_src R
+`summarise()` ungrouping output (override with `.groups` argument)
+#+end_src
 
 #+BEGIN_SRC R
 rt_boxp <- ggplot(dit, aes(x=factor(resp),y=time,fill=factor(resp)))+
   geom_boxplot() + labs(title="RT by accuracy") + facet_wrap(~item)
 logrt_boxp <- ggplot(dit, aes(x=factor(resp),y=log(time),fill=factor(resp)))+
   geom_boxplot() + labs(title="log RT by accuracy") + facet_wrap(~item)
+acc_plot <- ggplot(myacc, aes(x=item,y=accuracy)) +
+  geom_text_repel(label=1:I, segment.color = "grey50", size=3) +
+  labs(title="Accuracy")
 #+END_SRC
 
 #+RESULTS:
 
-[[file:figure/RTs.pdf]]
+[[file:figure/RTnACC.pdf]]
 
 #+BEGIN_SRC R
-pdf("figure/RTs.pdf")
+pdf("figure/RTnACC.pdf")
 rt_boxp
+acc_plot
 logrt_boxp
 dev.off(which = dev.cur())
 #+END_SRC
 
 #+RESULTS:
-: pdf 
-:   2
+: null device
+:           1
 
 ** prior & jump
 This is to export hyper-parameters and jumping rule
