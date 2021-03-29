@@ -93,7 +93,7 @@ h_{i0}(t) &= \lambda_{i0}(t) \exp(\theta_{k0} - \gamma_{} ||z_{k} - w_{i}||) \\
 :PROPERTIES:
 :ID:       adc42ad2-5845-4405-bed4-b640f540b3d9
 :END:
-[[attachment:_20210322_182408JASA-Delayed.pdf]]
+# [[attachment:_20210322_182408JASA-Delayed.pdf]]
 C=2, K_j: number of segments, U_j = 3rd quartile, k: k-th segment.
 [[attachment:_20210322_183639screenshot.png]]
 * New results with unknown $\gamma > 0$.
@@ -111,9 +111,9 @@ h_{i0}(t) &= \lambda_{i0}(t) \exp(\theta_{k0})\\
 | chessB_double_pp_ncut5_zero_beta_noinfo_lc2 |
 | chessB_nn_ncut5_zero_beta_noinfo_lc2        |
 | chessB_np_ncut5_zero_beta_noinfo_lc2        |
-| *chessB_pn_ncut5_zero_beta_noinfo_lc2*        |
+| *chessB_pn_ncut5_zero_beta_noinfo_lc2*      |
 | chessB_pp_ncut5_zero_beta_noinfo_lc2        |
 | chessB_swdz_nn_ncut5_zero_beta_noinfo_lc2   |
 | chessB_swdz_pp_ncut5_zero_beta_noinfo_lc2   |
 
-*art_0.1.tar.gz*
+Updated package file: *art_0.1.tar.gz*
