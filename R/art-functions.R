@@ -1,5 +1,155 @@
 source("R/prerequisite.R")
 
+my_procrustes <- function(Xstar, dlist, is_list = FALSE, bind_zw = FALSE, my_translation = TRUE, my_scale = FALSE, my_reflect = TRUE) {
+  posm <- 0
+  if (is_list == TRUE) {
+    num_chain <- length(dlist)
+  } else {
+    num_chain <- 1
+  }
+  for (i in 1:num_chain) {
+    if (is_list == TRUE) {
+      df <- dlist[[i]]
+    } else {
+      df <- dlist
+    }
+
+    num_samples <- nrow(df)
+
+    z0dx <- grepl("^z\\.0\\.", colnames(df))
+    z1dx <- grepl("^z\\.1\\.", colnames(df))
+    w0dx <- grepl("^w\\.0\\.", colnames(df))
+    w1dx <- grepl("^w\\.1\\.", colnames(df))
+
+    no_z1 <- sum(z1dx) == 0
+    no_w1 <- sum(w1dx) == 0
+
+    num_w <- sum(w0dx) / 2
+    num_z <- sum(z0dx) / 2
+    w0 <- aperm(array(unlist(t(df[, w0dx])), dim = c(2, num_w, num_samples)), c(2, 1, 3))
+    z0 <- aperm(array(unlist(t(df[, z0dx])), dim = c(2, num_z, num_samples)), c(2, 1, 3))
+
+    w0star <- Xstar$w.0
+    z0star <- Xstar$z.0
+
+    if (no_w1) {
+      w1 <- NULL
+    } else {
+      if (no_z1) stop('require double_z = 1')
+      sout = MCMCpack::procrustes(Xstar$w.1, w0star)
+      w1star <- sout$X.new
+      w1 <- aperm(array(unlist(t(df[, w1dx])), dim = c(2, num_w, num_samples)), c(2, 1, 3))
+    }
+    if (no_z1) {
+      z1 <- NULL
+    } else {
+      z1star = Xstar$z.1 %*% sout$R + rep(sout$tt, each = num_z)
+      z1 <- aperm(array(unlist(t(df[, z1dx])), dim = c(2, num_z, num_samples)), c(2, 1, 3))
+    }
+
+    adx <- z0dx | z1dx | w0dx | w1dx
+    
+    xstar0 = rbind(w0star,z0star)
+    xstar1 = rbind(w1star,z1star)
+    
+    mm <- foreach(k = 1:num_samples) %dopar% {
+      if (!bind_zw) {
+        pout <- MCMCpack::procrustes(w0[, , k], w0star)
+        w0[, , k] <- pout$X.new
+        z0[, , k] <- z0[, , k] %*% pout$R + rep(pout$tt, each = num_z)
+      } else {
+        bout <- MCMCpack::procrustes(rbind(w0[, , k],z0[,,k]), xstar0)
+        w0[, , k] <- bout$X.new[1:num_w, ]
+        z0[, , k] <- bout$X.new[(num_w+1):(num_w+num_z), ]
+        }
+        
+        if (!no_w1 & !bind_zw) {
+          pout <- MCMCpack::procrustes(w1[, , k], w1star)
+          w1[, , k] <- pout$X.new
+          }
+      if (!no_z1 & !bind_zw) {
+          z1[, , k] <- z1[, , k] %*% pout$R + rep(pout$tt, each = num_z)
+        }
+      if (!no_w1 & bind_zw) {
+        bout <- MCMCpack::procrustes(rbind(w1[, , k],z1[,,k]), xstar1)
+        w1[, , k] <- bout$X.new[1:num_w, ]
+        z1[, , k] <- bout$X.new[(num_w+1):(num_w+num_z), ]
+      }
+        rbind(z0[, , k], z1[, , k], w0[, , k], w1[, , k])
+      }
+      tmm <- lapply(mm, t)
+      df[, adx] <- t(matrix(unlist(tmm), nrow = sum(adx)))
+
+      posm <- posm + Reduce("+", mm) / num_samples
+      if (is_list == TRUE) {
+        dlist[[i]] <- df
+      } else {
+        dlist <- df
+      }
+    }
+
+    posm <- posm / num_chain
+    z0 <- posm[1:num_z, ]
+    if (no_z1 && no_w1) {
+      w0 <- posm[num_z + (1:num_w), ]
+    } else if (no_z1 && !no_w1) {
+      w0 <- posm[num_z + (1:num_w), ]
+      w1 <- posm[num_z + num_w + (1:num_w), ]
+    }
+
+    if (!no_z1 && no_w1) {
+      z1 <- posm[num_z + (1:num_z), ]
+      w0 <- posm[2 * num_z + (1:num_w), ]
+    } else if (!no_z1 && !no_w1) {
+      z1 <- posm[num_z + (1:num_z), ]
+      w0 <- posm[2 * num_z + (1:num_w), ]
+      w1 <- posm[2 * num_z + num_w + (1:num_w), ]
+    }
+    return(list(dlist = dlist, z0 = z0, z1 = z1, w0 = w0, w1 = w1))
+  }
+
+getparam <- function(posm, sj, i, k) {
+  cname <- names(posm)
+  z <- posm[stringr::str_which(cname, paste0("z\\.[0-1]\\.", k, "\\.[1-2]"))] %>%
+    matrix(nrow = 2, ncol = 2) %>%
+    t()
+  w <- posm[stringr::str_which(cname, paste0("w\\.[0-1]\\.", i, "\\.[1-2]"))] %>%
+    matrix(nrow = 2, ncol = 2) %>%
+    t()
+  gamma <- posm[stringr::str_which(cname, paste0("gamma"))]
+  beta <- posm[stringr::str_which(cname, paste0("beta\\.", i, "\\."))]
+  theta <- posm[stringr::str_which(cname, paste0("theta\\.", k, "\\."))]
+  lambda <- posm[stringr::str_which(cname, paste0("lambda\\.[0-1]\\.", i, "\\."))] %>%
+    matrix(ncol = 2) %>%
+    t()
+  H <- sj[2:(G + 1)] - sj[1:G]
+  res <- list(lambda = lambda, beta = beta, theta = theta, gamma = gamma, z = z, w = w, sj = sj, H = H)
+  if (any(unlist(lapply(res, is.na)))) stop("Index out of range")
+  ## should if be G+1? or G?
+  ## if (ncol(lambda) != (G+1)) stop("ncol(lambda) != G+1")
+  if (ncol(lambda) != (G)) {
+    stop("ncol(lambda) != G")
+  } else {
+    return(res)
+  }
+}
+
+eval_DIC = function(lambda, theta, z, w, gamma, param) {
+  mlambda = rbind(apply(lambda,2,mean), lambda)
+  mtheta = rbind(apply(theta,2,mean), theta)
+  mz = rbind(apply(z,2,mean), z)
+  mw = rbind(apply(w,2,mean), w)
+  mgamma = rbind(apply(gamma,2,mean), gamma)
+
+  mloglike = art::get_loglike(mlambda, mtheta, mz, mw, mgamma, param)
+  ll = mloglike[2:length(mloglike)]
+  pd2 = 0.5 * var(-2*ll)
+  pd1 = mean(-2*ll) - (-2 * mloglike[1])
+  DIC2 = -2*mloglike[1] + 2*pd2
+  DIC1 = -2*mloglike[1] + 2*pd1
+  return(list(loglike=ll, DIC1=DIC1, DIC2 = DIC2))
+}
+
 gethaz_item <- function(sam, cname, item, N, double_w, double_z) {
   num_iter <- nrow(sam)
   d_zw <- list()
@@ -53,14 +203,15 @@ res <- list(lambda = lambda, rr = rr, log_rr = log_rr,  theta = theta)
 return(res)
 }
 
-gen_surv_time <- function(out, sj, H, N, nn) {
+gen_surv_time <- function(out, sj, N, nn) {
   rr <- out$rr
   lambda <- out$lambda
   mj <- length(sj)
+  len = diff(sj)
 
   haz <- lambda[[1]][nn, ] %o% rr[[1]][nn, ] + lambda[[2]][nn, ] %o% rr[[2]][nn, ]
   logS <- -rexp(N)
-  cumhaz <- rbind(rep(0, N), apply(haz * H, 2, cumsum))
+  cumhaz <- rbind(rep(0, N), apply(haz * len, 2, cumsum))
   vtime <- numeric(N)
 
   for (kk in 1:N) {
@@ -94,6 +245,7 @@ gen_surv_pp <- function(out, time, sj) {
   return(pp)
 }
 
+## log-likelihood, native R, use get_loglike() instead.
 get_ll <- function(out, resp_i, time_i, sj, H_i, seg_i, loglike = NULL) {
 
   rr = out$rr
@@ -111,7 +263,7 @@ get_ll <- function(out, resp_i, time_i, sj, H_i, seg_i, loglike = NULL) {
   slam[[cc]] = rbind(0, apply(hlam[[cc]],  1,  cumsum))
 
   for (nn in 1:num_iter) {
-    loglike[nn] = loglike[nn] - sum((slam[[cc]][(seg_i+1), nn] + H_i * out$lambda[[cc]][nn, (seg_i+1)]) * rr[[cc]][nn, ]) + sum(log_rr[[cc]][nn, ][resp_i == (cc - 1)] ) # log(S(t)) + log(h(t)) for event cc
+    loglike[nn] = loglike[nn] - sum((slam[[cc]][(seg_i+1), nn] + H_i * lambda[[cc]][nn, (seg_i+1)]) * rr[[cc]][nn, ]) + sum((log(lambda[[cc]][nn, (seg_i+1)]) + log_rr[[cc]][nn, ])[resp_i == (cc - 1)] ) # log(S(t)) + log(h(t)) for event cc
   }
 }
 return(loglike)
@@ -150,122 +302,6 @@ gen_surv <- function(out, sj, N) {
   rr12 <- out$haz[seg_g, 2:3] * out$rel
   pp <- rr12[, 2] / rowSums(rr12)
   return(list(time = time, pp = pp))
-}
-
-my_procrustes <- function(Xstar, dlist, is_list = FALSE, my_translation = TRUE, my_scale = FALSE, my_reflect = TRUE) {
-  posm <- 0
-  if (is_list == TRUE) {
-    num_chain <- length(dlist)
-  } else {
-    num_chain <- 1
-  }
-  for (i in 1:num_chain) {
-    if (is_list == TRUE) {
-      df <- dlist[[i]]
-    } else {
-      df <- dlist
-    }
-
-    num_samples <- nrow(df)
-
-    z0dx <- grepl("^z\\.0\\.", colnames(df))
-    z1dx <- grepl("^z\\.1\\.", colnames(df))
-    w0dx <- grepl("^w\\.0\\.", colnames(df))
-    w1dx <- grepl("^w\\.1\\.", colnames(df))
-
-    no_z1 <- sum(z1dx) == 0
-    no_w1 <- sum(w1dx) == 0
-
-    num_w <- sum(w0dx) / 2
-    num_z <- sum(z0dx) / 2
-    w0 <- aperm(array(unlist(t(df[, w0dx])), dim = c(2, num_w, num_samples)), c(2, 1, 3))
-    z0 <- aperm(array(unlist(t(df[, z0dx])), dim = c(2, num_z, num_samples)), c(2, 1, 3))
-
-    w0star <- Xstar$w.0
-
-    if (no_w1) {
-      w1 <- NULL
-    } else {
-      w1star <- MCMCpack::procrustes(Xstar$w.1, w0star)$X.new
-      w1 <- aperm(array(unlist(t(df[, w1dx])), dim = c(2, num_w, num_samples)), c(2, 1, 3))
-    }
-    if (no_z1) {
-      z1 <- NULL
-    } else {
-      z1 <- aperm(array(unlist(t(df[, z1dx])), dim = c(2, num_z, num_samples)), c(2, 1, 3))
-    }
-
-    adx <- z0dx | z1dx | w0dx | w1dx
-
-    mm <- foreach(k = 1:num_samples) %dopar% {
-      pout <- MCMCpack::procrustes(w0[, , k], w0star)
-      w0[, , k] <- pout$X.new
-      z0[, , k] <- z0[, , k] %*% pout$R + rep(pout$tt, each = num_z)
-
-      if (!no_w1) {
-        pout <- MCMCpack::procrustes(w1[, , k], w1star)
-        w1[, , k] <- pout$X.new
-      }
-      if (!no_z1) {
-        z1[, , k] <- z1[, , k] %*% pout$R + rep(pout$tt, each = num_z)
-      }
-      rbind(z0[, , k], z1[, , k], w0[, , k], w1[, , k])
-    }
-    tmm <- lapply(mm, t)
-    df[, adx] <- t(matrix(unlist(tmm), nrow = sum(adx)))
-
-    posm <- posm + Reduce("+", mm) / num_samples
-    if (is_list == TRUE) {
-      dlist[[i]] <- df
-    } else {
-      dlist <- df
-    }
-  }
-
-  posm <- posm / num_chain
-  z0 <- posm[1:num_z, ]
-  if (no_z1 && no_w1) {
-    w0 <- posm[num_z + (1:num_w), ]
-  } else if (no_z1 && !no_w1) {
-    w0 <- posm[num_z + (1:num_w), ]
-    w1 <- posm[num_z + num_w + (1:num_w), ]
-  }
-
-  if (!no_z1 && no_w1) {
-    z1 <- posm[num_z + (1:num_z), ]
-    w0 <- posm[2 * num_z + (1:num_w), ]
-  } else if (!no_z1 && !no_w1) {
-    z1 <- posm[num_z + (1:num_z), ]
-    w0 <- posm[2 * num_z + (1:num_w), ]
-    w1 <- posm[2 * num_z + num_w + (1:num_w), ]
-  }
-  return(list(dlist = dlist, z0 = z0, z1 = z1, w0 = w0, w1 = w1))
-}
-
-getparam <- function(posm, sj, i, k) {
-  cname <- names(posm)
-  z <- posm[stringr::str_which(cname, paste0("z\\.[0-1]\\.", k, "\\.[1-2]"))] %>%
-    matrix(nrow = 2, ncol = 2) %>%
-    t()
-  w <- posm[stringr::str_which(cname, paste0("w\\.[0-1]\\.", i, "\\.[1-2]"))] %>%
-    matrix(nrow = 2, ncol = 2) %>%
-    t()
-  gamma <- posm[stringr::str_which(cname, paste0("gamma"))]
-  beta <- posm[stringr::str_which(cname, paste0("beta\\.", i, "\\."))]
-  theta <- posm[stringr::str_which(cname, paste0("theta\\.", k, "\\."))]
-  lambda <- posm[stringr::str_which(cname, paste0("lambda\\.[0-1]\\.", i, "\\."))] %>%
-    matrix(ncol = 2) %>%
-    t()
-  H <- sj[2:(G + 1)] - sj[1:G]
-  res <- list(lambda = lambda, beta = beta, theta = theta, gamma = gamma, z = z, w = w, sj = sj, H = H)
-  if (any(unlist(lapply(res, is.na)))) stop("Index out of range")
-  ## should if be G+1? or G?
-  ## if (ncol(lambda) != (G+1)) stop("ncol(lambda) != G+1")
-  if (ncol(lambda) != (G)) {
-    stop("ncol(lambda) != G")
-  } else {
-    return(res)
-  }
 }
 
 ## concat summary results to one line string

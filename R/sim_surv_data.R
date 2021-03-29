@@ -26,16 +26,13 @@ HAS_REF <- 0
 source("R/Renviron.R")
 source("R/load-outputs.R")
 
-library(art)
-ddpp = get_loglike(lambda, theta, z, w, gamma, param)
-
 ## see get_hazitem() for "out"
 chain = 1
 sam = mylist[[chain]][seq(1, nrow(mylist[[chain]]), 50), ]
 num_iter = nrow(sam)
 
 mloglike = foreach(ii = 1:I, .combine="cbind") %dopar% {
-out <- gethaz_item(sam, cname, ii, N, theta = NULL, double_w, double_z)
+out <- gethaz_item(sam, cname, ii, N, double_w, double_z)
 
 seg_i = unlist(mseg[ii,])
 H_i = mh[ii,]
@@ -51,18 +48,21 @@ loglike = rowSums(mloglike)
 set.seed(1)
 num_iter <- nrow(mylist[[1]])
 sim_data <- list()
-for (item in 1:I) {
+len = diff(sj)
+num_chain = 1
+
+for (ii in 1:I) {
   start_time <- proc.time()
   stk_tt <- foreach(chain = 1:num_chain, .combine = "rbind") %dopar% {
-    out <- gethaz_item(mylist[[chain]], cname, item, N, theta = NULL, double_w, double_z)
+    out <- gethaz_item(mylist[[chain]], cname, ii, N, double_w, double_z)
     time <- foreach(nn = 1:num_iter, .combine = "rbind") %do% {
-      gen_surv_time(out, sj, H, N, nn)
+      gen_surv_time(out, sj,N, nn)
     }
     pp <- gen_surv_pp(out, time, sj) %>% array(dim = dim(time))
     cbind(time, pp)
   }
-  sim_data[[item]] <- stk_tt
-  cat("\nelapsed time to simulate item", item, "\n")
+  sim_data[[ii]] <- stk_tt
+  cat("\nelapsed time to simulate item", ii, "\n")
   print(proc.time() - start_time)
 }
 

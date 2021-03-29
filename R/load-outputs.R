@@ -99,7 +99,7 @@ if (HAS_REF) {
   Xstar$w.0 <- readr::read_csv(paste0(ref_dir, "w0star.csv"), col_names = FALSE) %>% as.matrix()
 }
 
-matched <- my_procrustes(Xstar, dlist, is_list = T)
+matched <- my_procrustes(Xstar, dlist, is_list = T, bind_zw = T)
 ## , my_translation = TRUE, my_scale = FALSE)
 mydf <- matched$dlist
 mdf <- bind_rows(matched$dlist, .id = "column_label")

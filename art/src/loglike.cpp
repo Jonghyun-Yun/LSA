@@ -19,6 +19,7 @@ using Eigen::VectorXd;
 using Eigen::MatrixXi;
 using Eigen::VectorXi;
 
+// maping rowvector to matrix by row-major order
 MatrixXd reshape_rowmajor(NumericMatrix::Row &row, int nrow, int ncol) {
   MatrixXd res(nrow, ncol);
   for (int rr = 0; rr < nrow; rr++) {

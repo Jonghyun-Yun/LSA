@@ -2186,10 +2186,12 @@ mvar = readr::read_csv("input/mvar.csv", col_names=FALSE) %>% as.matrix()
 I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
 
 ## lambda
-l_c = 2
+l_c = 10
 l_m = ((G - 1) / (quantile(time, 0.75)  * (G - 1:G + 0.5)))
 a_lambda = matrix(l_m/l_c, I, G, byrow=T)
 b_lambda = matrix(1 / l_c,I,G)
+## a_lambda = matrix(0.0001, I, G, byrow=T)
+## b_lambda = matrix(0.0001, I, G)
 jump_lambda = matrix(0.5,I,G)
 
 mu_beta = matrix(0.0,I,2)
@@ -3225,9 +3227,9 @@ dev.off(which = dev.cur())
 ** Shell to run C++
 #+begin_src sh :tangle run.sh
 #!/usr/bin/env bash
-out_dir="chessB_double_pn_ncut5_zero_beta_noinfo_lc2/"
+out_dir="chessB_double_pp_ncut5_zero_beta_noinfo_lc10/"
 prename="R/chessB_noinfo-preprocess.R"
-initname="R/chessB_pn-init.R"
+initname="R/chessB_pp-init.R"
 n_chain=2
 
 echo "================================"
@@ -3273,7 +3275,7 @@ Rscript R/run-analysis.R $out_dir $n_chain
 echo "Outputs are moved to" $out_dir"."
 echo "================================"
 
-sh run_np.sh
+# sh run_np.sh
 # sh run_swdz_nn.sh
 # sh run_swdz_pp.sh
 #+end_src
@@ -3517,65 +3519,13 @@ system(paste0("rsync -rv figure/*.pdf ", out_dir, "figure/"))
 #+END_SRC
 
 #+BEGIN_SRC R :results none
-out_dir="chessB_np_ncut5_zero_beta_noinfo_lc2/"
+out_dir="chessB_double_pp_ncut5_zero_beta_noinfo_lc2/"
 num_chain <- 2; double_z <- 0; double_w <- 0; HAS_REF <- 0;
 system(paste0("rm figure/*.pdf"))
 source("R/art-analysis.R")
 #+END_SRC
 
-#+RESULTS:
-#+begin_example
-
-Attaching package: 'dplyr'
-
-The following objects are masked from 'package:stats':
-
-    filter, lag
-
-The following objects are masked from 'package:base':
-
-    intersect, setdiff, setequal, union
-
-This is bayesplot version 1.7.2
-- Online documentation and vignettes at mc-stan.org/bayesplot
-- bayesplot theme set to bayesplot::theme_default()
-   ,* Does _not_ affect other ggplot2 plots
-   ,* See ?bayesplot_theme_set for details on theme setting
-Loading required package: iterators
-Loading required package: parallel
-
-[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
-cols(
-  X1 = [32mcol_double()[39m,
-  X2 = [32mcol_double()[39m,
-  X3 = [32mcol_double()[39m,
-  X4 = [32mcol_double()[39m
-)
-
-
-[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
-cols(
-  X1 = [32mcol_double()[39m
-)
-
-
-[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
-cols(
-  .default = col_double()
-)
-[36mℹ[39m Use [90m[40m[90m[40m`spec()`[40m[90m[49m[39m for the full column specifications.
-
-
-[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
-cols(
-  .default = col_double()
-)
-[36mℹ[39m Use [90m[40m[90m[40m`spec()`[40m[90m[49m[39m for the full column specifications.
-
-Error in grepl("^z\\.0\\.", cname) : object 'cname' not found
-#+end_example
-
-#+BEGIN_SRC R
+#+BEGIN_SRC R :results none
 system(paste0("mkdir -p ", out_dir, "figure/"))
 system(paste0("rsync -rv figure/*.pdf ", out_dir,"figure/"))
 #+END_SRC
@@ -3628,7 +3578,7 @@ source("R/Renviron.R")
 source('R/load-outputs.R')
 ## source('R/write_summary.R')
 source('R/visual-latent-space-plot.R')
-## source('R/visual-trace-plot.R')
+source('R/visual-trace-plot.R')
 ## source('R/CIF_posm.R')
 ## source('R/CIF.R')
 #+END_SRC
@@ -3809,356 +3759,6 @@ print(cl_lsjmplot(z0, w0, cl_z, cl_w, xlim = c(xmin, xmax), ylim = c(ymin, ymax)
 dev.off(which = dev.cur())
 #+end_src
 
-** WAIT simulation of survival times
-:PROPERTIES:
-:header-args:R: :tangle R/sim_surv_data.R
-:END:
-- State "WAIT"       from              [2021-02-19 Fri 03:55] \\
-  see if it can be run in another machine
-1. get break points for time
-2. fix item, get item parameters + piecewise constant rates
-3. calculate relative risk for each type (for all persons)
-4. simulate survival time -> response
-5. repeat for all items (40)
-6. repeat for many MCMC samples (10000?)
-
-Run =R/sim_surv_data.R= for the simulation, and find relevant data as
-follows:
-   #+begin_src R :tangle no
-   time = sim_data[[item]][,1:251]
-   pp = sim_data[[item]][,252:502]
-
-   mt = readr::read_csv(file="chessB_pn/input/mt.csv", col_names=F) %>% as.matrix()
-   mi = readr::read_csv(file="chessB_pn/input/mi.csv", col_names=F) %>% as.matrix()
-   #+end_src
-
-- ~iter~: MCMC iteration
-- ~time[iter, person]~: simulated survival time t
-- ~pp[iter, person]~: simulated conditional probability of correct response given time t
-- ~mi[item,person]~: observed response (1: correct, 0: incorrect)
-- ~mi[item,person]~: observed response (1: correct, 0: incorrect)
-- ~mt[item,person]~: observed time
-
-The =RData= will be saved in =chessB_pn=. To run the simulation with no
-distance term, set =out_dir <- "chessB_no_latent/"= in =R/sim_surv_data.R=.
-
-#+begin_src R :results none
-## out_dir <- "chessB_pn/"
-## out_dir <- "chessB_np/"
-out_dir <- "chessB_no_latent/"
-
-## out_dir <- "chessB_pn_ncut2_zero_beta/"
-out_dir <- "chessB_no_latent_ncut2_zero_beta/"
-## out_dir <- "chessB_np_ncut2_zero_beta/"
-## out_dir <- "chessB_no_latent_ncut2_zero_beta/"
-out_dir <- "chessB_swdz_pp_ncut5_zero_beta/"
-## out_dir <- "chessB_double_pp_ncut2_zero_beta/"
-
-out_dir <- "chessB_double_nn_ncut5_zero_beta_noinfo_lc2/"
-out_dir <- "chessB_double_pp_ncut5_zero_beta_noinfo_lc2/"
-## out_dir <- "chessB_nn_ncut5_zero_beta_noinfo_lc2/"
-## out_dir <- "chessB_pn_ncut5_zero_beta_noinfo_lc2/"
-## out_dir <- "chessB_pp_ncut5_zero_beta_noinfo_lc2/"
-## out_dir <- "chessB_swdz_nn_ncut5_zero_beta_noinfo_lc2/"
-## out_dir <- "chessB_swdz_pp_ncut5_zero_beta_noinfo_lc2/"
-## out_dir <- "chessB_no_latent_ncut5_zero_beta_noinfo_lc2/"
-out_dir = "chessB_np_ncut5_zero_beta_noinfo_lc2/"
-out_dir="chessB_np_ncut5_zero_beta_noinfo_lc2/"
-
-num_chain <- 2
-HAS_REF <- 0
-
-source("R/Renviron.R")
-source("R/load-outputs.R")
-#+end_src
-
-
-#+begin_src R :results none :tangle R/wrap_param.R
-source("R/chessB_noinfo-preprocess.R")
-mi = readr::read_csv(file="chessB_pn/input/mi.csv", col_names=F) %>% as.matrix()
-sam = mylist[[1]]
-
-## distance calculation can be fully vectorized (and storing z), but I don't have time for this.
-z <- sam[, stringr::str_which(cname, paste0("^z\\.[0-1]\\."))] %>% as.matrix()
-w <- sam[, stringr::str_which(cname, paste0("^w\\.[0-1]\\."))]%>% as.matrix()
-## beta <- sam[, stringr::str_which(cname, paste0("^beta\\.", item, "\\."))]
-
-## correction for single z or w
-if (ncol(z) < 2 * 2 * N) z = cbind(z,z)
-if (ncol(w) < 2 * 2 * I) w = cbind(w,w)
-
-theta <- sam[, stringr::str_which(cname, paste0("^theta\\."))] %>% as.matrix()## (theta.k.0 theta.k.1)
-gamma <- sam[, stringr::str_which(cname, paste0("gamma\\."))]%>% as.matrix()
-
-lambda <- sam[, stringr::str_which(cname, paste0("^lambda\\.[0-1]\\."))]%>% as.matrix()
-
-param = list(I=as.integer(I), N=as.integer(N), G=as.integer(G), seg = as.matrix(mseg), H = as.matrix(mh), len = as.integer(mlen), sj = as.numeric(sj), Y = mi)
-#+end_src
-
-#+begin_src R
-library(art)
-ddpp = get_loglike(lambda, theta, z, w, gamma, param)
-#+end_src
-
-#+RESULTS:
-
-#+begin_src R :tangle R/art-functions.R
-gethaz_item <- function(sam, cname, item, N, double_w, double_z) {
-  num_iter <- nrow(sam)
-  d_zw <- list()
-  d_zw[[1]] = d_zw[[2]] = matrix(0, num_iter, N)
-
-  for (k in 1:N) {
-    ## distance calculation can be fully vectorized (and storing z), but I don't have time for this.
-    z <- sam[, stringr::str_which(cname, paste0("^z\\.", 0, "\\.", k, "\\.[1-2]"))]
-    w <- sam[, stringr::str_which(cname, paste0("^w\\.", 0, "\\.", item, "\\."))]
-    d_zw[[1]][, k] <- sqrt(rowSums((z - w)^2))
-  }
-  if (!double_w & !double_z){
-  d_zw[[2]] = d_zw[[1]]
-} else if (double_w & double_z) {
-  for (k in 1:N) {
-    ## distance calculation can be fully vectorized (and storing z), but I don't have time for this.
-    z <- sam[, stringr::str_which(cname, paste0("^z\\.", 1, "\\.", k, "\\.[1-2]"))]
-    w <- sam[, stringr::str_which(cname, paste0("^w\\.", 1, "\\.", item, "\\."))]
-    d_zw[[2]][, k] <- sqrt(rowSums((z - w)^2))
-  }
-} else if (!double_w & double_z) {
-  for (k in 1:N) {
-    ## distance calculation can be fully vectorized (and storing z), but I don't have time for this.
-    z <- sam[, stringr::str_which(cname, paste0("^z\\.", 1, "\\.", k, "\\.[1-2]"))]
-    w <- sam[, stringr::str_which(cname, paste0("^w\\.", 0, "\\.", item, "\\."))]
-    d_zw[[2]][, k] <- sqrt(rowSums((z - w)^2))
-  }
-}
-
-beta <- sam[, stringr::str_which(cname, paste0("^beta\\.", item, "\\."))]
-
-theta_temp <- sam[, stringr::str_which(cname, paste0("^theta\\."))] ## (theta.k.0 theta.k.1)
-teq <- seq(1, ncol(theta_temp), 2)
-gamma <- theta <- lambda <- rr <- log_rr <- list()
-theta[[1]] <- theta_temp[, teq]
-theta[[2]] <- theta_temp[, -teq]
-
-gamma <- sam[, stringr::str_which(cname, paste0("gamma\\."))]
-
-lambda_temp <- sam[, stringr::str_which(cname, paste0("^lambda\\.[0-1]\\.", item, "\\."))]
-leq <- 1:(ncol(lambda_temp)/2)
-lambda[[1]] <- lambda_temp[, leq]
-lambda[[2]] <- lambda_temp[, -leq]
-
-for (cc in 1:2) {
- log_rr[[cc]] <- beta[, cc] + theta[[cc]] - gamma[,cc] * d_zw[[cc]]
- rr[[cc]] <- exp(log_rr[[cc]])
-}
-
-res <- list(lambda = lambda, rr = rr, log_rr = log_rr,  theta = theta)
-return(res)
-}
-#+end_src
-
-#+RESULTS:
-
-#+begin_src R :tangle R/art-functions.R
-gen_surv_time <- function(out, sj, H, N, nn) {
-  rr <- out$rr
-  lambda <- out$lambda
-  mj <- length(sj)
-
-  haz <- lambda[[1]][nn, ] %o% rr[[1]][nn, ] + lambda[[2]][nn, ] %o% rr[[2]][nn, ]
-  logS <- -rexp(N)
-  cumhaz <- rbind(rep(0, N), apply(haz * H, 2, cumsum))
-  vtime <- numeric(N)
-
-  for (kk in 1:N) {
-    ss <- findInterval(-logS[kk], cumhaz[, kk])
-    if (ss != mj) {
-      vtime[kk] <- sj[ss] - (logS[kk] + cumhaz[ss, kk]) / haz[ss, kk]
-    } else {
-      vtime[kk] <- sj[ss]
-    }
-  }
-  return(vtime)
-}
-#+end_src
-
-#+begin_src R :tangle R/art-functions.R
-gen_surv_pp <- function(out, time, sj) {
-  rr <- out$rr
-  lambda <- out$lambda
-  num_iter <- nrow(time)
-  hr <- list()
-  seg_g <- findInterval(time, sj)
-  mg <- length(sj)
-  seg_g[seg_g == mg] <- (mg - 1)
-
-  ## m is the number of rows in the matrix, r and c are row and column numbers respectively, and ind the linear index:
-  ## ind = (c-1)*m + r
-  ind <- (seg_g - 1) * num_iter + 1:num_iter
-
-  for (cc in 1:2) hr[[cc]] <- lambda[[cc]][ind] * c(rr[[cc]])
-
-  pp <- hr[[2]] / (hr[[1]] + hr[[2]])
-
-  return(pp)
-}
-#+end_src
-
-#+RESULTS:
-
-#+begin_src R
-## see get_hazitem() for "out"
-chain = 1
-sam = mylist[[chain]][seq(1, nrow(mylist[[chain]]), 50), ]
-num_iter = nrow(sam)
-
-mloglike = foreach(ii = 1:I, .combine="cbind") %dopar% {
-out <- gethaz_item(sam, cname, ii, N, theta = NULL, double_w, double_z)
-
-seg_i = unlist(mseg[ii,])
-H_i = mh[ii,]
-
-resp_i = mi[ii,]
-time_i = mt[ii,]
-
-get_ll(out, resp_i, time_i, sj, H_i, seg_i, loglike = NULL)
-}
-
-loglike = rowSums(mloglike)
-
-#+end_src
-
-#+begin_src R :tangle R/art-functions.R
-get_ll <- function(out, resp_i, time_i, sj, H_i, seg_i, loglike = NULL) {
-
-  rr = out$rr
-  log_rr = out$log_rr
-  lambda = out$lambda
-
-  num_iter = nrow(rr[[1]])
-  loglike = numeric(num_iter)
-
-  slam = hlam = list()
-
-  for (cc in 1:2) {
-
-  hlam[[cc]] = t( t(lambda[[cc]]) * mlen)
-  slam[[cc]] = rbind(0, apply(hlam[[cc]],  1,  cumsum))
-
-  for (nn in 1:num_iter) {
-    loglike[nn] = loglike[nn] - sum((slam[[cc]][(seg_i+1), nn] + H_i * out$lambda[[cc]][nn, (seg_i+1)]) * rr[[cc]][nn, ]) + sum(log_rr[[cc]][nn, ][resp_i == (cc - 1)] ) # log(S(t)) + log(h(t)) for event cc
-  }
-}
-return(loglike)
-  }
-
-#+end_src
-
-#+RESULTS:
-
-#+begin_src R
-set.seed(1)
-num_iter <- nrow(mylist[[1]])
-sim_data <- list()
-for (item in 1:I) {
-  start_time <- proc.time()
-  stk_tt <- foreach(chain = 1:num_chain, .combine = "rbind") %dopar% {
-    out <- gethaz_item(mylist[[chain]], cname, item, N, theta = NULL, double_w, double_z)
-    time <- foreach(nn = 1:num_iter, .combine = "rbind") %do% {
-      gen_surv_time(out, sj, H, N, nn)
-    }
-    pp <- gen_surv_pp(out, time, sj) %>% array(dim = dim(time))
-    cbind(time, pp)
-  }
-  sim_data[[item]] <- stk_tt
-  cat("\nelapsed time to simulate item", item, "\n")
-  print(proc.time() - start_time)
-}
-
-save(sim_data, file = paste0(out_dir, "surv_sim.RData"))
-#+end_src
-
-#+RESULTS:
-: Error in { : 
-:   task 1 failed - "task 1 failed - "dims [product 1255] do not match the length of object [10040]""
-
-#+begin_src R :tangle R/art-functions.R
-## calculate baseline hazard and hazard ratio
-## slow iteration
-haz_fun_item <- function(sam, sj, item, N) {
-  rel <- NULL
-  for (k in 1:N) {
-    param <- getparam(sam, sj, item, k)
-    dist <- sqrt(rowSums((param$z - param$w)^2))
-    rr <- exp(param$beta + param$theta - param$gamma * dist)
-    rel <- rbind(rel, rr)
-  }
-  haz <- matrix(c(sj, 0, param$lambda[1, ], 0, param$lambda[2, ]), length(sj), 3)
-  return(list(haz = haz, rel = rel))
-}
-#+end_src
-
-#+begin_src R :tangle R/art-functions.R
-## simulate survival time and response
-## slow
-gen_surv <- function(out, sj, N) {
-  time <- numeric(N)
-  for (k in 1:N) {
-    hh <- cbind(sj, out$haz[, 2] * out$rel[k, 1] + out$haz[, 3] * out$rel[k, 2])
-    time[k] <- timereg::rchaz(hh, n = 1, cum.hazard = FALSE)[, 2]
-  }
-
-  dd <- data.frame(time = time, status = rep(1, N))
-  seg_temp <- survSplit(formula = Surv(time, status) ~ 1, cut = sj, data = dd, episode = "seg_g")
-  seg_g <- seg_temp %>%
-    filter(status == 1) %>%
-    select(seg_g) %>%
-    unlist()
-
-  rr12 <- out$haz[seg_g, 2:3] * out$rel
-  pp <- rr12[, 2] / rowSums(rr12)
-  return(list(time = time, pp = pp))
-}
-#+end_src
-
-#+RESULTS:
-
-#+begin_src R :tangle no
-mt = readr::read_csv(file="chessB_pn/input/mt.csv", col_names=F) %>% as.matrix()
-mi = readr::read_csv(file="chessB_pn/input/mi.csv", col_names=F) %>% as.matrix()
-
-for (item in 1:I){
-time = sim_data[[item]][,1:251]
-aa = mt[item,]
-ss = 0
-for (kk in 1:N) {
-  ## print(sum(time[,kk] > aa[k]) / length(time[,kk]))
-  ss = ss + sum(time[,kk] > aa[k]) / length(time[,kk])
-  }
-print(ss/N)
-}
-#+end_src
-
-#+begin_src R :tangle no
-## simluate survival time and competing events for all items and chains
-## slow
-sim_data <- list()
-num_iter <- nrow(mylist[[1]])
-for (item in 1:I) {
-start_time <- proc.time()
-stk_tt <-  foreach(chain = 1:3, .combine='cbind') %dopar% {
-  foreach(ii=1:num_iter, .combine='cbind') %dopar% {
-    out <- haz_fun_item(mylist[[chain]][ii,], sj, item, N)
-    sim <- gen_surv(out, sj, N)
-    cbind(sim$time,sim$pp)
-  }
-}
-row.names(stk_tt) <- 1:N
-sim_data[[item]] <- stk_tt
-cat("\nelapsed time to simulate item",item,"\n")
-print(proc.time() - start_time)
-}
-#+end_src
 ** load outputs
 #+begin_src R :tangle R/load-outputs.R
 mvar <- readr::read_csv(paste0(out_dir, "mvar.csv"), col_names = F) %>% as.matrix()
@@ -4253,26 +3853,9 @@ if (sum((w0-w1)^2) < 1.0e-20) double_w = 0
 ## mylist[[cid]] = mcmc(df, start = mystart, end = myend, thin = mythin)
 #+END_SRC
 
-#+RESULTS:
-#+begin_example
-
-[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
-cols(
-  .default = col_double()
-)
-[36mℹ[39m Use [90m[40m[90m[40m`spec()`[40m[90m[49m[39m for the full column specifications.
-
-
-[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
-cols(
-  .default = col_double()
-)
-[36mℹ[39m Use [90m[40m[90m[40m`spec()`[40m[90m[49m[39m for the full column specifications.
-#+end_example
-
 # TODO: This function is under revision!!
 #+BEGIN_SRC R :tangle R/art-functions.R
-my_procrustes <- function(Xstar, dlist, is_list = FALSE, my_translation = TRUE, my_scale = FALSE, my_reflect = TRUE) {
+my_procrustes <- function(Xstar, dlist, is_list = FALSE, bind_zw = FALSE, my_translation = TRUE, my_scale = FALSE, my_reflect = TRUE) {
   posm <- 0
   if (is_list == TRUE) {
     num_chain <- length(dlist)
@@ -4302,159 +3885,83 @@ my_procrustes <- function(Xstar, dlist, is_list = FALSE, my_translation = TRUE, 
     z0 <- aperm(array(unlist(t(df[, z0dx])), dim = c(2, num_z, num_samples)), c(2, 1, 3))
 
     w0star <- Xstar$w.0
+    z0star <- Xstar$z.0
 
     if (no_w1) {
       w1 <- NULL
     } else {
-      w1star <- MCMCpack::procrustes(Xstar$w.1, w0star)$X.new
+      if (no_z1) stop('require double_z = 1')
+      sout = MCMCpack::procrustes(Xstar$w.1, w0star)
+      w1star <- sout$X.new
       w1 <- aperm(array(unlist(t(df[, w1dx])), dim = c(2, num_w, num_samples)), c(2, 1, 3))
     }
     if (no_z1) {
       z1 <- NULL
     } else {
+      z1star = Xstar$z.1 %*% sout$R + rep(sout$tt, each = num_z)
       z1 <- aperm(array(unlist(t(df[, z1dx])), dim = c(2, num_z, num_samples)), c(2, 1, 3))
     }
 
     adx <- z0dx | z1dx | w0dx | w1dx
-
+    
+    xstar0 = rbind(w0star,z0star)
+    xstar1 = rbind(w1star,z1star)
+    
     mm <- foreach(k = 1:num_samples) %dopar% {
-      pout <- MCMCpack::procrustes(w0[, , k], w0star)
-      w0[, , k] <- pout$X.new
-      z0[, , k] <- z0[, , k] %*% pout$R + rep(pout$tt, each = num_z)
-
-      if (!no_w1) {
-        pout <- MCMCpack::procrustes(w1[, , k], w1star)
-        w1[, , k] <- pout$X.new
+      if (!bind_zw) {
+        pout <- MCMCpack::procrustes(w0[, , k], w0star)
+        w0[, , k] <- pout$X.new
+        z0[, , k] <- z0[, , k] %*% pout$R + rep(pout$tt, each = num_z)
+      } else {
+        bout <- MCMCpack::procrustes(rbind(w0[, , k],z0[,,k]), xstar0)
+        w0[, , k] <- bout$X.new[1:num_w, ]
+        z0[, , k] <- bout$X.new[(num_w+1):(num_w+num_z), ]
+        }
+        
+        if (!no_w1 & !bind_zw) {
+          pout <- MCMCpack::procrustes(w1[, , k], w1star)
+          w1[, , k] <- pout$X.new
+          }
+      if (!no_z1 & !bind_zw) {
+          z1[, , k] <- z1[, , k] %*% pout$R + rep(pout$tt, each = num_z)
+        }
+      if (!no_w1 & bind_zw) {
+        bout <- MCMCpack::procrustes(rbind(w1[, , k],z1[,,k]), xstar1)
+        w1[, , k] <- bout$X.new[1:num_w, ]
+        z1[, , k] <- bout$X.new[(num_w+1):(num_w+num_z), ]
       }
-      if (!no_z1) {
-        z1[, , k] <- z1[, , k] %*% pout$R + rep(pout$tt, each = num_z)
+        rbind(z0[, , k], z1[, , k], w0[, , k], w1[, , k])
       }
-      rbind(z0[, , k], z1[, , k], w0[, , k], w1[, , k])
-    }
-    tmm <- lapply(mm, t)
-    df[, adx] <- t(matrix(unlist(tmm), nrow = sum(adx)))
+      tmm <- lapply(mm, t)
+      df[, adx] <- t(matrix(unlist(tmm), nrow = sum(adx)))
 
-    posm <- posm + Reduce("+", mm) / num_samples
-    if (is_list == TRUE) {
-      dlist[[i]] <- df
-    } else {
-      dlist <- df
-    }
-  }
-
-  posm <- posm / num_chain
-  z0 <- posm[1:num_z, ]
-  if (no_z1 && no_w1) {
-    w0 <- posm[num_z + (1:num_w), ]
-  } else if (no_z1 && !no_w1) {
-    w0 <- posm[num_z + (1:num_w), ]
-    w1 <- posm[num_z + num_w + (1:num_w), ]
-  }
-
-  if (!no_z1 && no_w1) {
-    z1 <- posm[num_z + (1:num_z), ]
-    w0 <- posm[2 * num_z + (1:num_w), ]
-  } else if (!no_z1 && !no_w1) {
-    z1 <- posm[num_z + (1:num_z), ]
-    w0 <- posm[2 * num_z + (1:num_w), ]
-    w1 <- posm[2 * num_z + num_w + (1:num_w), ]
-  }
-  return(list(dlist = dlist, z0 = z0, z1 = z1, w0 = w0, w1 = w1))
-}
-#+END_SRC
-
-#+RESULTS:
-
-#+BEGIN_SRC R 
-my_procrustes <- function(Xstar, dlist, is_list = FALSE, my_translation = TRUE, my_scale = FALSE, reflect = TRUE) {
-  posm <- 0
-  if (is_list == TRUE) {
-    num_chain <- length(dlist)
-  } else {
-    num_chain <- 1
-  }
-  for (i in 1:num_chain) {
-    if (is_list == TRUE) {
-      df <- dlist[[i]]
-    } else {
-      df <- dlist
-    }
-
-    num_samples <- nrow(df)
-
-    z0dx <- grepl("^z\\.0\\.", colnames(df))
-    z1dx <- grepl("^z\\.1\\.", colnames(df))
-    w0dx <- grepl("^w\\.0\\.", colnames(df))
-    w1dx <- grepl("^w\\.1\\.", colnames(df))
-
-    no_z1 <- sum(z1dx) == 0
-    no_w1 <- sum(w1dx) == 0
-
-    num_w <- sum(w0dx) / 2
-    num_z <- sum(z0dx) / 2
-    w0 <- aperm(array(unlist(t(df[, w0dx])), dim = c(2, num_w, num_samples)), c(2, 1, 3))
-    z0 <- aperm(array(unlist(t(df[, z0dx])), dim = c(2, num_z, num_samples)), c(2, 1, 3))
-
-    w0star <- Xstar$w.0
-
-    if (no_w1) {
-      w1 <- NULL
-    } else {
-      w1star <- MCMCpack::procrustes(Xstar$w.1, w0star, translation = my_translation, dilation = my_scale)$X.new
-      w1 <- aperm(array(unlist(t(df[, w1dx])), dim = c(2, num_w, num_samples)), c(2, 1, 3))
-    }
-    if (no_z1) {
-      z1 <- NULL
-    } else {
-      z1 <- aperm(array(unlist(t(df[, z1dx])), dim = c(2, num_z, num_samples)), c(2, 1, 3))
-    }
-
-    adx <- z0dx | z1dx | w0dx | w1dx
-
-    mm <- foreach(k = 1:num_samples) %dopar% {
-      pout <- MCMCpack::procrustes(w0[, , k], w0star, translation = my_translation, dilation = my_scale)
-      w0[, , k] <- pout$X.new
-      z0[, , k] <- t(t(pout$s * z0[, , k] %*% pout$R) + pout$tt)
-
-      if (!no_w1) {
-        pout <- MCMCpack::procrustes(w1[, , k], w1star, translation = my_translation, dilation = my_scale)
-        w1[, , k] <- pout$X.new
+      posm <- posm + Reduce("+", mm) / num_samples
+      if (is_list == TRUE) {
+        dlist[[i]] <- df
+      } else {
+        dlist <- df
       }
-      if (!no_z1) {
-        z1[, , k] <- t(t(pout$s * z1[, , k] %*% pout$R) + pout$tt)
-      }
-      rbind(z0[, , k], z1[, , k], w0[, , k], w1[, , k])
     }
-    tmm <- lapply(mm, t)
-    df[, adx] <- t(matrix(unlist(tmm), nrow = sum(adx)))
 
-    posm <- posm + Reduce("+", mm) / num_samples
-    if (is_list == TRUE) {
-      dlist[[i]] <- df
-    } else {
-      dlist <- df
+    posm <- posm / num_chain
+    z0 <- posm[1:num_z, ]
+    if (no_z1 && no_w1) {
+      w0 <- posm[num_z + (1:num_w), ]
+    } else if (no_z1 && !no_w1) {
+      w0 <- posm[num_z + (1:num_w), ]
+      w1 <- posm[num_z + num_w + (1:num_w), ]
     }
-  }
 
-  posm <- posm / num_chain
-  z0 <- posm[1:num_z, ]
-  if (no_z1 && no_w1) {
-    w0 <- posm[num_z + (1:num_w), ]
-  } else if (no_z1 && !no_w1) {
-    w0 <- posm[num_z + (1:num_w), ]
-    w1 <- posm[num_z + num_w + (1:num_w), ]
+    if (!no_z1 && no_w1) {
+      z1 <- posm[num_z + (1:num_z), ]
+      w0 <- posm[2 * num_z + (1:num_w), ]
+    } else if (!no_z1 && !no_w1) {
+      z1 <- posm[num_z + (1:num_z), ]
+      w0 <- posm[2 * num_z + (1:num_w), ]
+      w1 <- posm[2 * num_z + num_w + (1:num_w), ]
+    }
+    return(list(dlist = dlist, z0 = z0, z1 = z1, w0 = w0, w1 = w1))
   }
-
-  if (!no_z1 && no_w1) {
-    z1 <- posm[num_z + (1:num_z), ]
-    w0 <- posm[2 * num_z + (1:num_w), ]
-  } else if (!no_z1 && !no_w1) {
-    z1 <- posm[num_z + (1:num_z), ]
-    w0 <- posm[2 * num_z + (1:num_w), ]
-    w1 <- posm[2 * num_z + num_w + (1:num_w), ]
-  }
-  return(list(dlist = dlist, z0 = z0, z1 = z1, w0 = w0, w1 = w1))
-}
 #+END_SRC
 
 #+begin_src R :results none :tangle R/load-outputs.R
@@ -4474,7 +3981,7 @@ if (HAS_REF) {
 #+end_src
 
 #+BEGIN_SRC R :tangle R/load-outputs.R
-matched <- my_procrustes(Xstar, dlist, is_list = T)
+matched <- my_procrustes(Xstar, dlist, is_list = T, bind_zw = T)
 ## , my_translation = TRUE, my_scale = FALSE)
 mydf <- matched$dlist
 mdf <- bind_rows(matched$dlist, .id = "column_label")
@@ -5534,6 +5041,541 @@ plot(fdmeans,col=1:max(res$cls),lwd=2)
 dev.off(which = dev.cur())
 #+end_src
 
+* WAIT simulation of survival times
+:PROPERTIES:
+:header-args:R: :tangle R/sim_surv_data.R
+:END:
+- State "WAIT"       from              [2021-02-19 Fri 03:55] \\
+  see if it can be run in another machine
+1. get break points for time
+2. fix item, get item parameters + piecewise constant rates
+3. calculate relative risk for each type (for all persons)
+4. simulate survival time -> response
+5. repeat for all items (40)
+6. repeat for many MCMC samples (10000?)
+
+Run =R/sim_surv_data.R= for the simulation, and find relevant data as
+follows:
+   #+begin_src R :tangle no
+   time = sim_data[[item]][,1:251]
+   pp = sim_data[[item]][,252:502]
+
+   mt = readr::read_csv(file="chessB_pn/input/mt.csv", col_names=F) %>% as.matrix()
+   mi = readr::read_csv(file="chessB_pn/input/mi.csv", col_names=F) %>% as.matrix()
+   #+end_src
+
+- ~iter~: MCMC iteration
+- ~time[iter, person]~: simulated survival time t
+- ~pp[iter, person]~: simulated conditional probability of correct response given time t
+- ~mi[item,person]~: observed response (1: correct, 0: incorrect)
+- ~mt[item,person]~: observed time
+
+The =RData= will be saved in =chessB_pn=. To run the simulation with no
+distance term, set =out_dir <- "chessB_no_latent/"= in =R/sim_surv_data.R=.
+
+#+begin_src R :results none
+## out_dir <- "chessB_pn/"
+## out_dir <- "chessB_np/"
+out_dir <- "chessB_no_latent/"
+
+## out_dir <- "chessB_pn_ncut2_zero_beta/"
+out_dir <- "chessB_no_latent_ncut2_zero_beta/"
+## out_dir <- "chessB_np_ncut2_zero_beta/"
+## out_dir <- "chessB_no_latent_ncut2_zero_beta/"
+out_dir <- "chessB_swdz_pp_ncut5_zero_beta/"
+## out_dir <- "chessB_double_pp_ncut2_zero_beta/"
+
+out_dir <- "chessB_double_nn_ncut5_zero_beta_noinfo_lc2/"
+out_dir <- "chessB_double_pp_ncut5_zero_beta_noinfo_lc2/"
+## out_dir <- "chessB_nn_ncut5_zero_beta_noinfo_lc2/"
+## out_dir <- "chessB_pn_ncut5_zero_beta_noinfo_lc2/"
+## out_dir <- "chessB_pp_ncut5_zero_beta_noinfo_lc2/"
+## out_dir <- "chessB_swdz_nn_ncut5_zero_beta_noinfo_lc2/"
+## out_dir <- "chessB_swdz_pp_ncut5_zero_beta_noinfo_lc2/"
+## out_dir <- "chessB_no_latent_ncut5_zero_beta_noinfo_lc2/"
+out_dir = "chessB_np_ncut5_zero_beta_noinfo_lc2/"
+out_dir="chessB_np_ncut5_zero_beta_noinfo_lc2/"
+
+num_chain <- 2
+HAS_REF <- 0
+
+source("R/Renviron.R")
+source("R/load-outputs.R")
+#+end_src
+
+
+#+begin_src R :results none :tangle R/wrap_param.R
+source("R/chessB_noinfo-preprocess.R")
+mi = readr::read_csv(file="chessB_pn/input/mi.csv", col_names=F) %>% as.matrix()
+sam = mylist[[1]]
+
+## distance calculation can be fully vectorized (and storing z), but I don't have time for this.
+z <- sam[, stringr::str_which(cname, paste0("^z\\.[0-1]\\."))] %>% as.matrix()
+w <- sam[, stringr::str_which(cname, paste0("^w\\.[0-1]\\."))]%>% as.matrix()
+## beta <- sam[, stringr::str_which(cname, paste0("^beta\\.", item, "\\."))]
+
+## correction for single z or w
+if (ncol(z) < 2 * 2 * N) z = cbind(z,z)
+if (ncol(w) < 2 * 2 * I) w = cbind(w,w)
+
+theta <- sam[, stringr::str_which(cname, paste0("^theta\\."))] %>% as.matrix()## (theta.k.0 theta.k.1)
+gamma <- sam[, stringr::str_which(cname, paste0("gamma\\."))]%>% as.matrix()
+
+lambda <- sam[, stringr::str_which(cname, paste0("^lambda\\.[0-1]\\."))]%>% as.matrix()
+
+param = list(I=as.integer(I), N=as.integer(N), G=as.integer(G), seg = as.matrix(mseg), H = as.matrix(mh), len = as.integer(mlen), sj = as.numeric(sj), Y = mi)
+#+end_src
+
+#+begin_src R :tangle R/art-functions.R
+eval_DIC = function(lambda, theta, z, w, gamma, param) {
+  mlambda = rbind(apply(lambda,2,mean), lambda)
+  mtheta = rbind(apply(theta,2,mean), theta)
+  mz = rbind(apply(z,2,mean), z)
+  mw = rbind(apply(w,2,mean), w)
+  mgamma = rbind(apply(gamma,2,mean), gamma)
+
+  mloglike = art::get_loglike(mlambda, mtheta, mz, mw, mgamma, param)
+  ll = mloglike[2:length(mloglike)]
+  pd2 = 0.5 * var(-2*ll)
+  pd1 = mean(-2*ll) - (-2 * mloglike[1])
+  DIC2 = -2*mloglike[1] + 2*pd2
+  DIC1 = -2*mloglike[1] + 2*pd1
+  return(list(loglike=ll, DIC1=DIC1, DIC2 = DIC2))
+}
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R :tangle R/art-functions.R
+gethaz_item <- function(sam, cname, item, N, double_w, double_z) {
+  num_iter <- nrow(sam)
+  d_zw <- list()
+  d_zw[[1]] = d_zw[[2]] = matrix(0, num_iter, N)
+
+  for (k in 1:N) {
+    ## distance calculation can be fully vectorized (and storing z), but I don't have time for this.
+    z <- sam[, stringr::str_which(cname, paste0("^z\\.", 0, "\\.", k, "\\.[1-2]"))]
+    w <- sam[, stringr::str_which(cname, paste0("^w\\.", 0, "\\.", item, "\\."))]
+    d_zw[[1]][, k] <- sqrt(rowSums((z - w)^2))
+  }
+  if (!double_w & !double_z){
+  d_zw[[2]] = d_zw[[1]]
+} else if (double_w & double_z) {
+  for (k in 1:N) {
+    ## distance calculation can be fully vectorized (and storing z), but I don't have time for this.
+    z <- sam[, stringr::str_which(cname, paste0("^z\\.", 1, "\\.", k, "\\.[1-2]"))]
+    w <- sam[, stringr::str_which(cname, paste0("^w\\.", 1, "\\.", item, "\\."))]
+    d_zw[[2]][, k] <- sqrt(rowSums((z - w)^2))
+  }
+} else if (!double_w & double_z) {
+  for (k in 1:N) {
+    ## distance calculation can be fully vectorized (and storing z), but I don't have time for this.
+    z <- sam[, stringr::str_which(cname, paste0("^z\\.", 1, "\\.", k, "\\.[1-2]"))]
+    w <- sam[, stringr::str_which(cname, paste0("^w\\.", 0, "\\.", item, "\\."))]
+    d_zw[[2]][, k] <- sqrt(rowSums((z - w)^2))
+  }
+}
+
+beta <- sam[, stringr::str_which(cname, paste0("^beta\\.", item, "\\."))]
+
+theta_temp <- sam[, stringr::str_which(cname, paste0("^theta\\."))] ## (theta.k.0 theta.k.1)
+teq <- seq(1, ncol(theta_temp), 2)
+gamma <- theta <- lambda <- rr <- log_rr <- list()
+theta[[1]] <- theta_temp[, teq]
+theta[[2]] <- theta_temp[, -teq]
+
+gamma <- sam[, stringr::str_which(cname, paste0("gamma\\."))]
+
+lambda_temp <- sam[, stringr::str_which(cname, paste0("^lambda\\.[0-1]\\.", item, "\\."))]
+leq <- 1:(ncol(lambda_temp)/2)
+lambda[[1]] <- lambda_temp[, leq]
+lambda[[2]] <- lambda_temp[, -leq]
+
+for (cc in 1:2) {
+ log_rr[[cc]] <- beta[, cc] + theta[[cc]] - gamma[,cc] * d_zw[[cc]]
+ rr[[cc]] <- exp(log_rr[[cc]])
+}
+
+res <- list(lambda = lambda, rr = rr, log_rr = log_rr,  theta = theta)
+return(res)
+}
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R :tangle R/art-functions.R
+gen_surv_time <- function(out, sj, N, nn) {
+  rr <- out$rr
+  lambda <- out$lambda
+  mj <- length(sj)
+  len = diff(sj)
+
+  haz <- lambda[[1]][nn, ] %o% rr[[1]][nn, ] + lambda[[2]][nn, ] %o% rr[[2]][nn, ]
+  logS <- -rexp(N)
+  cumhaz <- rbind(rep(0, N), apply(haz * len, 2, cumsum))
+  vtime <- numeric(N)
+
+  for (kk in 1:N) {
+    ss <- findInterval(-logS[kk], cumhaz[, kk])
+    if (ss != mj) {
+      vtime[kk] <- sj[ss] - (logS[kk] + cumhaz[ss, kk]) / haz[ss, kk]
+    } else {
+      vtime[kk] <- sj[ss]
+    }
+  }
+  return(vtime)
+}
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R :tangle R/art-functions.R
+gen_surv_pp <- function(out, time, sj) {
+  rr <- out$rr
+  lambda <- out$lambda
+  num_iter <- nrow(time)
+  hr <- list()
+  seg_g <- findInterval(time, sj)
+  mg <- length(sj)
+  seg_g[seg_g == mg] <- (mg - 1)
+
+  ## m is the number of rows in the matrix, r and c are row and column numbers respectively, and ind the linear index:
+  ## ind = (c-1)*m + r
+  ind <- (seg_g - 1) * num_iter + 1:num_iter
+
+  for (cc in 1:2) hr[[cc]] <- lambda[[cc]][ind] * c(rr[[cc]])
+
+  pp <- hr[[2]] / (hr[[1]] + hr[[2]])
+
+  return(pp)
+}
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R
+## see get_hazitem() for "out"
+chain = 1
+sam = mylist[[chain]][seq(1, nrow(mylist[[chain]]), 50), ]
+num_iter = nrow(sam)
+
+mloglike = foreach(ii = 1:I, .combine="cbind") %dopar% {
+out <- gethaz_item(sam, cname, ii, N, double_w, double_z)
+
+seg_i = unlist(mseg[ii,])
+H_i = mh[ii,]
+
+resp_i = mi[ii,]
+time_i = mt[ii,]
+
+get_ll(out, resp_i, time_i, sj, H_i, seg_i, loglike = NULL)
+}
+
+loglike = rowSums(mloglike)
+
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R :tangle R/art-functions.R
+## log-likelihood, native R, use get_loglike() instead.
+get_ll <- function(out, resp_i, time_i, sj, H_i, seg_i, loglike = NULL) {
+
+  rr = out$rr
+  log_rr = out$log_rr
+  lambda = out$lambda
+
+  num_iter = nrow(rr[[1]])
+  loglike = numeric(num_iter)
+
+  slam = hlam = list()
+
+  for (cc in 1:2) {
+
+  hlam[[cc]] = t( t(lambda[[cc]]) * mlen)
+  slam[[cc]] = rbind(0, apply(hlam[[cc]],  1,  cumsum))
+
+  for (nn in 1:num_iter) {
+    loglike[nn] = loglike[nn] - sum((slam[[cc]][(seg_i+1), nn] + H_i * lambda[[cc]][nn, (seg_i+1)]) * rr[[cc]][nn, ]) + sum((log(lambda[[cc]][nn, (seg_i+1)]) + log_rr[[cc]][nn, ])[resp_i == (cc - 1)] ) # log(S(t)) + log(h(t)) for event cc
+  }
+}
+return(loglike)
+  }
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R
+set.seed(1)
+num_iter <- nrow(mylist[[1]])
+sim_data <- list()
+len = diff(sj)
+num_chain = 1
+
+for (ii in 1:I) {
+  start_time <- proc.time()
+  stk_tt <- foreach(chain = 1:num_chain, .combine = "rbind") %dopar% {
+    out <- gethaz_item(mylist[[chain]], cname, ii, N, double_w, double_z)
+    time <- foreach(nn = 1:num_iter, .combine = "rbind") %do% {
+      gen_surv_time(out, sj,N, nn)
+    }
+    pp <- gen_surv_pp(out, time, sj) %>% array(dim = dim(time))
+    cbind(time, pp)
+  }
+  sim_data[[ii]] <- stk_tt
+  cat("\nelapsed time to simulate item", ii, "\n")
+  print(proc.time() - start_time)
+}
+
+save(sim_data, file = paste0(out_dir, "surv_sim.RData"))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+
+elapsed time to simulate item 1 
+   user  system elapsed 
+  3.662   0.069   4.612 
+
+elapsed time to simulate item 2 
+   user  system elapsed 
+  3.889   0.054   4.710 
+
+elapsed time to simulate item 3 
+   user  system elapsed 
+  3.708   0.020   4.388 
+
+elapsed time to simulate item 4 
+   user  system elapsed 
+  3.781   0.038   4.432 
+
+elapsed time to simulate item 5 
+   user  system elapsed 
+  3.511   0.017   4.281 
+
+elapsed time to simulate item 6 
+   user  system elapsed 
+  3.405   0.022   4.221 
+
+elapsed time to simulate item 7 
+   user  system elapsed 
+  3.495   0.017   4.169 
+
+elapsed time to simulate item 8 
+   user  system elapsed 
+  3.501   0.029   4.205 
+
+elapsed time to simulate item 9 
+   user  system elapsed 
+  3.533   0.018   4.373 
+
+elapsed time to simulate item 10 
+   user  system elapsed 
+  3.535   0.018   4.320 
+
+elapsed time to simulate item 11 
+   user  system elapsed 
+  3.616   0.021   4.439 
+
+elapsed time to simulate item 12 
+   user  system elapsed 
+  3.942   0.034   4.476 
+
+elapsed time to simulate item 13 
+   user  system elapsed 
+  3.879   0.025   4.826 
+
+elapsed time to simulate item 14 
+   user  system elapsed 
+  3.724   0.023   4.605 
+
+elapsed time to simulate item 15 
+   user  system elapsed 
+  3.789   0.031   4.561 
+
+elapsed time to simulate item 16 
+   user  system elapsed 
+  3.707   0.025   4.695 
+
+elapsed time to simulate item 17 
+   user  system elapsed 
+  4.352   0.081   6.518 
+
+elapsed time to simulate item 18 
+   user  system elapsed 
+  4.549   0.035   6.340 
+
+elapsed time to simulate item 19 
+   user  system elapsed 
+  5.163   0.073   7.356 
+
+elapsed time to simulate item 20 
+   user  system elapsed 
+  6.666   0.195  10.171 
+
+elapsed time to simulate item 21 
+   user  system elapsed 
+  7.078   0.171  10.586 
+
+elapsed time to simulate item 22 
+   user  system elapsed 
+  6.694   0.114   9.533 
+
+elapsed time to simulate item 23 
+   user  system elapsed 
+  5.731   0.062   7.579 
+
+elapsed time to simulate item 24 
+   user  system elapsed 
+  4.830   0.031   6.304 
+
+elapsed time to simulate item 25 
+   user  system elapsed 
+  4.391   0.028   5.734 
+
+elapsed time to simulate item 26 
+   user  system elapsed 
+  4.286   0.038   5.749 
+
+elapsed time to simulate item 27 
+   user  system elapsed 
+  3.884   0.024   5.201 
+
+elapsed time to simulate item 28 
+   user  system elapsed 
+  3.765   0.032   5.329 
+
+elapsed time to simulate item 29 
+   user  system elapsed 
+  3.795   0.023   5.087 
+
+elapsed time to simulate item 30 
+   user  system elapsed 
+  3.987   0.033   5.028 
+
+elapsed time to simulate item 31 
+   user  system elapsed 
+  3.771   0.020   5.051 
+
+elapsed time to simulate item 32 
+   user  system elapsed 
+  3.841   0.027   4.974 
+
+elapsed time to simulate item 33 
+   user  system elapsed 
+  3.940   0.023   5.160 
+
+elapsed time to simulate item 34 
+   user  system elapsed 
+  4.009   0.038   5.326 
+
+elapsed time to simulate item 35 
+   user  system elapsed 
+  3.930   0.026   5.258 
+
+elapsed time to simulate item 36 
+   user  system elapsed 
+  3.985   0.030   5.114 
+
+elapsed time to simulate item 37 
+   user  system elapsed 
+  4.017   0.025   5.431 
+
+elapsed time to simulate item 38 
+   user  system elapsed 
+  4.084   0.027   5.247 
+
+elapsed time to simulate item 39 
+   user  system elapsed 
+  4.158   0.038   5.441 
+
+elapsed time to simulate item 40 
+   user  system elapsed 
+  3.924   0.023   5.126
+#+end_example
+
+#+begin_src R :tangle R/art-functions.R
+## calculate baseline hazard and hazard ratio
+## slow iteration
+haz_fun_item <- function(sam, sj, item, N) {
+  rel <- NULL
+  for (k in 1:N) {
+    param <- getparam(sam, sj, item, k)
+    dist <- sqrt(rowSums((param$z - param$w)^2))
+    rr <- exp(param$beta + param$theta - param$gamma * dist)
+    rel <- rbind(rel, rr)
+  }
+  haz <- matrix(c(sj, 0, param$lambda[1, ], 0, param$lambda[2, ]), length(sj), 3)
+  return(list(haz = haz, rel = rel))
+}
+#+end_src
+
+#+begin_src R :tangle R/art-functions.R
+## simulate survival time and response
+## slow
+gen_surv <- function(out, sj, N) {
+  time <- numeric(N)
+  for (k in 1:N) {
+    hh <- cbind(sj, out$haz[, 2] * out$rel[k, 1] + out$haz[, 3] * out$rel[k, 2])
+    time[k] <- timereg::rchaz(hh, n = 1, cum.hazard = FALSE)[, 2]
+  }
+
+  dd <- data.frame(time = time, status = rep(1, N))
+  seg_temp <- survSplit(formula = Surv(time, status) ~ 1, cut = sj, data = dd, episode = "seg_g")
+  seg_g <- seg_temp %>%
+    filter(status == 1) %>%
+    select(seg_g) %>%
+    unlist()
+
+  rr12 <- out$haz[seg_g, 2:3] * out$rel
+  pp <- rr12[, 2] / rowSums(rr12)
+  return(list(time = time, pp = pp))
+}
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R :tangle no
+mt = readr::read_csv(file="chessB_pn/input/mt.csv", col_names=F) %>% as.matrix()
+mi = readr::read_csv(file="chessB_pn/input/mi.csv", col_names=F) %>% as.matrix()
+
+for (item in 1:I){
+time = sim_data[[item]][,1:251]
+aa = mt[item,]
+ss = 0
+for (kk in 1:N) {
+  ## print(sum(time[,kk] > aa[k]) / length(time[,kk]))
+  ss = ss + sum(time[,kk] > aa[k]) / length(time[,kk])
+  }
+print(ss/N)
+}
+#+end_src
+
+#+begin_src R :tangle no
+## simluate survival time and competing events for all items and chains
+## slow
+sim_data <- list()
+num_iter <- nrow(mylist[[1]])
+for (item in 1:I) {
+start_time <- proc.time()
+stk_tt <-  foreach(chain = 1:3, .combine='cbind') %dopar% {
+  foreach(ii=1:num_iter, .combine='cbind') %dopar% {
+    out <- haz_fun_item(mylist[[chain]][ii,], sj, item, N)
+    sim <- gen_surv(out, sj, N)
+    cbind(sim$time,sim$pp)
+  }
+}
+row.names(stk_tt) <- 1:N
+sim_data[[item]] <- stk_tt
+cat("\nelapsed time to simulate item",item,"\n")
+print(proc.time() - start_time)
+}
+#+end_src
+
+#+RESULTS:
+: Error in nrow(mylist[[1]]) : object 'mylist' not found
+: Error in 1:I : NA/NaN argument
+
 * posterior checking
 Rcpp probability distribution: https://teuder.github.io/rcpp4everyone_en/220_dpqr_functions.html
 to test my code
@@ -5559,6 +5601,11 @@ out_dir="chessB_no_latent_ncut5_zero_beta_noinfo_lc2/"
 ## out_dir="chessB_nn_ncut2_zero_beta_noinfo_lc2/"
 ## out_dir="chessB_nn_ncut5_zero_beta_noinfo_lc2/"
 ## out_dir="chessB_np_ncut5_zero_beta_noinfo_lc2/"
+## out_dir="chessB_pp_ncut5_zero_beta_noinfo_lc2/"
+out_dir="chessB_double_pn_ncut5_zero_beta_noinfo_lc2/"
+out_dir="chessB_double_np_ncut5_zero_beta_noinfo_lc2/"
+out_dir="chessB_double_pp_ncut5_zero_beta_noinfo_lc2/"
+out_dir="chessB_double_nn_ncut5_zero_beta_noinfo_lc2/"
 
 num_chain <- 1
 HAS_REF <- 0
@@ -5570,8 +5617,13 @@ source("R/Renviron.R")
 mt = readr::read_csv(file="chessB_pn/input/mt.csv", col_names=F) %>% as.matrix()
 mi = readr::read_csv(file="chessB_pn/input/mi.csv", col_names=F) %>% as.matrix()
 
-source("R/load-outputs.R")
+system(paste0("rm figure/*.pdf"))
 
+source("R/load-outputs.R")
+source("R/visual-latent-space-plot.R")
+
+system(paste0("mkdir -p ", out_dir, "figure/"))
+system(paste0("rsync -rv figure/*.pdf ", out_dir, "figure/"))
 ## save(mylist, file = paste0(out_dir,"mylist"))
 #+end_src
 
@@ -5603,8 +5655,9 @@ for (ii in 1:I) {
   print(proc.time() - start_time)
 }
 
-mlike = art::get_loglike(lambda, theta, z, w, gamma, param)
-mmet = list(mll=mll,mauc=mauc,mlike=mlike)
+mm = eval_DIC(lambda, theta, z, w, gamma, param)
+mlike=mm$loglike
+mmet = list(mll=mll,mauc=mauc,mlike=mm$loglike)
 ## save(mmet, file = paste0(out_dir,"mll_auc.RData"))
 #+end_src
 
@@ -5628,6 +5681,21 @@ auc_boxp <- ggplot(dd, aes(x=item,y=AUC,fill=factor(item))) +
   geom_boxplot() + theme(legend.position = "none") + ylim(0, 1)
 
 llike_boxp <- ggplot(data.frame(LogLike = mlike), aes(y=LogLike)) + geom_boxplot() + theme(legend.position = "none") + ggtitle(concat_summary(mlike,0)) + theme(plot.title = element_text(size=10))
+
+sink(paste0(out_dir,"analysis-output.txt"))
+
+cat("=============================\n")
+cat("log-likelihood\n")
+cat("=============================\n")
+summary(mlike)
+
+cat("=============================\n")
+cat("DIC\n")
+cat("=============================\n")
+cat("DIC1, DIC2\n")
+cat(paste0(round(mm$DIC1,2),","),round(mm$DIC2,2),"\n")
+
+sink()
 
 pdf(paste0(out_dir,"figure/cmetrics.pdf"))
 print(ll_boxp)
@@ -5660,27 +5728,32 @@ out_dir="chessB_no_latent_ncut5_zero_beta_noinfo_lc2/"
 
 num_chain <- 1
 HAS_REF <- 0
+source("R/test_simcode.R")
 
 ## fname = paste0(out_dir,"dll_auc.RData")
 ## if (file.exists(fname)) load(file = fname) else source("R/test_simcode.R")
 
 ddd = dd # baseline to ddd
 
-## out_dir="chessB_double_no_ncut5_zero_beta_noinfo_lc2/"
-## out_dir="chessB_double_pp_ncut5_zero_beta_noinfo_lc2/"
-## out_dir="chessB_double_nn_ncut5_zero_beta_noinfo_lc2/"
-out_dir="chessB_np_ncut5_zero_beta_noinfo_lc2/"
-out_dir="chessB_pn_ncut5_zero_beta_noinfo_lc2/"
-out_dir="chessB_pp_ncut5_zero_beta_noinfo_lc2/"
-## out_dir="chessB_nn_ncut5_zero_beta_noinfo_lc2/"
-## out_dir="chessB_swdz_nn_ncut5_zero_beta_noinfo_lc2/"
-## out_dir="chessB_swdz_pp_ncut5_zero_beta_noinfo_lc2/"
+lout = NULL
+lout=c(lout,"chessB_double_pp_ncut5_zero_beta_noinfo_lc2/")
+lout=c(lout,"chessB_double_nn_ncut5_zero_beta_noinfo_lc2/")
+lout=c(lout,"chessB_double_np_ncut5_zero_beta_noinfo_lc2/")
+lout=c(lout,"chessB_double_pn_ncut5_zero_beta_noinfo_lc2/")
+lout=c(lout,"chessB_np_ncut5_zero_beta_noinfo_lc2/")
+lout=c(lout,"chessB_pn_ncut5_zero_beta_noinfo_lc2/")
+lout=c(lout,"chessB_pp_ncut5_zero_beta_noinfo_lc2/")
+lout=c(lout,"chessB_nn_ncut5_zero_beta_noinfo_lc2/")
+lout=c(lout,"chessB_swdz_nn_ncut5_zero_beta_noinfo_lc2/")
+lout=c(lout,"chessB_swdz_pp_ncut5_zero_beta_noinfo_lc2/")
 
 ## fname = paste0(out_dir,"dll_auc.RData")
 ## if (file.exists(fname)) load(file = fname) else source("R/test_simcode.R")
 
 num_chain <- 1
 HAS_REF <- 0
+
+for (out_dir in lout) {
 
 source("R/test_simcode.R")
 ddd$dLogLoss = ddd$LogLoss - dd$LogLoss
@@ -5701,6 +5774,20 @@ dev.off()
 
 cat("Plot(s) are saved in",out_dir,"\n")
 cat("=================================\n")
+
+sink("loglikelihood.txt", append=TRUE)
+cat(out_dir,"\n")
+summary(mlike)
+cat("=============================\n")
+
+sink()
+
+sink("DIC.txt", append=TRUE)
+cat("out_dir, DIC1, DIC2\n")
+cat(paste0(out_dir,","),paste0(round(mm$DIC1,2),","),round(mm$DIC2,2),"\n")
+
+sink()
+}
 #+end_src
 
 [[pdf:LogLoss_diff.pdf::1]]
@@ -5978,18 +6065,20 @@ lout = c("chessb_np/", "chessb_pn/", "chessb_no_latent/")
 lout = c("chessB_pn_ncut2_zero_beta/", "chessB_no_latent_ncut2_zero_beta/", "chessB_np_ncut2_zero_beta/","chessB_swdz_pp_ncut2_zero_beta/", "chessB_double_pp_ncut2_zero_beta/",
 "chessB_swdz_nn_ncut2_zero_beta/", "chessB_double_nn_ncut2_zero_beta/")
 
+mi = as.matrix(mi)
+
 for (out_dir in lout) {
 
 ## log loss using simulated time
-mll  <- 99 * mi
-
+mll  <- mauc <- matrix(0, num_iter, I)
+  
 load(paste0(out_dir, "surv_sim.RData"))
 
-
-for (item in 1:I) {
+for (ii in 1:I) {
   pp = sim_data[[i]][, (N+1): (2*N)]
-  for (k in 1:N) {
-    mll[item, k] = MLmetrics::LogLoss(pp[, k], mi[item, k])
+  for (nn in 1:num_iter) {
+    mll[nn, ii] = MLmetrics::LogLoss(pp[nn, ], mi[ii, ])
+    mauc[nn, ii] = MLmetrics::AUC(pp[nn, ], mi[ii, ])
     }
   }
 

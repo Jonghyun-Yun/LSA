@@ -1,6 +1,6 @@
 # Created 2021-03-02 Tue 09:18
-#+TITLE: Simulated survival time and log-loss
-#+SUBTITLE: model comparison
+#+TITLE: [2021-03-29 Mon] Discussion
+#+SUBTITLE:
 #+AUTHOR: Jonghyun Yun
 
 # https://orgmode.org/manual/Export-Settings.html#Export-Settings
@@ -12,188 +12,65 @@
 
 # comment out for reveal.js
 #+SETUPFILE: ~/setup/my-theme-readtheorg.setup
+#+SETUPFILE: ~/org/latex_header.setup
+#+SETUPFILE: ~/org/orgmode_header.setup
 
 #+PROPERTY: header-args :tangle
 # #+PROPERTY: header-args :eval never-export
 #+PROPERTY: header-args:R :session *R-Org* :exports both :results output :noweb yes :eval nil
-* OrgMode                                                          :noexport:
-#+INFOJS_OPT: view:nil toc:t ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
 
-** Reveal
-#+REVEAL_ROOT: https://cdn.jsdelivr.net/npm/reveal.js
-# slide/none/fade/convex/concave/zoom
-#+REVEAL_TRANS: slide
-# solarized/black/white/league/sky/beige/simple/serif/blood/night/moon
-#+REVEAL_THEME: solarized
-#+REVEAL_HLEVEL: 2
-#+REVEAL_PLUGINS: (highlight search zoom)
-#+REVEAL_EXTRA_CSS: ./reveal_firago.css
-
-#+OPTIONS: reveal_history:t reveal_fragmentinurl:t
-#+OPTIONS: reveal_mousewheel:t reveal_inter_presentation_links:t
-#+OPTIONS: reveal_width:1400 reveal_height:1000
-#+REVEAL_TITLE_SLIDE: <h2 class="title">%t</h2><h4 class="subtitle">%s</h4><h3 class="author">%a</h3><h3 class="date">%d</h3>
-
-** Hugo
-#+HUGO_BASE_DIR: ~/website
-#+HUGO_AUTO_SET_LASTMOD: t
-#+HUGO_DATE_FORMAT: %Y-%m-%dT%T%z
-#+HUGO_FRONT_MATTER_FORMAT: toml
-
-#+HUGO_SECTION:
-#+HUGO_BUNDLE:
-#+HUGO_CATEGORIES:
-
-#+HUGO_EXPORT_RMARKDOWN:
-
-** HTML
-#+OPTIONS: html-link-use-abs-url:nil html-postamble:nil html-preamble:t
-#+OPTIONS: html-scripts:t html-style:t html5-fancy:t
-
-# #+HTML_MATHJAX: align: left indent: 5em tagside: right
-# #+HTML_MATHJAX: scale: 85 font: Asana-Math
-# MATHJAX font: MathJax TeX (default) Asana-Math Neo-Euler Latin-Modern Gyre-Pagella Gyre-Termes
-# #+OPTIONS: tex:dvipng tex:dvisvgm # use LaTeX to generate images for equations
-
-#+HTML_HEAD:  <!-- Global site tag (gtag.js) - Google Analytics -->
-#+HTML_HEAD:<script async src="https://www.googletagmanager.com/gtag/js?id=UA-128966866-1"></script>
-#+HTML_HEAD:<script>
-#+HTML_HEAD:  window.dataLayer = window.dataLayer || [];
-#+HTML_HEAD:  function gtag(){dataLayer.push(arguments);}
-#+HTML_HEAD:  gtag('js', new Date());
-#+HTML_HEAD:
-#+HTML_HEAD:  gtag('config', 'UA-128966866-1');
-#+HTML_HEAD:</script>
-
-# #+HTML_LINK_HOME: http://wweb.uta.edu/faculty/yunj/index.html
-# #+HTML_LINK_UP: http://wweb.uta.edu/faculty/yunj/index.html
-
-# https://scripter.co/latex-in-html/
-#+macro: latex @@html:<span class="latex">L<sup>a</sup>T<sub>e</sub>X</span>@@
-
-#+BEGIN_SRC emacs-lisp :eval no :results silent :exports none :tangle no
-(setq org-html-htmlize-output-type 'css)
-(setq org-html-htmlize-output-type 'inline-css)
-#+END_SRC
-
-#+begin_src emacs-lisp ::eval no results silent :exports none :tangle no
-(add-hook 'org-babel-after-execute-hook 'org-display-inline-images)
-(add-hook 'org-mode-hook 'org-display-inline-images)
-#+end_src
-
-* LaTeX Header                                                     :noexport:
-#+LATEX_CLASS: no-article
-#+LATEX_CLASS_OPTIONS: [letterpaper,11pt]
-
-#+LATEX_COMPILER: xelatex
-
-#+LATEX_HEADER: %% Margins
-#+LATEX_HEADER: \usepackage{geometry}
-#+LATEX_HEADER: \geometry{verbose,margin=1.5in}
-#+LATEX_HEADER: \setlength\parindent{0pt}
-#+LATEX_HEADER: \linespread{1.1}
-
-#+LATEX_HEADER: %% Typesetting
-#+LATEX_HEADER: \usepackage[stretch=10,babel=true]{microtype} % better typesetting. works w/ pdftex, not latex.
-#+LATEX_HEADER: %% \usepackage[english]{babel} % manages hyphenation patterns
-#+LATEX_HEADER: %% \usepackage{polyglossia} \setdefaultlanguage{english} % babel replacement for XeLaTex.
-#+LATEX_HEADER: \usepackage{csquotes} % Context sensitive quotation facilities
-
-#+LaTeX_HEADER: %% Biblio
-#+LATEX_HEADER: \usepackage[natbib=true, sorting=ynt, backend=biber, minbibnames=3, maxbibnames=3, doi=false, isbn=false, style=authoryear]{biblatex}
-#+LATEX_HEADER: \addbibresource{~/Zotero/myref.bib}
-#+LATEX_HEADER: \AtEveryBibitem{\clearfield{note}}
-#+LATEX_HEADER: \AtEveryBibitem{\clearfield{month}}
-#+LATEX_HEADER: \AtEveryBibitem{\clearfield{day}}
-#+LATEX_HEADER: \AtEveryBibitem{\clearfield{eprint}}
-
-#+LATEX_HEADER: %% Math
-#+LATEX_HEADER: \usepackage{amsmath} % \declareMathOperator
-# #+LATEX_HEADER: \usepackage{mathabx} % \widebar
-# #+LATEX_HEADER: \usepackage{amssymb}
-# #+LATEX_HEADER: \usepackage{amsbsy}  %\boldsymbol %\pbm (faked bold)
-# #+LATEX_HEADER: \usepackage{wasysym}
-#+LATEX_HEADER: \usepackage[mathbf=sym]{unicode-math}
-#+LATEX_HEADER: %% \usepackage{cool} % for math operators & symbols e.g. partial diff
-#+LATEX_HEADER: \usepackage{mathtools} % for math aligning & spacing
-#+LATEX_HEADER: \usepackage{physics} % derivative, dx, operators
-#+LATEX_HEADER: \usepackage{cancel}
-#+LATEX_HEADER: \allowdisplaybreaks % Allow new page within align
-
-#+LATEX_HEADER: %% Font
-# #+LATEX_HEADER: \usepackage{lmodern}
-# #+LATEX_HEADER: \setmathfont{latinmodern-math.otf}
-#+LATEX_HEADER: \setmainfont{XITS}
-#+LATEX_HEADER: \setmathfont{XITS Math} % \boldsymbol works
-#+LATEX_HEADER: \setmathfont[range={\mathcal,\mathbfcal},StylisticSet=1]{XITS Math}
-
-#+LATEX_HEADER: \usepackage[unicode,colorlinks]{hyperref}
-# #+LATEX_HEADER: \PassOptionsToPackage{unicode,colorlinks=true}{hyperref}
-
-# #+LATEX_HEADER: \usepackage[unicode]{hyperref}
-# #+LATEX_HEADER: \PassOptionsToPackage{unicode}{hyperref}
-# #+LATEX_HEADER: \hypersetup{colorlinks = true}
-# #+LATEX_HEADER:     linkcolor={red!50!black},
-# #+LATEX_HEADER:     citecolor={blue!50!black},
-# #+LATEX_HEADER:     urlcolor={blue!80!black}}
-* [2021-03-22 Mon] Updates
-- Code debugging for MCMC sampler ($\beta, \theta$)
-- New posterior samples will be on Github
-| chessB_double_pp_ncut2_zero_beta |
-| chessB_swdz_pp_ncut2_zero_beta   |
-| chessB_np_ncut2_zero_beta        |
-| chessB_no_latent_ncut2_zero_beta |
-| chessB_pn_ncut2_zero_beta        |
-| chessB_swdz_nn_ncut2_zero_beta   |
-| chessB_double_nn_ncut2_zero_beta |
-- Segment number: 5 -> 2 -> 3
+* [2021-03-29 Mon] Updates
+- Code debugging finished for MCMC sampler ($\beta, \theta$)
+- $\beta_{ic}$ is non-identifiable, dropped.
+- New posterior analysis is ready to look.
+- piecewise approximation segment number: back to 5 (was 2).
+  - at a small # of segments, the latent space doesn't improve the fit to chessB data (log-loss).
+- 유월 서브미션 목표!!
 * Log-loss
 Given the survival time $t$ and MCMC samples, the conditional probability of "correct" response is estimated as
 \[
 \hat p_{ik}^{(l)}(t) = \frac{h_{i1}^{(l)}(t)}{h_{i1}^{(l)}(t) + h_{i0}^{(l)}(t)},
 \]
 where $(l)$ denote the index of MCMC sample used to calculate the quantity.
-We use $Y_{ik} =
-1$ to denote a correct response, and $Y_{ik} = 0$ an incorrect response. Then, $p_{ik}^{(l)}(t)$ can be served as the prediction probability of $Y_{ik}$, which allows using classification performance metrics. For easiness of evaluation, we use the log-loss (over respondent and item)
+We use $Y_{ik} = 1$ to denote a correct response, and $Y_{ik} = 0$ an incorrect response. Then, $p_{ik}^{(l)}(t)$ can be served as the prediction probability of $Y_{ik}$, which allows using classification performance metrics. For easiness of evaluation, we use the log-loss for item:
+
 \[
--\frac{1}{L}
-\sum_{l=1} ^{L}\left\{ y_{ik} \log \hat p_{ik}^{(l)}(t) + (1-y_{ik}) \log (1 - \hat p_{ik}^{(l)})\right\}.
+-\frac{1}{N}
+\sum_{k} \left\{ y_{ik} \log \hat p_{ik}^{(l)}(t) + (1-y_{ik}) \log (1 - \hat p_{ik}^{(l)})\right\}.
 \]
 
 * Models
-=np= model:
+=double pp= model:
+the smaller distance, the faster process
 \begin{align*}
-h_{i1}(t) &= \lambda_{i1}(t) \exp(\beta_{i1} + \theta_{k1} + ||z_{k} - w_{i}||) \\
-h_{i0}(t) &= \lambda_{i0}(t) \exp(\beta_{i0} + \theta_{k0} - ||z_{k} - w_{i}||) \\
-\end{align*}
-with piecewise baseline.
-\begin{align*}
-\lambda_{ic}(t) &= \lambda_{ic,j} \text{ if } s_{j-1} \le t < s_{j};\\
-\end{align*}
-for $j = 1,2,\ldots,J$.
-
-$\beta_{ic}$ is not identifiable. It cannot be distinguished from $\lambda_{ic}(t)$.
-
-\begin{align*}
-h_{i1}(t) &= \lambda_{i1}(t) \exp( \theta_{k1} + ||z_{k} - w_{i}||) \\
-h_{i0}(t) &= \lambda_{i0}(t) \exp( \theta_{k0} - ||z_{k} - w_{i}||) \\
-\end{align*}
-with piecewise baseline.
-\begin{align*}
-\lambda_{ic}(t) &= \lambda_{ic,j} \exp(\beta_{i1c})\text{ if } s_{j-1} \le t < s_{j};\\
+h_{i1}(t) &= \lambda_{i1}(t) \exp(\theta_{k1} - \gamma_{1} ||z_{k1} - w_{i1}||) \\
+h_{i0}(t) &= \lambda_{i0}(t) \exp(\theta_{k0} - \gamma_{0} ||z_{k0} - w_{i0}||) \\
 \end{align*}
 
-for $j = 1,2,\ldots,J$.
+=np= model: the smaller distance, the more distinct process (in terms of speed).
 \begin{align*}
-h_{i1}(t) &= \lambda_{i1,1} \exp(\theta_{k1} + ||z_{k} - w_{i}||) \\
-h_{i0}(t) &= \lambda_{i0,1} \exp(\theta_{k0} - ||z_{k} - w_{i}||) \\
+h_{i1}(t) &= \lambda_{i1}(t) \exp(\theta_{k1} + \gamma ||z_{k} - w_{i}||) \\
+h_{i0}(t) &= \lambda_{i0}(t) \exp(\theta_{k0} - \gamma ||z_{k} - w_{i}||) \\
 \end{align*}
 
-\[
-\lambda_{ic,j} ~ Gamma(mean = \beta_{_{ic}, var = 1})
-\]
+* $\gamma$ is non-identifiable, but it's ok to keep
+=np= model with $\gamma = 1$.
+\begin{align*}
+h_{i1}(t) &= \lambda_{i1}(t) \exp(\theta_{k1} + ||z_{k} - w_{i}||) \\
+h_{i0}(t) &= \lambda_{i0}(t) \exp(\theta_{k0} - ||z_{k} - w_{i}||) \\
+\end{align*}
+ - priors on the latent space
+   \begin{align*}
+   \pi\left(\mathbf{z}_{j}\right) & \sim \mathrm{MVN}_{d}\left(0, I_{d}\right) \\
+   \pi\left(\mathbf{w}_{i}\right) & \sim \mathrm{MVN}_{d}\left(0, I_{d}\right) \\
+   \end{align*}
+ - results (latent space structure) heavily depend on the prior variance ($\sigma_{zw}$) of $z_{k}$ and $w_{i}$.
+ - we should let the data determine $\sigma_{zw}$.
 
-** TODO fit the model
+* KILL fit the model
+CLOSED: [2021-03-29 Mon 09:29]
+- State "KILL"       from "TODO"       [2021-03-29 Mon 09:29] \\
+  cannot do the model selection based on a non-identifiable parameter.
 \begin{align*}
 h_{i1}(t) &= \lambda_{i1}(t) \exp(\theta_{k1} + \gamma_{} ||z_{k} - w_{i}||) \\
 h_{i0}(t) &= \lambda_{i0}(t) \exp(\theta_{k0} - \gamma_{} ||z_{k} - w_{i}||) \\
@@ -202,39 +79,41 @@ h_{i0}(t) &= \lambda_{i0}(t) \exp(\theta_{k0} - \gamma_{} ||z_{k} - w_{i}||) \\
 \gamma_{} \sim N(0,1)
 \]
 
+* diffused priors?
 \begin{align*}
-h_{i1}(t) &= \lambda_{i1}(t) \exp(\theta_{k1} + ||z_{k1} - w_{i1}||) \\
-h_{i0}(t) &= \lambda_{i0}(t) \exp(\theta_{k0} + ||z_{k0} - w_{i0}||) \\
-\end{align*}
-
-* Priors
-\begin{align*}
-\pi\left(\lambda_{ic,m}\right) & \sim \operatorname{Gamma}\left(a_{\lambda},b_{\lambda}\right) \\
-\pi\left(\beta_{i}\right) & \sim \mathrm{N}\left(0, \tau_{\beta}^{2}\right) \\
+\pi\left(\lambda_{ic,j}\right) & \sim \operatorname{Gamma}\left(\text{mean} = \tilde \lambda_{ic,j}, \text{var} = C \cdot \tilde \lambda_{ic,j})\right) \\
 \pi\left(\theta_{k} | \sigma^{2}\right) & \sim \mathrm{N}\left(0, \sigma^{2}\right) \\ \pi\left(\sigma^{2}\right) & \sim \operatorname{lnv}-\operatorname{Gamma}\left(a_{\sigma}, b_{\sigma}\right) \\
 \pi\left(\mathbf{z}_{j}\right) & \sim \mathrm{MVN}_{d}\left(0, I_{d}\right) \\
 \pi\left(\mathbf{w}_{i}\right) & \sim \mathrm{MVN}_{d}\left(0, I_{d}\right) \\
-\log \pi(\gamma) & \sim \mathrm{N}\left(\mu_{\gamma}, \tau_{\gamma}^{2}\right)
+\pi(
+\log \gamma) & \sim \mathrm{N}\left(\mu_{\gamma}, \tau_{\gamma}^{2}\right)
 \end{align*}
-** hyper-parameters
-\[a_{\lambda} = 1, b_{\lambda} = 1, \tau_{\beta}^{2}=1, a_{\sigma}=1, b_{\sigma}=1, \mu_{\gamma}=0, \text { and } \tau_{\gamma}^{2}=1\]
-** See JASA paper to set a_{\lambda, $b_{_}{\lambda}$}               :ATTACH:
+\[C = 2, a_{\sigma}=0.0001, b_{\sigma}=0.0001, \mu_{\gamma}=0, \text { and } \tau_{\gamma}^{}=2\]
+** How to set $\lambda$ priors                                       :ATTACH:
 :PROPERTIES:
 :ID:       adc42ad2-5845-4405-bed4-b640f540b3d9
 :END:
 [[attachment:_20210322_182408JASA-Delayed.pdf]]
-
-C=2, K_j: number of segments, U_j = 70% of max time, k: interval index.
-
-
+C=2, K_j: number of segments, U_j = 3rd quartile, k: k-th segment.
 [[attachment:_20210322_183639screenshot.png]]
-
-* Identifiability
+* New results with unknown $\gamma > 0$.
+baseline model:
 \begin{align*}
-h_{i1}(t) &= \lambda_{i1}(t) \exp(\beta_{i1} + \theta_{k1} - ||z_{k} - w_{i}||) \\
-h_{i0}(t) &= \lambda_{i0}(t) \exp(\beta_{i0} + \theta_{k0} + ||z_{k} - w_{i}||) \\
+h_{i1}(t) &= \lambda_{i1}(t) \exp(\theta_{k1})\\
+h_{i0}(t) &= \lambda_{i0}(t) \exp(\theta_{k0})\\
 \end{align*}
-* Why latent space model has poor fit?
-** single z,w models
-- it only improve one process: one with positive gamma
-- this might be an example of overly sensitive classifier?
+
+[[file:chessB_RTnACC.pdf]]
+| chessB_no_latent_ncut5_zero_beta_noinfo_lc2 |
+| chessB_double_nn_ncut5_zero_beta_noinfo_lc2 |
+| chessB_double_np_ncut5_zero_beta_noinfo_lc2 |
+| chessB_double_pn_ncut5_zero_beta_noinfo_lc2 |
+| chessB_double_pp_ncut5_zero_beta_noinfo_lc2 |
+| chessB_nn_ncut5_zero_beta_noinfo_lc2        |
+| chessB_np_ncut5_zero_beta_noinfo_lc2        |
+| *chessB_pn_ncut5_zero_beta_noinfo_lc2*        |
+| chessB_pp_ncut5_zero_beta_noinfo_lc2        |
+| chessB_swdz_nn_ncut5_zero_beta_noinfo_lc2   |
+| chessB_swdz_pp_ncut5_zero_beta_noinfo_lc2   |
+
+*art_0.1.tar.gz*

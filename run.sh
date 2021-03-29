@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-out_dir="chessB_pn_ncut5_zero_beta_noinfo_lc2/"
+out_dir="chessB_double_pp_ncut5_zero_beta_noinfo_lc10/"
 prename="R/chessB_noinfo-preprocess.R"
-initname="R/chessB_pn-init.R"
+initname="R/chessB_pp-init.R"
 n_chain=2
 
 echo "================================"
@@ -25,7 +25,7 @@ cp $initname output/
 for ((v = 1; v <= $n_chain; v++))
 do
     Rscript $initname
-    ./main initialize parallel single_w single_z full latent gamma true single no_ars nonzero_theta zero_beta lambda_free $v 1000 1000 10
+    ./main initialize parallel double_w double_z full latent gamma true both no_ars nonzero_theta zero_beta lambda_free $v 10000 10000 10
 done
 ## explain comandline arguments:
  # continue initialize -> start new chains?
@@ -36,15 +36,17 @@ done
  # latent no_latent -> update latent space?
  # gamma no_gamma -> update gamma?
  # true false -> can I play with the gamma sign?
- # correct incorrect false -> gamma for what process?
+ # correct incorrect single both -> gamma for what process?
  # do_ars no_ars -> ARS for gamma
  # zero_theta nonzero_theta -> theta.k.0 are zero
  # double_beta single_beta
 
 mkdir -p $out_dir
 mv output/* $out_dir
-Rscript R/run-analysis.R $out_dir $n_chain 0 0
+Rscript R/run-analysis.R $out_dir $n_chain
 echo "Outputs are moved to" $out_dir"."
 echo "================================"
 
-sh run_np.sh
+# sh run_np.sh
+# sh run_swdz_nn.sh
+# sh run_swdz_pp.sh

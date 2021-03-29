@@ -3,8 +3,13 @@ source("R/Renviron.R")
 mt = readr::read_csv(file="chessB_pn/input/mt.csv", col_names=F) %>% as.matrix()
 mi = readr::read_csv(file="chessB_pn/input/mi.csv", col_names=F) %>% as.matrix()
 
-source("R/load-outputs.R")
+system(paste0("rm figure/*.pdf"))
 
+source("R/load-outputs.R")
+source("R/visual-latent-space-plot.R")
+
+system(paste0("mkdir -p ", out_dir, "figure/"))
+system(paste0("rsync -rv figure/*.pdf ", out_dir, "figure/"))
 ## save(mylist, file = paste0(out_dir,"mylist"))
 
 source("R/wrap_param.R")
@@ -34,8 +39,9 @@ for (ii in 1:I) {
   print(proc.time() - start_time)
 }
 
-mlike = art::get_loglike(lambda, theta, z, w, gamma, param)
-mmet = list(mll=mll,mauc=mauc,mlike=mlike)
+mm = eval_DIC(lambda, theta, z, w, gamma, param)
+mlike=mm$loglike
+mmet = list(mll=mll,mauc=mauc,mlike=mm$loglike)
 ## save(mmet, file = paste0(out_dir,"mll_auc.RData"))
 
 dll = t(mll)
@@ -57,6 +63,21 @@ auc_boxp <- ggplot(dd, aes(x=item,y=AUC,fill=factor(item))) +
   geom_boxplot() + theme(legend.position = "none") + ylim(0, 1)
 
 llike_boxp <- ggplot(data.frame(LogLike = mlike), aes(y=LogLike)) + geom_boxplot() + theme(legend.position = "none") + ggtitle(concat_summary(mlike,0)) + theme(plot.title = element_text(size=10))
+
+sink(paste0(out_dir,"analysis-output.txt"))
+
+cat("=============================\n")
+cat("log-likelihood\n")
+cat("=============================\n")
+summary(mlike)
+
+cat("=============================\n")
+cat("DIC\n")
+cat("=============================\n")
+cat("DIC1, DIC2\n")
+cat(paste0(round(mm$DIC1,2),","),round(mm$DIC2,2),"\n")
+
+sink()
 
 pdf(paste0(out_dir,"figure/cmetrics.pdf"))
 print(ll_boxp)
