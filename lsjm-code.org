@@ -8,131 +8,13 @@
 #+STARTUP: overview inlineimages logdone indent
 
 #+SETUPFILE: ~/setup/my-theme-readtheorg.setup
+#+SETUPFILE: ~/org/latex_header.setup
+#+SETUPFILE: ~/org/orgmode_header.setup
 
 #+PROPERTY: header-args :eval never-export
 #+PROPERTY: header-args:R :session *R-Org* :exports both :noweb yes
 #+PROPERTY: header-args:jupyter-python :session *jupyter-lsjm* :kernel tf :async yes
 
-* OrgMode                                                          :noexport:
-#+INFOJS_OPT: view:nil toc:t ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
-
-** Reveal
-#+REVEAL_ROOT: https://cdn.jsdelivr.net/npm/reveal.js
-# slide/none/fade/convex/concave/zoom
-#+REVEAL_TRANS: slide
-# solarized/black/white/league/sky/beige/simple/serif/blood/night/moon
-#+REVEAL_THEME: solarized
-#+REVEAL_HLEVEL: 2
-#+REVEAL_PLUGINS: (highlight search zoom)
-#+REVEAL_EXTRA_CSS: ./reveal_firago.css
-
-#+OPTIONS: reveal_history:t reveal_fragmentinurl:t
-#+OPTIONS: reveal_mousewheel:t reveal_inter_presentation_links:t
-#+OPTIONS: reveal_width:1400 reveal_height:1000
-#+REVEAL_TITLE_SLIDE: <h2 class="title">%t</h2><h4 class="subtitle">%s</h4><h3 class="author">%a</h3><h3 class="date">%d</h3>
-
-** Hugo
-#+HUGO_BASE_DIR: ~/website
-#+HUGO_AUTO_SET_LASTMOD: t
-#+HUGO_DATE_FORMAT: %Y-%m-%dT%T%z
-#+HUGO_FRONT_MATTER_FORMAT: toml
-
-#+HUGO_SECTION:
-#+HUGO_BUNDLE:
-#+HUGO_CATEGORIES:
-
-#+HUGO_EXPORT_RMARKDOWN:
-
-** HTML
-#+OPTIONS: html-link-use-abs-url:nil html-postamble:nil html-preamble:t
-#+OPTIONS: html-scripts:t html-style:t html5-fancy:t
-
-# #+HTML_MATHJAX: align: left indent: 5em tagside: right
-# #+HTML_MATHJAX: scale: 85 font: Asana-Math
-# MATHJAX font: MathJax TeX (default) Asana-Math Neo-Euler Latin-Modern Gyre-Pagella Gyre-Termes
-# #+OPTIONS: tex:dvipng tex:dvisvgm # use LaTeX to generate images for equations
-
-#+HTML_HEAD:  <!-- Global site tag (gtag.js) - Google Analytics -->
-#+HTML_HEAD:<script async src="https://www.googletagmanager.com/gtag/js?id=UA-128966866-1"></script>
-#+HTML_HEAD:<script>
-#+HTML_HEAD:  window.dataLayer = window.dataLayer || [];
-#+HTML_HEAD:  function gtag(){dataLayer.push(arguments);}
-#+HTML_HEAD:  gtag('js', new Date());
-#+HTML_HEAD:
-#+HTML_HEAD:  gtag('config', 'UA-128966866-1');
-#+HTML_HEAD:</script>
-
-# #+HTML_LINK_HOME: http://wweb.uta.edu/faculty/yunj/index.html
-# #+HTML_LINK_UP: http://wweb.uta.edu/faculty/yunj/index.html
-
-# https://scripter.co/latex-in-html/
-#+macro: latex @@html:<span class="latex">L<sup>a</sup>T<sub>e</sub>X</span>@@
-
-#+BEGIN_SRC emacs-lisp :eval no :results silent :exports none :tangle no
-(setq org-html-htmlize-output-type 'css)
-(setq org-html-htmlize-output-type 'inline-css)
-#+END_SRC
-
-#+begin_src emacs-lisp ::eval no results silent :exports none :tangle no
-(add-hook 'org-babel-after-execute-hook 'org-display-inline-images)
-(add-hook 'org-mode-hook 'org-display-inline-images)
-#+end_src
-
-* LaTeX Header                                                     :noexport:
-#+LATEX_CLASS: no-article
-#+LATEX_CLASS_OPTIONS: [letterpaper,11pt]
-
-#+LATEX_COMPILER: xelatex
-
-#+LATEX_HEADER: %% Margins
-#+LATEX_HEADER: \usepackage{geometry}
-#+LATEX_HEADER: \geometry{verbose,margin=1.5in}
-#+LATEX_HEADER: \setlength\parindent{0pt}
-#+LATEX_HEADER: \linespread{1.1}
-
-#+LATEX_HEADER: %% Typesetting
-#+LATEX_HEADER: \usepackage[stretch=10,babel=true]{microtype} % better typesetting. works w/ pdftex, not latex.
-#+LATEX_HEADER: %% \usepackage[english]{babel} % manages hyphenation patterns
-#+LATEX_HEADER: %% \usepackage{polyglossia} \setdefaultlanguage{english} % babel replacement for XeLaTex.
-#+LATEX_HEADER: \usepackage{csquotes} % Context sensitive quotation facilities
-
-#+LaTeX_HEADER: %% Biblio
-#+LATEX_HEADER: \usepackage[natbib=true, sorting=ynt, backend=biber, minbibnames=3, maxbibnames=3, doi=false, isbn=false, style=authoryear]{biblatex}
-#+LATEX_HEADER: \addbibresource{~/Zotero/myref.bib}
-#+LATEX_HEADER: \AtEveryBibitem{\clearfield{note}}
-#+LATEX_HEADER: \AtEveryBibitem{\clearfield{month}}
-#+LATEX_HEADER: \AtEveryBibitem{\clearfield{day}}
-#+LATEX_HEADER: \AtEveryBibitem{\clearfield{eprint}}
-
-#+LATEX_HEADER: %% Math
-#+LATEX_HEADER: \usepackage{amsmath} % \declareMathOperator
-# #+LATEX_HEADER: \usepackage{mathabx} % \widebar
-# #+LATEX_HEADER: \usepackage{amssymb}
-# #+LATEX_HEADER: \usepackage{amsbsy}  %\boldsymbol %\pbm (faked bold)
-# #+LATEX_HEADER: \usepackage{wasysym}
-#+LATEX_HEADER: \usepackage[mathbf=sym]{unicode-math}
-#+LATEX_HEADER: %% \usepackage{cool} % for math operators & symbols e.g. partial diff
-#+LATEX_HEADER: \usepackage{mathtools} % for math aligning & spacing
-#+LATEX_HEADER: \usepackage{physics} % derivative, dx, operators
-#+LATEX_HEADER: \usepackage{cancel}
-#+LATEX_HEADER: \allowdisplaybreaks % Allow new page within align
-
-#+LATEX_HEADER: %% Font
-# #+LATEX_HEADER: \usepackage{lmodern}
-# #+LATEX_HEADER: \setmathfont{latinmodern-math.otf}
-#+LATEX_HEADER: \setmainfont{XITS}
-#+LATEX_HEADER: \setmathfont{XITS Math} % \boldsymbol works
-#+LATEX_HEADER: \setmathfont[range={\mathcal,\mathbfcal},StylisticSet=1]{XITS Math}
-
-#+LATEX_HEADER: \usepackage[unicode,colorlinks]{hyperref}
-# #+LATEX_HEADER: \PassOptionsToPackage{unicode,colorlinks=true}{hyperref}
-
-# #+LATEX_HEADER: \usepackage[unicode]{hyperref}
-# #+LATEX_HEADER: \PassOptionsToPackage{unicode}{hyperref}
-# #+LATEX_HEADER: \hypersetup{colorlinks = true}
-# #+LATEX_HEADER:     linkcolor={red!50!black},
-# #+LATEX_HEADER:     citecolor={blue!50!black},
-# #+LATEX_HEADER:     urlcolor={blue!80!black}}
 * References
 #+BEGIN_SRC emacs-lisp :eval yes :exports none
 (add-hook 'org-export-before-parsing-hook 'orcp-citeproc)

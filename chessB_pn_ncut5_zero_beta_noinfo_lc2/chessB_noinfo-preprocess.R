@@ -8,6 +8,8 @@ l_c = 2
 l_m = ((G - 1) / (quantile(time, 0.75)  * (G - 1:G + 0.5)))
 a_lambda = matrix(l_m/l_c, I, G, byrow=T)
 b_lambda = matrix(1 / l_c,I,G)
+## a_lambda = matrix(0.0001, I, G, byrow=T)
+## b_lambda = matrix(0.0001, I, G)
 jump_lambda = matrix(0.5,I,G)
 
 mu_beta = matrix(0.0,I,2)

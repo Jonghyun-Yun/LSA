@@ -4,7 +4,7 @@ mvar = readr::read_csv("input/mvar.csv", col_names=FALSE) %>% as.matrix()
 I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
 
 ## lambda
-l_c = 10
+l_c = 2
 l_m = ((G - 1) / (quantile(time, 0.75)  * (G - 1:G + 0.5)))
 a_lambda = matrix(l_m/l_c, I, G, byrow=T)
 b_lambda = matrix(1 / l_c,I,G)
