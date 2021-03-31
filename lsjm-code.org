@@ -223,10 +223,34 @@ If $Y_{ikc} = 1$,
 r = r \times \exp[-\sum_{i=1}^{I}\sum_{k=1}^{N} ||z_{kc} - w_{i}||(\gamma_{c}^* - \gamma_{c}^{t})]
 \]
 * prerequisite
-:PROPERTIES:
-:header-args:R:          :tangle R/prerequisite.R
-:END:
+
+required package intallation scripts
+#+begin_src R :tangle
+## install.packages("coda")
+install.packages("dplyr")
+install.packages("stringr")
+install.packages("magrittr")
+install.packages("bayesplot")
+install.packages("foreach")
+install.packages("doParallel")
+install.packages("reshape2")
+install.packages("readr")
+install.packages("data.table")
+install.packages("survival")
+#+end_src
+
 #+begin_src R
+install.packages(c("ggplot2","ggrepel","fda","funFEM"))
+#+end_src
+
+#+BEGIN_SRC R :results none
+## Rcpp::sourceCpp("comprisk.cpp")
+install.packages("art_0.1.tar.gz", repos = NULL, type="source")
+detach(package:art)
+library(art)
+#+END_SRC
+
+#+begin_src R :tangle R/prerequisite.R
 require(magrittr)
 require(dplyr)
 #+end_src
@@ -237,22 +261,6 @@ require(dplyr)
 #+begin_src R :tangle R/art-functions.R
 source("R/prerequisite.R")
 #+end_src
-
-#+RESULTS:
-#+begin_example
-Loading required package: magrittr
-Loading required package: dplyr
-
-Attaching package: 'dplyr'
-
-The following objects are masked from 'package:stats':
-
-    filter, lag
-
-The following objects are masked from 'package:base':
-
-    intersect, setdiff, setequal, union
-#+end_example
 
 * PISA2015 data
 ** pisa2015/README.txt
@@ -2077,7 +2085,7 @@ mvar = readr::read_csv("input/mvar.csv", col_names=FALSE) %>% as.matrix()
 I = mvar[1,1]; N = mvar[1,2]; C = mvar[1,3]; G = mvar[1,4];
 
 ## lambda
-l_c = 10
+l_c = 2
 l_m = ((G - 1) / (quantile(time, 0.75)  * (G - 1:G + 0.5)))
 a_lambda = matrix(l_m/l_c, I, G, byrow=T)
 b_lambda = matrix(1 / l_c,I,G)
@@ -3118,10 +3126,10 @@ dev.off(which = dev.cur())
 ** Shell to run C++
 #+begin_src sh :tangle run.sh
 #!/usr/bin/env bash
-out_dir="chessB_double_pp_ncut5_zero_beta_noinfo_lc10/"
+out_dir="chessB_double_pn_ncut5_zero_beta_noinfo_lc2_long/"
 prename="R/chessB_noinfo-preprocess.R"
-initname="R/chessB_pp-init.R"
-n_chain=2
+initname="R/chessB_pn-init.R"
+n_chain=1
 
 echo "================================"
 echo "Output dir:" $out_dir
@@ -3144,7 +3152,7 @@ cp $initname output/
 for ((v = 1; v <= $n_chain; v++))
 do
     Rscript $initname
-    ./main initialize parallel double_w double_z full latent gamma true both no_ars nonzero_theta zero_beta lambda_free $v 10000 10000 10
+    ./main initialize parallel double_w double_z full latent gamma true single no_ars nonzero_theta zero_beta lambda_free $v 30000 30000 10
 done
 ## explain comandline arguments:
  # continue initialize -> start new chains?
@@ -3166,162 +3174,8 @@ Rscript R/run-analysis.R $out_dir $n_chain
 echo "Outputs are moved to" $out_dir"."
 echo "================================"
 
-# sh run_np.sh
-# sh run_swdz_nn.sh
-# sh run_swdz_pp.sh
 #+end_src
 
-#+begin_src sh :tangle run_np.sh
-#!/usr/bin/env bash
-out_dir="chessB_double_np_ncut5_zero_beta_noinfo_lc2/"
-prename="R/chessB_noinfo-preprocess.R"
-initname="R/chessB_np-init.R"
-n_chain=2
-
-echo "================================"
-echo "Output dir:" $out_dir
-echo "preprocessing:" $prename
-echo "initializing:" $initname
-echo "n_chain:" $n_chain
-echo "================================"
-
-export STAN_NUM_THREADS=2
-mkdir -p output
-rm output/*
-rm input/*
-
-Rscript $prename
-cp input/{mvar,mlen}.csv output/
-cp run.sh output/
-cp $prename output/
-cp $initname output/
-
-for ((v = 1; v <= $n_chain; v++))
-do
-    Rscript $initname
-    ./main initialize parallel double_w double_z full latent gamma true both no_ars nonzero_theta zero_beta lambda_free $v 10000 10000 10
-done
-## explain comandline arguments:
- # continue initialize -> start new chains?
- # parallel serial -> parallel computation?
- # single_w double_w
- # single_z double_z
- # full sparse -> missing or not
- # latent no_latent -> update latent space?
- # gamma no_gamma -> update gamma?
- # true false -> can I play with the gamma sign?
- # correct incorrect false -> gamma for what process?
- # do_ars no_ars -> ARS for gamma
- # zero_theta nonzero_theta -> theta.k.0 are zero
- # double_beta single_beta
-
-mkdir -p $out_dir
-mv output/* $out_dir
-Rscript R/run-analysis.R $out_dir $n_chain
-echo "Outputs are moved to" $out_dir"."
-echo "================================"
-#+end_src
-
-#+begin_src sh :tangle run_swdz_nn.sh
-#!/usr/bin/env bash
-out_dir="chessB_swdz_nn_double_gamma_ncut5_zero_beta_noinfo_lc2/"
-prename="R/chessB_noinfo-preprocess.R"
-initname="R/chessB_nn-init.R"
-n_chain=2
-
-echo "================================"
-echo "Output dir:" $out_dir
-echo "preprocessing:" $prename
-echo "initializing:" $initname
-echo "n_chain:" $n_chain
-echo "================================"
-
-export STAN_NUM_THREADS=2
-mkdir -p output
-rm output/*
-rm input/*
-
-Rscript $prename
-cp input/{mvar,mlen}.csv output/
-cp run.sh output/
-cp $prename output/
-cp $initname output/
-
-for ((v = 1; v <= $n_chain; v++))
-do
-    Rscript $initname
-    ./main initialize parallel single_w double_z full latent gamma true both no_ars nonzero_theta zero_beta lambda_free $v 10000 10000 10
-done
-## explain comandline arguments:
- # continue initialize -> start new chains?
- # parallel serial -> parallel computation?
- # single_w double_w
- # single_z double_z
- # full sparse -> missing or not
- # latent no_latent -> update latent space?
- # gamma no_gamma -> update gamma?
- # true false -> can I play with the gamma sign?
- # correct incorrect false -> gamma for what process?
- # do_ars no_ars -> ARS for gamma
- # zero_theta nonzero_theta -> theta.k.0 are zero
- # double_beta single_beta
-
-mkdir -p $out_dir
-mv output/* $out_dir
-Rscript R/run-analysis.R $out_dir $n_chain 0 1
-echo "Outputs are moved to" $out_dir"."
-echo "================================"
-#+end_src
-#+begin_src sh :tangle run_swdz_pp.sh
-#!/usr/bin/env bash
-out_dir="chessB_swdz_pp_double_gamma_ncut5_zero_beta_noinfo_lc2/"
-prename="R/chessB_noinfo-preprocess.R"
-initname="R/chessB_pp-init.R"
-n_chain=2
-
-echo "================================"
-echo "Output dir:" $out_dir
-echo "preprocessing:" $prename
-echo "initializing:" $initname
-echo "n_chain:" $n_chain
-echo "================================"
-
-export STAN_NUM_THREADS=2
-mkdir -p output
-rm output/*
-rm input/*
-
-Rscript $prename
-cp input/{mvar,mlen}.csv output/
-cp run.sh output/
-cp $prename output/
-cp $initname output/
-
-for ((v = 1; v <= $n_chain; v++))
-do
-    Rscript $initname
-    ./main initialize parallel single_w double_z full latent gamma true double no_ars nonzero_theta zero_beta lambda_free $v 10000 10000 10
-done
-## explain comandline arguments:
- # continue initialize -> start new chains?
- # parallel serial -> parallel computation?
- # single_w double_w
- # single_z double_z
- # full sparse -> missing or not
- # latent no_latent -> update latent space?
- # gamma no_gamma -> update gamma?
- # true false -> can I play with the gamma sign?
- # correct incorrect false -> gamma for what process?
- # do_ars no_ars -> ARS for gamma
- # zero_theta nonzero_theta -> theta.k.0 are zero
- # double_beta single_beta
-
-mkdir -p $out_dir
-mv output/* $out_dir
-Rscript R/run-analysis.R $out_dir $n_chain 0 1
-echo "Outputs are moved to" $out_dir"."
-echo "================================"
-#+end_src
 #+begin_src R :tangle no_latent.sh
 #!/usr/bin/env bash
 out_dir="chessB_double_no_ncut5_zero_beta_noinfo_lc2/"
@@ -3409,43 +3263,17 @@ system(paste0("mkdir -p ", out_dir, "figure/"))
 system(paste0("rsync -rv figure/*.pdf ", out_dir, "figure/"))
 #+END_SRC
 
+set the output directory. run the chain of analytic tools. move the results to the output dir.
 #+BEGIN_SRC R :results none
-out_dir="chessB_double_pp_ncut5_zero_beta_noinfo_lc2/"
-num_chain <- 2; double_z <- 0; double_w <- 0; HAS_REF <- 0;
+out_dir="chessB_pn_ncut5_zero_beta_noinfo_lc2/"
+num_chain <- 2; HAS_REF <- 0;
 system(paste0("rm figure/*.pdf"))
 source("R/art-analysis.R")
-#+END_SRC
-
-#+BEGIN_SRC R :results none
 system(paste0("mkdir -p ", out_dir, "figure/"))
 system(paste0("rsync -rv figure/*.pdf ", out_dir,"figure/"))
 #+END_SRC
 
-#+begin_src R
-## install.packages("coda")
-install.packages("dplyr")
-install.packages("stringr")
-install.packages("magrittr")
-install.packages("bayesplot")
-install.packages("foreach")
-install.packages("doParallel")
-install.packages("reshape2")
-install.packages("readr")
-install.packages("data.table")
-install.packages("survival")
-#+end_src
-
-#+begin_src R
-install.packages(c("ggplot2","ggrepel","fda","funFEM"))
-#+end_src
-
-#+BEGIN_SRC R :results none
-## Rcpp::sourceCpp("comprisk.cpp")
-install.packages("art_0.1.tar.gz", repos = NULL, type="source")
-detach(package:art)
-library(art)
-#+END_SRC
-
+load library, functions, scripts, etc.
 #+BEGIN_SRC R :results none :tangle R/Renviron.R
 library(art)
 library(coda)
@@ -3478,27 +3306,18 @@ print average acceptance rate per type of quantities: \lambda, \beta, \theta, z,
 #+BEGIN_SRC sh
 cat output/summary.csv
 #+END_SRC
-** example to extract w0 and z0                                     :ARCHIVE:
+
+** example to extract w0 and z0
+This is an example to extract the Procrustean matched coordinates of the latent space.
 #+begin_src R
 out_dir <- "chessB_pn/"
 num_chain <- 3
-double_z <- 0
-double_w <- 0
 HAS_REF <- 0
-library(art)
-library(coda)
-library(dplyr)
-library(stringr)
-library(magrittr)
-library(bayesplot)
-library(foreach)
-library(doParallel)
-## registerDoParallel(cores = detectCores() - 1)
-registerDoParallel(6)
 
-setwd("/Users/yunj/Dropbox/research/lsjm-art/lsjm-code")
+source("R/Renviron.R")
+#+end_src
 
-source("R/art-functions.R")
+#+begin_src R
 source("R/load-outputs.R")
 
 z0 <- matched$z0
@@ -3651,6 +3470,7 @@ dev.off(which = dev.cur())
 #+end_src
 
 ** load outputs
+This section contains scripts to create an mcmc object. 1) read MCMC samples, 2) set their column names, and 3) Procrustean matching.
 #+begin_src R :tangle R/load-outputs.R
 mvar <- readr::read_csv(paste0(out_dir, "mvar.csv"), col_names = F) %>% as.matrix()
 I <- mvar[1]
@@ -3943,7 +3763,7 @@ summary(mylist)
 ## sink()
 #+END_SRC
 
-** latent space
+** latent space visualization
 
 HPD based latent plot
 [[pdf:figure/latent_space_hpd.pdf::1]]
@@ -4175,7 +3995,7 @@ readr::write_csv(data.frame(x=w0[,1], y=w0[,2]), "chessB_pn_w.csv", col_names = 
 
 #+RESULTS:
 
-** trace plots
+** MCMC trace plots
 [[file:figure/lambda_mcmc_interval_plot.pdf]]
 #+BEGIN_SRC R :tangle R/visual-trace-plot.R
 pdf("figure/lambda_mcmc_interval_plot.pdf")
