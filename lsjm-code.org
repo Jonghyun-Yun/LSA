@@ -223,9 +223,8 @@ If $Y_{ikc} = 1$,
 r = r \times \exp[-\sum_{i=1}^{I}\sum_{k=1}^{N} ||z_{kc} - w_{i}||(\gamma_{c}^* - \gamma_{c}^{t})]
 \]
 * prerequisite
-
 required package intallation scripts
-#+begin_src R :tangle
+#+begin_src R
 ## install.packages("coda")
 install.packages("dplyr")
 install.packages("stringr")
@@ -237,9 +236,6 @@ install.packages("reshape2")
 install.packages("readr")
 install.packages("data.table")
 install.packages("survival")
-#+end_src
-
-#+begin_src R
 install.packages(c("ggplot2","ggrepel","fda","funFEM"))
 #+end_src
 
@@ -254,9 +250,6 @@ library(art)
 require(magrittr)
 require(dplyr)
 #+end_src
-
-#+RESULTS:
-: Loading required package: magrittr
 
 #+begin_src R :tangle R/art-functions.R
 source("R/prerequisite.R")
@@ -2138,7 +2131,6 @@ init_z = 0*matrix(rnorm(2*2*N), ncol = 2);
 source("R/write-init.R")
 #+END_SRC
 
-
 ** Choose-a-move test B: np (default) Gamma(0) = -1, Gamma(1) = 1
 #+BEGIN_SRC R :results none :tangle R/chessB_np-init.R
 mvar = as.matrix( readr::read_csv("input/mvar.csv", col_names=F) )
@@ -3126,7 +3118,7 @@ dev.off(which = dev.cur())
 ** Shell to run C++
 #+begin_src sh :tangle run.sh
 #!/usr/bin/env bash
-out_dir="chessB_double_pn_ncut5_zero_beta_noinfo_lc2_long/"
+out_dir="chessB_pn_ncut5_zero_beta_noinfo_lc2_long/"
 prename="R/chessB_noinfo-preprocess.R"
 initname="R/chessB_pn-init.R"
 n_chain=1
@@ -3144,7 +3136,7 @@ rm output/*
 rm input/*
 
 Rscript $prename
-cp input/{mvar,mlen}.csv output/
+cp input/{mvar,mlen,mseg,mh,mi,mt}.csv output/
 cp run.sh output/
 cp $prename output/
 cp $initname output/
@@ -3266,7 +3258,7 @@ system(paste0("rsync -rv figure/*.pdf ", out_dir, "figure/"))
 set the output directory. run the chain of analytic tools. move the results to the output dir.
 #+BEGIN_SRC R :results none
 out_dir="chessB_pn_ncut5_zero_beta_noinfo_lc2/"
-num_chain <- 2; HAS_REF <- 0;
+num_chain <- 1; HAS_REF <- 0;
 system(paste0("rm figure/*.pdf"))
 source("R/art-analysis.R")
 system(paste0("mkdir -p ", out_dir, "figure/"))
@@ -4208,7 +4200,8 @@ dev.off(which = dev.cur())
 #+RESULTS:
 : pdf 
 :   2
-*** latent space trace                                              :ARCHIVE:
+
+*** latent space trace
 
 [[pdf:figure/z_pairs_plot.pdf]]
 #+BEGIN_SRC R :tangle R/visual-trace-plot.R
@@ -4224,7 +4217,7 @@ dev.off(which = dev.cur())
 #+END_SRC
 
 #+RESULTS:
-: pdf 
+: pdf
 :   2
 
 [[pdf:figure/w_pairs_plot.pdf]]
@@ -4242,7 +4235,7 @@ for (i in i_begin:min(I, 50)) {
 dev.off(which = dev.cur())
 #+END_SRC
 
-#+BEGIN_SRC R 
+#+BEGIN_SRC R
 w = mylist[[1]][,grepl("^w\\.[0]\\.1\\.",cname)]
 z = mylist[[1]][,grepl("^z\\.[0]\\.1\\.",cname)]
 
@@ -4276,7 +4269,7 @@ dev.off(which = dev.cur())
 #+END_SRC
 
 #+RESULTS:
-: pdf 
+: pdf
 :   2
 
 [[file:figure/w_mcmc_trace_plot.pdf]]
@@ -4295,7 +4288,7 @@ dev.off(which = dev.cur())
 #+END_SRC
 
 #+RESULTS:
-: pdf 
+: pdf
 :   2
 
 ** output analysis
@@ -4814,27 +4807,34 @@ source("R/Renviron.R")
 source("R/load-outputs.R")
 #+end_src
 
-
 #+begin_src R :results none :tangle R/wrap_param.R
-source("R/chessB_noinfo-preprocess.R")
-mi = readr::read_csv(file="chessB_pn/input/mi.csv", col_names=F) %>% as.matrix()
-sam = mylist[[1]]
+mi <- readr::read_csv(file = paste0(out_dir, "mi.csv"), col_names = F) %>% as.matrix()
+mt <- readr::read_csv(file = paste0(out_dir, "mt.csv"), col_names = F) %>% as.matrix()
+mseg <- readr::read_csv(file = paste0(out_dir, "mseg.csv"), col_names = F) %>% as.matrix()
+mh <- readr::read_csv(file = paste0(out_dir, "mh.csv"), col_names = F) %>% as.matrix()
+
+sam = NULL
+vv = 1
+while (vv <= num_chain) {
+sam <- rbind(sam, mylist[[vv]])
+vv = vv + 1
+}
 
 ## distance calculation can be fully vectorized (and storing z), but I don't have time for this.
 z <- sam[, stringr::str_which(cname, paste0("^z\\.[0-1]\\."))] %>% as.matrix()
-w <- sam[, stringr::str_which(cname, paste0("^w\\.[0-1]\\."))]%>% as.matrix()
+w <- sam[, stringr::str_which(cname, paste0("^w\\.[0-1]\\."))] %>% as.matrix()
 ## beta <- sam[, stringr::str_which(cname, paste0("^beta\\.", item, "\\."))]
 
 ## correction for single z or w
-if (ncol(z) < 2 * 2 * N) z = cbind(z,z)
-if (ncol(w) < 2 * 2 * I) w = cbind(w,w)
+if (ncol(z) < 2 * 2 * N) z <- cbind(z, z)
+if (ncol(w) < 2 * 2 * I) w <- cbind(w, w)
 
-theta <- sam[, stringr::str_which(cname, paste0("^theta\\."))] %>% as.matrix()## (theta.k.0 theta.k.1)
-gamma <- sam[, stringr::str_which(cname, paste0("gamma\\."))]%>% as.matrix()
+theta <- sam[, stringr::str_which(cname, paste0("^theta\\."))] %>% as.matrix() ## (theta.k.0 theta.k.1)
+gamma <- sam[, stringr::str_which(cname, paste0("gamma\\."))] %>% as.matrix()
 
-lambda <- sam[, stringr::str_which(cname, paste0("^lambda\\.[0-1]\\."))]%>% as.matrix()
+lambda <- sam[, stringr::str_which(cname, paste0("^lambda\\.[0-1]\\."))] %>% as.matrix()
 
-param = list(I=as.integer(I), N=as.integer(N), G=as.integer(G), seg = as.matrix(mseg), H = as.matrix(mh), len = as.integer(mlen), sj = as.numeric(sj), Y = mi)
+param <- list(I = as.integer(I), N = as.integer(N), G = as.integer(G), seg = as.matrix(mseg), H = as.matrix(mh), len = as.integer(diff(sj)), sj = as.numeric(sj), Y = mi)
 #+end_src
 
 #+begin_src R :tangle R/art-functions.R
@@ -4922,10 +4922,12 @@ gen_surv_time <- function(out, sj, N, nn) {
   len = diff(sj)
 
   haz <- lambda[[1]][nn, ] %o% rr[[1]][nn, ] + lambda[[2]][nn, ] %o% rr[[2]][nn, ]
-  logS <- -rexp(N)
+  ## logS <- -rexp(N)
+  logS <- -rep(1,N)
   cumhaz <- rbind(rep(0, N), apply(haz * len, 2, cumsum))
   vtime <- numeric(N)
 
+  ## cat(cumhaz[, 2])
   for (kk in 1:N) {
     ss <- findInterval(-logS[kk], cumhaz[, kk])
     if (ss != mj) {
@@ -5041,170 +5043,6 @@ for (ii in 1:I) {
 save(sim_data, file = paste0(out_dir, "surv_sim.RData"))
 #+end_src
 
-#+RESULTS:
-#+begin_example
-
-elapsed time to simulate item 1 
-   user  system elapsed 
-  3.662   0.069   4.612 
-
-elapsed time to simulate item 2 
-   user  system elapsed 
-  3.889   0.054   4.710 
-
-elapsed time to simulate item 3 
-   user  system elapsed 
-  3.708   0.020   4.388 
-
-elapsed time to simulate item 4 
-   user  system elapsed 
-  3.781   0.038   4.432 
-
-elapsed time to simulate item 5 
-   user  system elapsed 
-  3.511   0.017   4.281 
-
-elapsed time to simulate item 6 
-   user  system elapsed 
-  3.405   0.022   4.221 
-
-elapsed time to simulate item 7 
-   user  system elapsed 
-  3.495   0.017   4.169 
-
-elapsed time to simulate item 8 
-   user  system elapsed 
-  3.501   0.029   4.205 
-
-elapsed time to simulate item 9 
-   user  system elapsed 
-  3.533   0.018   4.373 
-
-elapsed time to simulate item 10 
-   user  system elapsed 
-  3.535   0.018   4.320 
-
-elapsed time to simulate item 11 
-   user  system elapsed 
-  3.616   0.021   4.439 
-
-elapsed time to simulate item 12 
-   user  system elapsed 
-  3.942   0.034   4.476 
-
-elapsed time to simulate item 13 
-   user  system elapsed 
-  3.879   0.025   4.826 
-
-elapsed time to simulate item 14 
-   user  system elapsed 
-  3.724   0.023   4.605 
-
-elapsed time to simulate item 15 
-   user  system elapsed 
-  3.789   0.031   4.561 
-
-elapsed time to simulate item 16 
-   user  system elapsed 
-  3.707   0.025   4.695 
-
-elapsed time to simulate item 17 
-   user  system elapsed 
-  4.352   0.081   6.518 
-
-elapsed time to simulate item 18 
-   user  system elapsed 
-  4.549   0.035   6.340 
-
-elapsed time to simulate item 19 
-   user  system elapsed 
-  5.163   0.073   7.356 
-
-elapsed time to simulate item 20 
-   user  system elapsed 
-  6.666   0.195  10.171 
-
-elapsed time to simulate item 21 
-   user  system elapsed 
-  7.078   0.171  10.586 
-
-elapsed time to simulate item 22 
-   user  system elapsed 
-  6.694   0.114   9.533 
-
-elapsed time to simulate item 23 
-   user  system elapsed 
-  5.731   0.062   7.579 
-
-elapsed time to simulate item 24 
-   user  system elapsed 
-  4.830   0.031   6.304 
-
-elapsed time to simulate item 25 
-   user  system elapsed 
-  4.391   0.028   5.734 
-
-elapsed time to simulate item 26 
-   user  system elapsed 
-  4.286   0.038   5.749 
-
-elapsed time to simulate item 27 
-   user  system elapsed 
-  3.884   0.024   5.201 
-
-elapsed time to simulate item 28 
-   user  system elapsed 
-  3.765   0.032   5.329 
-
-elapsed time to simulate item 29 
-   user  system elapsed 
-  3.795   0.023   5.087 
-
-elapsed time to simulate item 30 
-   user  system elapsed 
-  3.987   0.033   5.028 
-
-elapsed time to simulate item 31 
-   user  system elapsed 
-  3.771   0.020   5.051 
-
-elapsed time to simulate item 32 
-   user  system elapsed 
-  3.841   0.027   4.974 
-
-elapsed time to simulate item 33 
-   user  system elapsed 
-  3.940   0.023   5.160 
-
-elapsed time to simulate item 34 
-   user  system elapsed 
-  4.009   0.038   5.326 
-
-elapsed time to simulate item 35 
-   user  system elapsed 
-  3.930   0.026   5.258 
-
-elapsed time to simulate item 36 
-   user  system elapsed 
-  3.985   0.030   5.114 
-
-elapsed time to simulate item 37 
-   user  system elapsed 
-  4.017   0.025   5.431 
-
-elapsed time to simulate item 38 
-   user  system elapsed 
-  4.084   0.027   5.247 
-
-elapsed time to simulate item 39 
-   user  system elapsed 
-  4.158   0.038   5.441 
-
-elapsed time to simulate item 40 
-   user  system elapsed 
-  3.924   0.023   5.126
-#+end_example
-
 #+begin_src R :tangle R/art-functions.R
 ## calculate baseline hazard and hazard ratio
 ## slow iteration
@@ -5283,10 +5121,6 @@ print(proc.time() - start_time)
 }
 #+end_src
 
-#+RESULTS:
-: Error in nrow(mylist[[1]]) : object 'mylist' not found
-: Error in 1:I : NA/NaN argument
-
 * posterior checking
 Rcpp probability distribution: https://teuder.github.io/rcpp4everyone_en/220_dpqr_functions.html
 to test my code
@@ -5311,12 +5145,7 @@ out_dir <- "chessB_swdz_nn_ncut2_zero_beta/"
 out_dir="chessB_no_latent_ncut5_zero_beta_noinfo_lc2/"
 ## out_dir="chessB_nn_ncut2_zero_beta_noinfo_lc2/"
 ## out_dir="chessB_nn_ncut5_zero_beta_noinfo_lc2/"
-## out_dir="chessB_np_ncut5_zero_beta_noinfo_lc2/"
-## out_dir="chessB_pp_ncut5_zero_beta_noinfo_lc2/"
-out_dir="chessB_double_pn_ncut5_zero_beta_noinfo_lc2/"
-out_dir="chessB_double_np_ncut5_zero_beta_noinfo_lc2/"
-out_dir="chessB_double_pp_ncut5_zero_beta_noinfo_lc2/"
-out_dir="chessB_double_nn_ncut5_zero_beta_noinfo_lc2/"
+out_dir="chessB_pn_ncut5_zero_beta_noinfo_lc2/"
 
 num_chain <- 1
 HAS_REF <- 0
@@ -5786,7 +5615,511 @@ mll  <- mauc <- matrix(0, num_iter, I)
 load(paste0(out_dir, "surv_sim.RData"))
 
 for (ii in 1:I) {
-  pp = sim_data[[i]][, (N+1): (2*N)]
+  pp = sim_data[[ii]][, (N+1): (2*N)]
+  for (nn in 1:num_iter) {
+    mll[nn, ii] = MLmetrics::LogLoss(pp[nn, ], mi[ii, ])
+    mauc[nn, ii] = MLmetrics::AUC(pp[nn, ], mi[ii, ])
+    }
+  }
+
+save(mll,file = paste0(out_dir,"simll.RData"))
+  }
+#+end_src
+
+#+begin_src R
+fname = "simll.RData"
+pname = "single_logloss_diff_by.pdf"
+
+lout = c("chessB_pn_ncut2_zero_beta/", "chessB_no_latent_ncut2_zero_beta/", "chessB_np_ncut2_zero_beta/")
+
+source("R/draw_logloss_diff_by.R")
+
+pname = "half_single_logloss_diff_by.pdf"
+lout = c("chessB_swdz_nn_ncut2_zero_beta/", "chessB_no_latent_ncut2_zero_beta/", "chessB_double_pp_ncut2_zero_beta/")
+
+source("R/draw_logloss_diff_by.R")
+
+pname = "double_logloss_diff_by.pdf"
+lout = c("chessB_double_nn_ncut2_zero_beta/", "chessB_no_latent_ncut2_zero_beta/", "chessB_double_pp_ncut2_zero_beta/")
+
+source("R/draw_logloss_diff_by.R")
+#+end_src
+
+#+RESULTS:
+
+** with simulated time V1
+
+#+begin_src R :results none
+out_dir = "chessB_pn_ncut5_zero_beta_noinfo_lc2/"
+num_chain = 1; HAS_REF = 0
+source("R/Renviron.R")
+source("R/load-outputs.R")
+## save(mylist, file = paste0(out_dir,"mylist"))
+source("R/wrap_param.R")
+#+end_src
+
+#+begin_src R
+set.seed(1)
+num_iter <- nrow(mylist[[1]])
+sim_data1 <- list()
+len = diff(sj)
+num_chain = 1
+mll1  <- mauc1<- matrix(0, num_iter, I)
+
+for (ii in 1:I) {
+  start_time <- proc.time()
+  stk_tt <- foreach(chain = 1:num_chain, .combine = "rbind") %dopar% {
+    out <- gethaz_item(mylist[[chain]], cname, ii, N, double_w, double_z)
+    time <- foreach(nn = 1:num_iter, .combine = "rbind") %do% {
+      gen_surv_time(out, sj,N, nn)
+    }
+    pp <- gen_surv_pp(out, time, sj) %>% array(dim = dim(time))
+    cbind(time, pp)
+  }
+  sim_data1[[ii]] <- stk_tt
+  cat("\nelapsed time to simulate item", ii, "\n")
+  print(proc.time() - start_time)
+}
+
+for (ii in 1:I) {
+  pp1 = sim_data1[[ii]][, (N+1): (2*N)]
+  for (nn in 1:num_iter) {
+    mll1[nn, ii] = MLmetrics::LogLoss(pp1[nn, ], mi[ii, ])
+    mauc1[nn, ii] = MLmetrics::AUC(pp1[nn, ], mi[ii, ])
+    }
+  }
+
+summary(mauc1[,1])
+summary(sim_data1[[ii]][, 1:10])
+#+end_src
+
+#+RESULTS:
+#+begin_example
+
+elapsed time to simulate item 1
+   user  system elapsed
+  2.514   0.027   2.546
+
+elapsed time to simulate item 2
+   user  system elapsed
+  2.586   0.038   2.628
+
+elapsed time to simulate item 3
+   user  system elapsed
+  2.451   0.025   2.480
+
+elapsed time to simulate item 4
+   user  system elapsed
+  2.279   0.023   2.305
+
+elapsed time to simulate item 5
+   user  system elapsed
+  2.395   0.017   2.417
+
+elapsed time to simulate item 6
+   user  system elapsed
+  2.467   0.031   2.501
+
+elapsed time to simulate item 7
+   user  system elapsed
+  2.424   0.023   2.456
+
+elapsed time to simulate item 8
+   user  system elapsed
+  2.386   0.017   2.408
+
+elapsed time to simulate item 9
+   user  system elapsed
+  2.528   0.033   2.570
+
+elapsed time to simulate item 10
+   user  system elapsed
+  2.582   0.027   2.634
+
+elapsed time to simulate item 11
+   user  system elapsed
+  2.537   0.030   2.582
+
+elapsed time to simulate item 12
+   user  system elapsed
+  2.668   0.028   2.711
+
+elapsed time to simulate item 13
+   user  system elapsed
+  2.524   0.025   2.557
+
+elapsed time to simulate item 14
+   user  system elapsed
+  2.688   0.035   2.731
+
+elapsed time to simulate item 15
+   user  system elapsed
+  2.478   0.025   2.519
+
+elapsed time to simulate item 16
+   user  system elapsed
+  2.428   0.029   2.462
+
+elapsed time to simulate item 17
+   user  system elapsed
+  2.479   0.022   2.507
+
+elapsed time to simulate item 18
+   user  system elapsed
+  2.405   0.026   2.434
+
+elapsed time to simulate item 19
+   user  system elapsed
+  2.540   0.036   2.583
+
+elapsed time to simulate item 20
+   user  system elapsed
+  2.351   0.020   2.374
+
+elapsed time to simulate item 21
+   user  system elapsed
+  2.498   0.021   2.527
+
+elapsed time to simulate item 22
+   user  system elapsed
+  2.438   0.028   2.469
+
+elapsed time to simulate item 23
+   user  system elapsed
+  2.525   0.026   2.557
+
+elapsed time to simulate item 24
+   user  system elapsed
+  2.421   0.025   2.450
+
+elapsed time to simulate item 25
+   user  system elapsed
+  2.633   0.034   2.672
+
+elapsed time to simulate item 26
+   user  system elapsed
+  2.380   0.019   2.404
+
+elapsed time to simulate item 27
+   user  system elapsed
+  2.499   0.029   2.534
+
+elapsed time to simulate item 28
+   user  system elapsed
+  2.384   0.021   2.409
+
+elapsed time to simulate item 29
+   user  system elapsed
+  2.598   0.042   2.648
+
+elapsed time to simulate item 30
+   user  system elapsed
+  2.592   0.042   2.666
+
+elapsed time to simulate item 31
+   user  system elapsed
+  2.511   0.025   2.552
+
+elapsed time to simulate item 32
+   user  system elapsed
+  2.544   0.022   2.575
+
+elapsed time to simulate item 33
+   user  system elapsed
+  2.495   0.027   2.531
+
+elapsed time to simulate item 34
+   user  system elapsed
+  2.532   0.030   2.571
+
+elapsed time to simulate item 35
+   user  system elapsed
+  2.632   0.027   2.674
+
+elapsed time to simulate item 36
+   user  system elapsed
+  2.634   0.035   2.678
+
+elapsed time to simulate item 37
+   user  system elapsed
+  2.600   0.037   2.645
+
+elapsed time to simulate item 38
+   user  system elapsed
+  2.652   0.022   2.678
+
+elapsed time to simulate item 39
+   user  system elapsed
+  2.804   0.019   2.825
+
+elapsed time to simulate item 40
+   user  system elapsed
+  2.954   0.030   2.992
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
+ 0.4614  0.6676  0.7093  0.7045  0.7490  0.8689
+       V1               V2                 V3                V4
+ Min.   : 0.104   Min.   : 0.02754   Min.   : 0.2282   Min.   : 0.2858
+ 1st Qu.:14.521   1st Qu.:16.75310   1st Qu.:13.5640   1st Qu.:13.4322
+ Median :20.673   Median :22.21936   Median :20.3473   Median :20.4440
+ Mean   :19.557   Mean   :21.60670   Mean   :19.4311   Mean   :19.4715
+ 3rd Qu.:24.761   3rd Qu.:27.99535   3rd Qu.:25.5656   3rd Qu.:25.9579
+ Max.   :31.000   Max.   :31.00000   Max.   :31.0000   Max.   :31.0000
+       V5                V6                 V7               V8
+ Min.   : 0.2591   Min.   : 0.08343   Min.   : 0.075   Min.   : 0.005359
+ 1st Qu.:10.3169   1st Qu.:10.49384   1st Qu.:15.068   1st Qu.: 5.743108
+ Median :16.1253   Median :17.33921   Median :21.164   Median :10.174143
+ Mean   :15.9242   Mean   :16.62757   Mean   :20.222   Mean   :10.770361
+ 3rd Qu.:21.3981   3rd Qu.:21.95471   3rd Qu.:25.922   3rd Qu.:14.797996
+ Max.   :31.0000   Max.   :31.00000   Max.   :31.000   Max.   :30.918441
+       V9                V10
+ Min.   : 0.01327   Min.   : 0.02723
+ 1st Qu.:10.44726   1st Qu.: 4.46470
+ Median :16.88016   Median : 6.12966
+ Mean   :16.40644   Mean   : 7.19662
+ 3rd Qu.:21.57719   3rd Qu.: 9.46719
+ Max.   :31.00000   Max.   :27.73726
+#+end_example
+
+#+begin_src R
+sim_data <- list()
+len = diff(sj)
+num_chain = 1
+mll  <- mauc <- matrix(0, num_iter, I)
+
+for (ii in 1:I) {
+  start_time <- proc.time()
+  stk_tt <- foreach(chain = 1:num_chain, .combine = "rbind") %do% {
+    simtp <- art::rcpp_gen_surv(lambda, theta, z, w, gamma, param, ii)
+    ## out <- gethaz_item(mylist[[chain]], cname, ii, N, double_w, double_z)
+    ## simtp$pp <- gen_surv_pp(out, simtp$time, sj) %>% array(dim = dim(simtp$time))
+    cbind(simtp$time, simtp$pp)
+    }
+  sim_data[[ii]] <- stk_tt
+  cat("\nelapsed time to simulate item", ii, "\n")
+  print(proc.time() - start_time)
+}
+
+for (ii in 1:I) {
+  pp = sim_data[[ii]][, (N+1): (2*N)]
+  for (nn in 1:num_iter) {
+    mll[nn, ii] = MLmetrics::LogLoss(pp[nn, ], mi[ii, ])
+    mauc[nn, ii] = MLmetrics::AUC(pp[nn, ], mi[ii, ])
+    }
+  }
+
+summary(mauc[,1])
+summary(sim_data[[ii]][, 1:10])
+#+end_src
+
+#+RESULTS:
+#+begin_example
+
+elapsed time to simulate item 1
+   user  system elapsed
+  0.148   0.004   0.153
+
+elapsed time to simulate item 2
+   user  system elapsed
+  0.133   0.003   0.137
+
+elapsed time to simulate item 3
+   user  system elapsed
+  0.154   0.015   0.169
+
+elapsed time to simulate item 4
+   user  system elapsed
+  0.145   0.003   0.147
+
+elapsed time to simulate item 5
+   user  system elapsed
+  0.135   0.002   0.138
+
+elapsed time to simulate item 6
+   user  system elapsed
+  0.134   0.003   0.136
+
+elapsed time to simulate item 7
+   user  system elapsed
+  0.140   0.003   0.144
+
+elapsed time to simulate item 8
+   user  system elapsed
+  0.139   0.004   0.143
+
+elapsed time to simulate item 9
+   user  system elapsed
+  0.139   0.003   0.142
+
+elapsed time to simulate item 10
+   user  system elapsed
+  0.153   0.005   0.161
+
+elapsed time to simulate item 11
+   user  system elapsed
+  0.143   0.004   0.147
+
+elapsed time to simulate item 12
+   user  system elapsed
+  0.135   0.003   0.138
+
+elapsed time to simulate item 13
+   user  system elapsed
+  0.136   0.003   0.140
+
+elapsed time to simulate item 14
+   user  system elapsed
+  0.136   0.004   0.139
+
+elapsed time to simulate item 15
+   user  system elapsed
+  0.135   0.003   0.139
+
+elapsed time to simulate item 16
+   user  system elapsed
+  0.135   0.003   0.138
+
+elapsed time to simulate item 17
+   user  system elapsed
+  0.276   0.050   0.327
+
+elapsed time to simulate item 18
+   user  system elapsed
+  0.150   0.004   0.153
+
+elapsed time to simulate item 19
+   user  system elapsed
+  0.135   0.002   0.138
+
+elapsed time to simulate item 20
+   user  system elapsed
+  0.137   0.003   0.141
+
+elapsed time to simulate item 21
+   user  system elapsed
+  0.138   0.002   0.141
+
+elapsed time to simulate item 22
+   user  system elapsed
+  0.138   0.003   0.141
+
+elapsed time to simulate item 23
+   user  system elapsed
+  0.137   0.002   0.140
+
+elapsed time to simulate item 24
+   user  system elapsed
+  0.149   0.004   0.153
+
+elapsed time to simulate item 25
+   user  system elapsed
+  0.179   0.004   0.183
+
+elapsed time to simulate item 26
+   user  system elapsed
+  0.136   0.003   0.139
+
+elapsed time to simulate item 27
+   user  system elapsed
+  0.133   0.003   0.136
+
+elapsed time to simulate item 28
+   user  system elapsed
+  0.134   0.003   0.138
+
+elapsed time to simulate item 29
+   user  system elapsed
+  0.135   0.003   0.137
+
+elapsed time to simulate item 30
+   user  system elapsed
+  0.137   0.003   0.140
+
+elapsed time to simulate item 31
+   user  system elapsed
+  0.135   0.003   0.139
+
+elapsed time to simulate item 32
+   user  system elapsed
+  0.135   0.003   0.138
+
+elapsed time to simulate item 33
+   user  system elapsed
+  0.139   0.004   0.143
+
+elapsed time to simulate item 34
+   user  system elapsed
+  0.137   0.003   0.141
+
+elapsed time to simulate item 35
+   user  system elapsed
+  0.136   0.003   0.140
+
+elapsed time to simulate item 36
+   user  system elapsed
+  0.136   0.004   0.139
+
+elapsed time to simulate item 37
+   user  system elapsed
+  0.145   0.004   0.150
+
+elapsed time to simulate item 38
+   user  system elapsed
+  0.149   0.003   0.153
+
+elapsed time to simulate item 39
+   user  system elapsed
+  0.140   0.004   0.144
+
+elapsed time to simulate item 40
+   user  system elapsed
+  0.139   0.003   0.143
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
+ 0.6008  0.7401  0.7718  0.7704  0.8017  0.8888
+       V1                V2                  V3                 V4
+ Min.   : 0.1216   Min.   : 0.006149   Min.   : 0.01047   Min.   : 0.02577
+ 1st Qu.:13.2669   1st Qu.:13.406861   1st Qu.:13.18964   1st Qu.:13.17931
+ Median :20.0876   Median :20.186556   Median :20.05341   Median :20.07753
+ Mean   :17.1144   Mean   :18.267923   Mean   :17.13554   Mean   :17.52106
+ 3rd Qu.:20.4748   3rd Qu.:20.667244   3rd Qu.:20.51831   3rd Qu.:20.57766
+ Max.   :31.0000   Max.   :31.000000   Max.   :31.00000   Max.   :31.00000
+       V5                  V6                 V7                V8
+ Min.   : 0.001447   Min.   : 0.05882   Min.   : 0.0184   Min.   : 0.01527
+ 1st Qu.: 8.459800   1st Qu.: 8.72372   1st Qu.:13.2672   1st Qu.: 4.52964
+ Median :13.552469   Median :13.66791   Median :20.1129   Median : 8.35317
+ Mean   :14.040341   Mean   :14.68743   Mean   :17.7225   Mean   : 8.92112
+ 3rd Qu.:20.161396   3rd Qu.:20.22287   3rd Qu.:20.5452   3rd Qu.:13.21041
+ Max.   :31.000000   Max.   :31.00000   Max.   :31.0000   Max.   :20.62678
+       V9               V10
+ Min.   : 0.0203   Min.   : 0.002942
+ 1st Qu.: 8.4253   1st Qu.: 4.115752
+ Median :13.4570   Median : 4.565881
+ Mean   :13.5149   Mean   : 6.022391
+ 3rd Qu.:20.1179   3rd Qu.: 8.374777
+ Max.   :31.0000   Max.   :20.253700
+#+end_example
+
+
+#+begin_src R :results none
+## out_dir = "chessb_np/"
+## out_dir = "chessb_pn/"
+## out_dir = "chessb_no_latent/"
+
+lout = c("chessb_np/", "chessb_pn/", "chessb_no_latent/")
+
+lout = c("chessB_pn_ncut2_zero_beta/", "chessB_no_latent_ncut2_zero_beta/", "chessB_np_ncut2_zero_beta/","chessB_swdz_pp_ncut2_zero_beta/", "chessB_double_pp_ncut2_zero_beta/",
+"chessB_swdz_nn_ncut2_zero_beta/", "chessB_double_nn_ncut2_zero_beta/")
+
+mi = as.matrix(mi)
+
+for (out_dir in lout) {
+
+## log loss using simulated time
+mll  <- mauc <- matrix(0, num_iter, I)
+
+load(paste0(out_dir, "surv_sim.RData"))
+
+for (ii in 1:I) {
+  pp = sim_data[[ii]][, (N+1): (2*N)]
   for (nn in 1:num_iter) {
     mll[nn, ii] = MLmetrics::LogLoss(pp[nn, ], mi[ii, ])
     mauc[nn, ii] = MLmetrics::AUC(pp[nn, ], mi[ii, ])
@@ -6190,415 +6523,6 @@ devtools::build('~/Dropbox/research/lsjm-art/lsjm-code/art')
 install.packages("art_0.1.tar.gz", repos = NULL, type="source")
 library(art)
 #+end_src
-
-#+RESULTS:
-#+begin_example
-Installing package into '/usr/local/lib/R/4.0/site-library'
-(as 'lib' is unspecified)
-Using libraries at paths:
-- /usr/local/lib/R/4.0/site-library
-- /usr/local/Cellar/r/4.0.3/lib/R/library
-,* installing *source* package 'art' ...
-,** using staged installation
-,** libs
-Using libraries at paths:
-- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
-- /usr/local/lib/R/4.0/site-library
-- /usr/local/Cellar/r/4.0.3/lib/R/library
-Using libraries at paths:
-- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
-- /usr/local/lib/R/4.0/site-library
-- /usr/local/Cellar/r/4.0.3/lib/R/library
-Using libraries at paths:
-- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
-- /usr/local/lib/R/4.0/site-library
-- /usr/local/Cellar/r/4.0.3/lib/R/library
-
-
-/usr/local/bin/ccache /usr/local/opt/llvm/bin/clang++ -std=c++14 -I"/usr/local/Cellar/r/4.0.3/lib/R/include" -DNDEBUG  -I'/usr/local/lib/R/4.0/site-library/Rcpp/include' -I'/usr/local/lib/R/4.0/site-library/RcppEigen/include' -I'/usr/local/lib/R/4.0/site-library/RcppNumerical/include' -I'/usr/local/lib/R/4.0/site-library/RcppParallel/include' -I'/usr/local/lib/R/4.0/site-library/StanHeaders/include' -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -I/usr/local/include -I/usr/local/opt/llvm/include -I/usr/local/opt/openssl/include -I/usr/local/opt/gettext/include	-I/usr/local/opt/tcl-tk/include   -I'/usr/local/lib/R/4.0/site-library/RcppParallel/include' -D_REENTRANT -DSTAN_THREADS   -I"/usr/local/lib/R/4.0/site-library/StanHeaders/include/src" -fPIC  -g -O3 -Wall -pedantic -mtune=native -pipe -c RcppExports.cpp -o RcppExports.o
-In file included from RcppExports.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:1:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Core:535:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from RcppExports.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:2:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/LU:47:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from RcppExports.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:3:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Cholesky:12:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Jacobi:29:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from RcppExports.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:3:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Cholesky:43:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from RcppExports.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/QR:17:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Householder:27:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from RcppExports.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:5:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/SVD:48:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from RcppExports.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:6:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Geometry:58:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from RcppExports.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:7:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Eigenvalues:58:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from RcppExports.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:31:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Sparse:26:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/SparseCore:66:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from RcppExports.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:31:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Sparse:27:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/OrderingMethods:71:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from RcppExports.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:31:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Sparse:29:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/SparseCholesky:43:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from RcppExports.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:31:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Sparse:32:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/SparseQR:35:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from RcppExports.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:31:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Sparse:33:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/IterativeLinearSolvers:46:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from RcppExports.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:32:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/CholmodSupport:45:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from RcppExports.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:35:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/unsupported/Eigen/KroneckerProduct:34:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/unsupported/Eigen/../../Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from RcppExports.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:39:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/unsupported/Eigen/Polynomials:135:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/unsupported/Eigen/../../Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from RcppExports.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:40:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/unsupported/Eigen/SparseExtra:51:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/unsupported/Eigen/../../Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from RcppExports.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:26:
-In file included from /usr/local/lib/R/4.0/site-library/Rcpp/include/Rcpp.h:57:
-/usr/local/lib/R/4.0/site-library/Rcpp/include/Rcpp/DataFrame.h:136:18: warning: unused variable 'data' [-Wunused-variable]
-            SEXP data = Parent::get__();
-                 ^
-18 warnings generated.
-Using libraries at paths:
-- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
-- /usr/local/lib/R/4.0/site-library
-- /usr/local/Cellar/r/4.0.3/lib/R/library
-Using libraries at paths:
-- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
-- /usr/local/lib/R/4.0/site-library
-- /usr/local/Cellar/r/4.0.3/lib/R/library
-Using libraries at paths:
-- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
-- /usr/local/lib/R/4.0/site-library
-- /usr/local/Cellar/r/4.0.3/lib/R/library
-
-
-/usr/local/bin/ccache /usr/local/opt/llvm/bin/clang++ -std=c++14 -I"/usr/local/Cellar/r/4.0.3/lib/R/include" -DNDEBUG  -I'/usr/local/lib/R/4.0/site-library/Rcpp/include' -I'/usr/local/lib/R/4.0/site-library/RcppEigen/include' -I'/usr/local/lib/R/4.0/site-library/RcppNumerical/include' -I'/usr/local/lib/R/4.0/site-library/RcppParallel/include' -I'/usr/local/lib/R/4.0/site-library/StanHeaders/include' -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -I/usr/local/include -I/usr/local/opt/llvm/include -I/usr/local/opt/openssl/include -I/usr/local/opt/gettext/include	-I/usr/local/opt/tcl-tk/include   -I'/usr/local/lib/R/4.0/site-library/RcppParallel/include' -D_REENTRANT -DSTAN_THREADS   -I"/usr/local/lib/R/4.0/site-library/StanHeaders/include/src" -fPIC  -g -O3 -Wall -pedantic -mtune=native -pipe -c comprisk.cpp -o comprisk.o
-In file included from comprisk.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:1:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Core:535:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from comprisk.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:2:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/LU:47:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from comprisk.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:3:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Cholesky:12:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Jacobi:29:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from comprisk.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:3:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Cholesky:43:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from comprisk.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/QR:17:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Householder:27:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from comprisk.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:5:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/SVD:48:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from comprisk.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:6:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Geometry:58:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from comprisk.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:30:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Dense:7:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Eigenvalues:58:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from comprisk.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:31:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Sparse:26:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/SparseCore:66:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from comprisk.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:31:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Sparse:27:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/OrderingMethods:71:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from comprisk.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:31:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Sparse:29:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/SparseCholesky:43:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from comprisk.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:31:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Sparse:32:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/SparseQR:35:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from comprisk.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:31:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/Sparse:33:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/IterativeLinearSolvers:46:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from comprisk.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:32:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/CholmodSupport:45:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from comprisk.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:35:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/unsupported/Eigen/KroneckerProduct:34:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/unsupported/Eigen/../../Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from comprisk.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:39:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/unsupported/Eigen/Polynomials:135:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/unsupported/Eigen/../../Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from comprisk.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:25:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigenForward.h:40:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/unsupported/Eigen/SparseExtra:51:
-/usr/local/lib/R/4.0/site-library/RcppEigen/include/unsupported/Eigen/../../Eigen/src/Core/util/ReenableStupidWarnings.h:10:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
-    #pragma clang diagnostic pop
-                             ^
-In file included from comprisk.cpp:4:
-In file included from /usr/local/lib/R/4.0/site-library/RcppNumerical/include/RcppNumerical.h:10:
-In file included from /usr/local/lib/R/4.0/site-library/RcppEigen/include/RcppEigen.h:26:
-In file included from /usr/local/lib/R/4.0/site-library/Rcpp/include/Rcpp.h:57:
-/usr/local/lib/R/4.0/site-library/Rcpp/include/Rcpp/DataFrame.h:136:18: warning: unused variable 'data' [-Wunused-variable]
-            SEXP data = Parent::get__();
-                 ^
-18 warnings generated.
-/usr/local/bin/ccache /usr/local/opt/llvm/bin/clang -I"/usr/local/Cellar/r/4.0.3/lib/R/include" -DNDEBUG  -I'/usr/local/lib/R/4.0/site-library/Rcpp/include' -I'/usr/local/lib/R/4.0/site-library/RcppEigen/include' -I'/usr/local/lib/R/4.0/site-library/RcppNumerical/include' -I'/usr/local/lib/R/4.0/site-library/RcppParallel/include' -I'/usr/local/lib/R/4.0/site-library/StanHeaders/include' -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -I/usr/local/include -I/usr/local/opt/llvm/include -I/usr/local/opt/openssl/include -I/usr/local/opt/gettext/include	-I/usr/local/opt/tcl-tk/include   -fPIC  -g -O3 -Wall -pedantic -mtune=native -pipe -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -c init.c -o init.o
-init.c:1:1: warning: ISO C requires a translation unit to contain at least one declaration [-Wempty-translation-unit]
-1 warning generated.
-Using libraries at paths:
-- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
-- /usr/local/lib/R/4.0/site-library
-- /usr/local/Cellar/r/4.0.3/lib/R/library
-Using libraries at paths:
-- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
-- /usr/local/lib/R/4.0/site-library
-- /usr/local/Cellar/r/4.0.3/lib/R/library
-Using libraries at paths:
-- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
-- /usr/local/lib/R/4.0/site-library
-- /usr/local/Cellar/r/4.0.3/lib/R/library
-
-
-/usr/local/bin/ccache /usr/local/opt/llvm/bin/clang++ -std=c++14 -I"/usr/local/Cellar/r/4.0.3/lib/R/include" -DNDEBUG  -I'/usr/local/lib/R/4.0/site-library/Rcpp/include' -I'/usr/local/lib/R/4.0/site-library/RcppEigen/include' -I'/usr/local/lib/R/4.0/site-library/RcppNumerical/include' -I'/usr/local/lib/R/4.0/site-library/RcppParallel/include' -I'/usr/local/lib/R/4.0/site-library/StanHeaders/include' -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -I/usr/local/include -I/usr/local/opt/llvm/include -I/usr/local/opt/openssl/include -I/usr/local/opt/gettext/include	-I/usr/local/opt/tcl-tk/include   -I'/usr/local/lib/R/4.0/site-library/RcppParallel/include' -D_REENTRANT -DSTAN_THREADS   -I"/usr/local/lib/R/4.0/site-library/StanHeaders/include/src" -fPIC  -g -O3 -Wall -pedantic -mtune=native -pipe -c loglike.cpp -o loglike.o
-In file included from loglike.cpp:1:
-In file included from /usr/local/lib/R/4.0/site-library/Rcpp/include/Rcpp.h:57:
-/usr/local/lib/R/4.0/site-library/Rcpp/include/Rcpp/DataFrame.h:136:18: warning: unused variable 'data' [-Wunused-variable]
-            SEXP data = Parent::get__();
-                 ^
-1 warning generated.
-Using libraries at paths:
-- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
-- /usr/local/lib/R/4.0/site-library
-- /usr/local/Cellar/r/4.0.3/lib/R/library
-Using libraries at paths:
-- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
-- /usr/local/lib/R/4.0/site-library
-- /usr/local/Cellar/r/4.0.3/lib/R/library
-Using libraries at paths:
-- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
-- /usr/local/lib/R/4.0/site-library
-- /usr/local/Cellar/r/4.0.3/lib/R/library
-Using libraries at paths:
-- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
-- /usr/local/lib/R/4.0/site-library
-- /usr/local/Cellar/r/4.0.3/lib/R/library
-/usr/local/bin/ccache /usr/local/opt/llvm/bin/clang++ -std=c++14 -dynamiclib -Wl,-headerpad_max_install_names -undefined dynamic_lookup -single_module -multiply_defined suppress -L/usr/local/Cellar/r/4.0.3/lib/R/lib -L/usr/local/opt/gettext/lib -L/usr/local/opt/readline/lib -L/usr/local/lib -L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib -o art.so RcppExports.o comprisk.o init.o loglike.o -L/usr/local/lib/R/4.0/site-library/RcppParallel/lib/ -Wl,-rpath,/usr/local/lib/R/4.0/site-library/RcppParallel/lib/ -ltbb -ltbbmalloc -L/usr/local/Cellar/r/4.0.3/lib/R/lib -lR -lintl -Wl,-framework -Wl,CoreFoundation
-installing to /usr/local/lib/R/4.0/site-library/00LOCK-art/00new/art/libs
-,** R
-,** byte-compile and prepare package for lazy loading
-Using libraries at paths:
-- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
-- /usr/local/lib/R/4.0/site-library
-- /usr/local/Cellar/r/4.0.3/lib/R/library
-,** help
-,*** installing help indices
-,** building package indices
-Using libraries at paths:
-- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
-- /usr/local/lib/R/4.0/site-library
-- /usr/local/Cellar/r/4.0.3/lib/R/library
-,** testing if installed package can be loaded from temporary location
-Using libraries at paths:
-- /usr/local/lib/R/4.0/site-library/00LOCK-art/00new
-- /usr/local/lib/R/4.0/site-library
-- /usr/local/Cellar/r/4.0.3/lib/R/library
-,** checking absolute paths in shared objects and dynamic libraries
-,** testing if installed package can be loaded from final location
-Using libraries at paths:
-- /usr/local/lib/R/4.0/site-library
-- /usr/local/Cellar/r/4.0.3/lib/R/library
-,** testing if installed package keeps a record of temporary installation path
-,* DONE (art)
-#+end_example
 
 *** function to get param from MCMC sample
 #+begin_src R

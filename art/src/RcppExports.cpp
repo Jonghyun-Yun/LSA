@@ -106,6 +106,40 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rcpp_gen_surv_time
+Eigen::MatrixXd rcpp_gen_surv_time(NumericMatrix lambda_, NumericMatrix theta_, NumericMatrix z_, NumericMatrix w_, NumericMatrix gamma_, List& param_, int item);
+RcppExport SEXP _art_rcpp_gen_surv_time(SEXP lambda_SEXP, SEXP theta_SEXP, SEXP z_SEXP, SEXP w_SEXP, SEXP gamma_SEXP, SEXP param_SEXP, SEXP itemSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type lambda_(lambda_SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type theta_(theta_SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type z_(z_SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type w_(w_SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type gamma_(gamma_SEXP);
+    Rcpp::traits::input_parameter< List& >::type param_(param_SEXP);
+    Rcpp::traits::input_parameter< int >::type item(itemSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_gen_surv_time(lambda_, theta_, z_, w_, gamma_, param_, item));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_gen_surv
+Rcpp::List rcpp_gen_surv(NumericMatrix lambda_, NumericMatrix theta_, NumericMatrix z_, NumericMatrix w_, NumericMatrix gamma_, List& param_, int item);
+RcppExport SEXP _art_rcpp_gen_surv(SEXP lambda_SEXP, SEXP theta_SEXP, SEXP z_SEXP, SEXP w_SEXP, SEXP gamma_SEXP, SEXP param_SEXP, SEXP itemSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type lambda_(lambda_SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type theta_(theta_SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type z_(z_SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type w_(w_SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type gamma_(gamma_SEXP);
+    Rcpp::traits::input_parameter< List& >::type param_(param_SEXP);
+    Rcpp::traits::input_parameter< int >::type item(itemSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_gen_surv(lambda_, theta_, z_, w_, gamma_, param_, item));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_art_cumcifun", (DL_FUNC) &_art_cumcifun, 4},
@@ -115,6 +149,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_art_eval_log_like", (DL_FUNC) &_art_eval_log_like, 3},
     {"_art_get_loglike", (DL_FUNC) &_art_get_loglike, 6},
     {"_art_rcpp_gen_surv_pp", (DL_FUNC) &_art_rcpp_gen_surv_pp, 7},
+    {"_art_rcpp_gen_surv_time", (DL_FUNC) &_art_rcpp_gen_surv_time, 7},
+    {"_art_rcpp_gen_surv", (DL_FUNC) &_art_rcpp_gen_surv, 7},
     {NULL, NULL, 0}
 };
 

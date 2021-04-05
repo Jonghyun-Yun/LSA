@@ -29,3 +29,11 @@ rcpp_gen_surv_pp <- function(lambda_, theta_, z_, w_, gamma_, param_, item) {
     .Call(`_art_rcpp_gen_surv_pp`, lambda_, theta_, z_, w_, gamma_, param_, item)
 }
 
+rcpp_gen_surv_time <- function(lambda_, theta_, z_, w_, gamma_, param_, item) {
+    .Call(`_art_rcpp_gen_surv_time`, lambda_, theta_, z_, w_, gamma_, param_, item)
+}
+
+rcpp_gen_surv <- function(lambda_, theta_, z_, w_, gamma_, param_, item) {
+    .Call(`_art_rcpp_gen_surv`, lambda_, theta_, z_, w_, gamma_, param_, item)
+}
+

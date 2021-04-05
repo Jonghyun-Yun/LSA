@@ -26,7 +26,7 @@
 - piecewise approximation segment number: back to 5 (was 2).
   - at a small # of segments, the latent space doesn't improve the fit to chessB data (log-loss).
 - 유월 서브미션 목표!!
-* Log-loss
+** Log-loss
 Given the survival time $t$ and MCMC samples, the conditional probability of "correct" response is estimated as
 \[
 \hat p_{ik}^{(l)}(t) = \frac{h_{i1}^{(l)}(t)}{h_{i1}^{(l)}(t) + h_{i0}^{(l)}(t)},
@@ -39,7 +39,7 @@ We use $Y_{ik} = 1$ to denote a correct response, and $Y_{ik} = 0$ an incorrect 
 \sum_{k} \left\{ y_{ik} \log \hat p_{ik}^{(l)}(t) + (1-y_{ik}) \log (1 - \hat p_{ik}^{(l)})\right\}.
 \]
 
-* Models
+** Models
 =double pp= model:
 the smaller distance, the faster process
 \begin{align*}
@@ -53,7 +53,7 @@ h_{i1}(t) &= \lambda_{i1}(t) \exp(\theta_{k1} + \gamma ||z_{k} - w_{i}||) \\
 h_{i0}(t) &= \lambda_{i0}(t) \exp(\theta_{k0} - \gamma ||z_{k} - w_{i}||) \\
 \end{align*}
 
-* $\gamma$ is non-identifiable, but it's ok to keep
+** $\gamma$ is non-identifiable, but it's ok to keep
 =np= model with $\gamma = 1$.
 \begin{align*}
 h_{i1}(t) &= \lambda_{i1}(t) \exp(\theta_{k1} + ||z_{k} - w_{i}||) \\
@@ -67,7 +67,7 @@ h_{i0}(t) &= \lambda_{i0}(t) \exp(\theta_{k0} - ||z_{k} - w_{i}||) \\
  - results (latent space structure) heavily depend on the prior variance ($\sigma_{zw}$) of $z_{k}$ and $w_{i}$.
  - we should let the data determine $\sigma_{zw}$.
 
-* KILL fit the model
+** KILL fit the model
 CLOSED: [2021-03-29 Mon 09:29]
 - State "KILL"       from "TODO"       [2021-03-29 Mon 09:29] \\
   cannot do the model selection based on a non-identifiable parameter.
@@ -79,7 +79,7 @@ h_{i0}(t) &= \lambda_{i0}(t) \exp(\theta_{k0} - \gamma_{} ||z_{k} - w_{i}||) \\
 \gamma_{} \sim N(0,1)
 \]
 
-* diffused priors?
+** diffused priors?
 \begin{align*}
 \pi\left(\lambda_{ic,j}\right) & \sim \operatorname{Gamma}\left(\text{mean} = \tilde \lambda_{ic,j}, \text{var} = C \cdot \tilde \lambda_{ic,j})\right) \\
 \pi\left(\theta_{k} | \sigma^{2}\right) & \sim \mathrm{N}\left(0, \sigma^{2}\right) \\ \pi\left(\sigma^{2}\right) & \sim \operatorname{lnv}-\operatorname{Gamma}\left(a_{\sigma}, b_{\sigma}\right) \\
@@ -89,14 +89,14 @@ h_{i0}(t) &= \lambda_{i0}(t) \exp(\theta_{k0} - \gamma_{} ||z_{k} - w_{i}||) \\
 \log \gamma) & \sim \mathrm{N}\left(\mu_{\gamma}, \tau_{\gamma}^{2}\right)
 \end{align*}
 \[C = 2, a_{\sigma}=0.0001, b_{\sigma}=0.0001, \mu_{\gamma}=0, \text { and } \tau_{\gamma}^{}=2\]
-** How to set $\lambda$ priors                                       :ATTACH:
+*** How to set $\lambda$ priors                                      :ATTACH:
 :PROPERTIES:
 :ID:       adc42ad2-5845-4405-bed4-b640f540b3d9
 :END:
 # [[attachment:_20210322_182408JASA-Delayed.pdf]]
 C=2, K_j: number of segments, U_j = 3rd quartile, k: k-th segment.
 [[attachment:_20210322_183639screenshot.png]]
-* New results with unknown $\gamma > 0$.
+** New results with unknown $\gamma > 0$.
 baseline model:
 \begin{align*}
 h_{i1}(t) &= \lambda_{i1}(t) \exp(\theta_{k1})\\
