@@ -212,45 +212,52 @@ public:
   double gen_time(int i, int k) {
     double vtime;
     VectorXd haz = VectorXd::Zero(G);
+    VectorXd hazlen = VectorXd::Zero(G);
 
-    for (int c = 0; c < 2; c++) {
       for (int g = 0; g < G; g++) {
-        haz(g) += lambda(c * I + i, g) * std::exp(log_rr(c, i, k)) * len(g);
+    for (int c = 0; c < 2; c++) {
+        haz(g) += lambda(c * I + i, g) * std::exp(log_rr(c, i, k));
       }
+    hazlen(g) = haz(g) * len(g);
     }
 
-    VectorXd cumhaz = my_cumsum(haz);
+    VectorXd cumhaz = my_cumsum(hazlen);
 
-    double logS = -1.0;
-    // double logS = -1.0 * R::rexp(1.0);
+    // double logS = -1.0;
+    double logS = -1.0 * R::rexp(1.0);
     // int mj = G - 1;
     int ss = findInterval(-1.0 * logS, cumhaz) - 1;
 
-    try {
-      if ((haz.array() < 0).any())
-        throw 0;
-    } catch (int n) {
-      std::cout << "Caught " << n << std::endl;
-    // if (k == 1) {
-      std::cout << "i, k: " << i << "," << k << std::endl;
-      for (int c = 0; c < 2; c++) {
-        for (int g = 0; g < G; g++) {
+    // try {
+    //   if ((haz.array() < 0).any())
+    //     throw 0;
+    // } catch (int n) {
+    //   std::cout << "Caught " << n << std::endl;
+    // if (k == 0) {
+//       std::cout << "i, k: " << i << "," << k << std::endl;
+//       for (int c = 0; c < 2; c++) {
+// std::cout <<
+//       theta(k, c) << "," << gamma(c) << "," << (z.row(c * N + k) - w.row(c * I + i)).norm() << std::endl;
 
-          std::cout << "c, g: " << c << "," << g << std::endl;
-          std::cout << "lambda(c * I + i, g)" << lambda(c * I + i, g)
-                    << std::endl;
-          std::cout << "rr" << std::exp(log_rr(c, i, k)) << std::endl;
-          std::cout << "len" << len(g) << std::endl;
-        }
-      }
+// std::cout << z.row(c * N + k) << "," << w.row(c * I + i)<< std::endl;
+//         for (int g = 0; g < G; g++) {
 
-      std::cout << "cumhaz" << std::endl;
-      std::cout << cumhaz << std::endl;
-      std::cout << "-1.0 * logS" << std::endl;
-      std::cout << -1.0 * logS << std::endl;
-      std::cout << "ss" << std::endl;
-      std::cout << ss << std::endl;
-    }
+//           std::cout << "c, g: " << c << "," << g << std::endl;
+//           std::cout << "lambda(c * I + i, g)" << lambda(c * I + i, g)
+//                     << std::endl;
+//           std::cout << "rr" << std::exp(log_rr(c, i, k)) << std::endl;
+//           std::cout << "len" << len(g) << std::endl;
+//         }
+//       }
+
+      // std::cout << "cumhaz" << std::endl;
+      // std::cout << cumhaz << std::endl;
+      // std::cout << "-1.0 * logS" << std::endl;
+      // std::cout << -1.0 * logS << std::endl;
+      // std::cout << "ss" << std::endl;
+      // std::cout << ss << std::endl;
+
+    // }
 
     if (ss < G) {
       vtime = sj(ss) - (logS + cumhaz(ss)) / haz(ss);
@@ -345,6 +352,18 @@ Eigen::MatrixXd rcpp_gen_surv_time(NumericMatrix lambda_, NumericMatrix theta_,
   return res;
 }
 
+template <typename T>
+VectorXi time_seg(const T &x, const VectorXd &sj) noexcept {
+  VectorXi out(x.size());
+
+    for (int i = 0; i < x.size(); i++) {
+    out(i) = findInterval(x(i), sj) - 1;
+    if (out(i) == (sj.size() - 1)) out(i) -= 1;
+  }
+
+  return out;
+}
+
 // [[Rcpp::export]]
 Rcpp::List rcpp_gen_surv(NumericMatrix lambda_, NumericMatrix theta_,
                             NumericMatrix z_, NumericMatrix w_,
@@ -366,7 +385,7 @@ Rcpp::List rcpp_gen_surv(NumericMatrix lambda_, NumericMatrix theta_,
     samples sample_l(lambda_.row(nn), theta_.row(nn), z_.row(nn), w_.row(nn),
                      gamma_.row(nn), param_);
     res_t.row(nn) = sample_l.gen_vtime(item-1); // indexing adjust
-    sample_l.set_seg(item, (findInterval(res_t.row(nn), sj).array() - 1).matrix());
+    sample_l.set_seg(item, time_seg(res_t.row(nn), sj));
     res_p.row(nn) = sample_l.acc_item(item-1); // indexing adjust
     Rcpp::checkUserInterrupt();
   }

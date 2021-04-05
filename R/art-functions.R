@@ -211,9 +211,13 @@ gen_surv_time <- function(out, sj, N, nn) {
 
   haz <- lambda[[1]][nn, ] %o% rr[[1]][nn, ] + lambda[[2]][nn, ] %o% rr[[2]][nn, ]
   logS <- -rexp(N)
+  ## logS <- -rep(1,N)
   cumhaz <- rbind(rep(0, N), apply(haz * len, 2, cumsum))
   vtime <- numeric(N)
 
+  ## cat(cumhaz[, 1],"\n")
+  ## cat(-logS[1],"\n")
+  
   for (kk in 1:N) {
     ss <- findInterval(-logS[kk], cumhaz[, kk])
     if (ss != mj) {

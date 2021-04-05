@@ -3288,10 +3288,10 @@ source("R/art-functions.R")
 source("R/Renviron.R")
 source('R/load-outputs.R')
 ## source('R/write_summary.R')
-source('R/visual-latent-space-plot.R')
-source('R/visual-trace-plot.R')
-## source('R/CIF_posm.R')
-## source('R/CIF.R')
+## source('R/visual-latent-space-plot.R')
+## source('R/visual-trace-plot.R')
+source('R/CIF_posm.R')
+source('R/CIF.R')
 #+END_SRC
 
 print average acceptance rate per type of quantities: \lambda, \beta, \theta, z, w, \gamma, \sigma
@@ -4922,12 +4922,14 @@ gen_surv_time <- function(out, sj, N, nn) {
   len = diff(sj)
 
   haz <- lambda[[1]][nn, ] %o% rr[[1]][nn, ] + lambda[[2]][nn, ] %o% rr[[2]][nn, ]
-  ## logS <- -rexp(N)
-  logS <- -rep(1,N)
+  logS <- -rexp(N)
+  ## logS <- -rep(1,N)
   cumhaz <- rbind(rep(0, N), apply(haz * len, 2, cumsum))
   vtime <- numeric(N)
 
-  ## cat(cumhaz[, 2])
+  ## cat(cumhaz[, 1],"\n")
+  ## cat(-logS[1],"\n")
+  
   for (kk in 1:N) {
     ss <- findInterval(-logS[kk], cumhaz[, kk])
     if (ss != mj) {
@@ -5655,6 +5657,7 @@ num_chain = 1; HAS_REF = 0
 source("R/Renviron.R")
 source("R/load-outputs.R")
 ## save(mylist, file = paste0(out_dir,"mylist"))
+## mylist[[1]] = mylist[[1]][1:2,]
 source("R/wrap_param.R")
 #+end_src
 
@@ -5668,7 +5671,7 @@ mll1  <- mauc1<- matrix(0, num_iter, I)
 
 for (ii in 1:I) {
   start_time <- proc.time()
-  stk_tt <- foreach(chain = 1:num_chain, .combine = "rbind") %dopar% {
+  stk_tt <- foreach(chain = 1:num_chain, .combine = "rbind") %do% {
     out <- gethaz_item(mylist[[chain]], cname, ii, N, double_w, double_z)
     time <- foreach(nn = 1:num_iter, .combine = "rbind") %do% {
       gen_surv_time(out, sj,N, nn)
@@ -5689,6 +5692,7 @@ for (ii in 1:I) {
     }
   }
 
+time1 = sim_data1[[ii]][, 1:N]
 summary(mauc1[,1])
 summary(sim_data1[[ii]][, 1:10])
 #+end_src
@@ -5696,188 +5700,32 @@ summary(sim_data1[[ii]][, 1:10])
 #+RESULTS:
 #+begin_example
 
-elapsed time to simulate item 1
-   user  system elapsed
-  2.514   0.027   2.546
-
-elapsed time to simulate item 2
-   user  system elapsed
-  2.586   0.038   2.628
-
-elapsed time to simulate item 3
-   user  system elapsed
-  2.451   0.025   2.480
-
-elapsed time to simulate item 4
-   user  system elapsed
-  2.279   0.023   2.305
-
-elapsed time to simulate item 5
-   user  system elapsed
-  2.395   0.017   2.417
-
-elapsed time to simulate item 6
-   user  system elapsed
-  2.467   0.031   2.501
-
-elapsed time to simulate item 7
-   user  system elapsed
-  2.424   0.023   2.456
-
-elapsed time to simulate item 8
-   user  system elapsed
-  2.386   0.017   2.408
-
-elapsed time to simulate item 9
-   user  system elapsed
-  2.528   0.033   2.570
-
-elapsed time to simulate item 10
-   user  system elapsed
-  2.582   0.027   2.634
-
-elapsed time to simulate item 11
-   user  system elapsed
-  2.537   0.030   2.582
-
-elapsed time to simulate item 12
-   user  system elapsed
-  2.668   0.028   2.711
-
-elapsed time to simulate item 13
-   user  system elapsed
-  2.524   0.025   2.557
-
-elapsed time to simulate item 14
-   user  system elapsed
-  2.688   0.035   2.731
-
-elapsed time to simulate item 15
-   user  system elapsed
-  2.478   0.025   2.519
-
-elapsed time to simulate item 16
-   user  system elapsed
-  2.428   0.029   2.462
-
-elapsed time to simulate item 17
-   user  system elapsed
-  2.479   0.022   2.507
-
-elapsed time to simulate item 18
-   user  system elapsed
-  2.405   0.026   2.434
-
-elapsed time to simulate item 19
-   user  system elapsed
-  2.540   0.036   2.583
-
-elapsed time to simulate item 20
-   user  system elapsed
-  2.351   0.020   2.374
-
-elapsed time to simulate item 21
-   user  system elapsed
-  2.498   0.021   2.527
-
-elapsed time to simulate item 22
-   user  system elapsed
-  2.438   0.028   2.469
-
-elapsed time to simulate item 23
-   user  system elapsed
-  2.525   0.026   2.557
-
-elapsed time to simulate item 24
-   user  system elapsed
-  2.421   0.025   2.450
-
-elapsed time to simulate item 25
-   user  system elapsed
-  2.633   0.034   2.672
-
-elapsed time to simulate item 26
-   user  system elapsed
-  2.380   0.019   2.404
-
-elapsed time to simulate item 27
-   user  system elapsed
-  2.499   0.029   2.534
-
-elapsed time to simulate item 28
-   user  system elapsed
-  2.384   0.021   2.409
-
-elapsed time to simulate item 29
-   user  system elapsed
-  2.598   0.042   2.648
-
-elapsed time to simulate item 30
-   user  system elapsed
-  2.592   0.042   2.666
-
-elapsed time to simulate item 31
-   user  system elapsed
-  2.511   0.025   2.552
-
-elapsed time to simulate item 32
-   user  system elapsed
-  2.544   0.022   2.575
-
-elapsed time to simulate item 33
-   user  system elapsed
-  2.495   0.027   2.531
-
-elapsed time to simulate item 34
-   user  system elapsed
-  2.532   0.030   2.571
-
-elapsed time to simulate item 35
-   user  system elapsed
-  2.632   0.027   2.674
-
-elapsed time to simulate item 36
-   user  system elapsed
-  2.634   0.035   2.678
-
-elapsed time to simulate item 37
-   user  system elapsed
-  2.600   0.037   2.645
-
-elapsed time to simulate item 38
-   user  system elapsed
-  2.652   0.022   2.678
-
-elapsed time to simulate item 39
-   user  system elapsed
-  2.804   0.019   2.825
-
-elapsed time to simulate item 40
-   user  system elapsed
-  2.954   0.030   2.992
-   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
+elapsed time to simulate item 1 
+   user  system elapsed 
+  2.312   0.051   2.364
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
  0.4614  0.6676  0.7093  0.7045  0.7490  0.8689
-       V1               V2                 V3                V4
- Min.   : 0.104   Min.   : 0.02754   Min.   : 0.2282   Min.   : 0.2858
- 1st Qu.:14.521   1st Qu.:16.75310   1st Qu.:13.5640   1st Qu.:13.4322
- Median :20.673   Median :22.21936   Median :20.3473   Median :20.4440
- Mean   :19.557   Mean   :21.60670   Mean   :19.4311   Mean   :19.4715
- 3rd Qu.:24.761   3rd Qu.:27.99535   3rd Qu.:25.5656   3rd Qu.:25.9579
- Max.   :31.000   Max.   :31.00000   Max.   :31.0000   Max.   :31.0000
-       V5                V6                 V7               V8
- Min.   : 0.2591   Min.   : 0.08343   Min.   : 0.075   Min.   : 0.005359
- 1st Qu.:10.3169   1st Qu.:10.49384   1st Qu.:15.068   1st Qu.: 5.743108
- Median :16.1253   Median :17.33921   Median :21.164   Median :10.174143
- Mean   :15.9242   Mean   :16.62757   Mean   :20.222   Mean   :10.770361
- 3rd Qu.:21.3981   3rd Qu.:21.95471   3rd Qu.:25.922   3rd Qu.:14.797996
- Max.   :31.0000   Max.   :31.00000   Max.   :31.000   Max.   :30.918441
-       V9                V10
- Min.   : 0.01327   Min.   : 0.02723
- 1st Qu.:10.44726   1st Qu.: 4.46470
- Median :16.88016   Median : 6.12966
- Mean   :16.40644   Mean   : 7.19662
- 3rd Qu.:21.57719   3rd Qu.: 9.46719
- Max.   :31.00000   Max.   :27.73726
+       V1                  V2                  V3                  V4          
+ Min.   : 0.001071   Min.   : 0.009548   Min.   : 0.003532   Min.   :0.003854  
+ 1st Qu.: 5.053942   1st Qu.: 4.233059   1st Qu.: 1.010665   1st Qu.:1.106081  
+ Median : 7.723994   Median : 5.627503   Median : 2.441516   Median :2.763595  
+ Mean   : 9.019573   Mean   : 6.426816   Mean   : 2.584889   Mean   :2.763235  
+ 3rd Qu.:11.329654   3rd Qu.: 8.084420   3rd Qu.: 4.133042   3rd Qu.:4.262597  
+ Max.   :31.000000   Max.   :31.000000   Max.   :10.039567   Max.   :9.756652  
+       V5                 V6                 V7                  V8          
+ Min.   :0.006382   Min.   : 0.02442   Min.   : 0.001863   Min.   :0.001369  
+ 1st Qu.:1.311351   1st Qu.: 2.25170   1st Qu.: 3.347043   1st Qu.:0.419742  
+ Median :3.024196   Median : 4.31526   Median : 4.638130   Median :0.979024  
+ Mean   :2.932691   Mean   : 4.15903   Mean   : 4.733939   Mean   :1.440150  
+ 3rd Qu.:4.369691   3rd Qu.: 5.37769   3rd Qu.: 5.882890   3rd Qu.:2.174139  
+ Max.   :8.851547   Max.   :15.36853   Max.   :20.841994   Max.   :7.233847  
+       V9               V10          
+ Min.   :0.01441   Min.   :0.000417  
+ 1st Qu.:1.12040   1st Qu.:0.359703  
+ Median :2.89759   Median :0.861900  
+ Mean   :2.77517   Mean   :1.270668  
+ 3rd Qu.:4.24634   3rd Qu.:1.816021  
+ Max.   :9.07442   Max.   :4.964124
 #+end_example
 
 #+begin_src R
@@ -5890,8 +5738,8 @@ for (ii in 1:I) {
   start_time <- proc.time()
   stk_tt <- foreach(chain = 1:num_chain, .combine = "rbind") %do% {
     simtp <- art::rcpp_gen_surv(lambda, theta, z, w, gamma, param, ii)
-    ## out <- gethaz_item(mylist[[chain]], cname, ii, N, double_w, double_z)
-    ## simtp$pp <- gen_surv_pp(out, simtp$time, sj) %>% array(dim = dim(simtp$time))
+    out <- gethaz_item(mylist[[chain]], cname, ii, N, double_w, double_z)
+    simtp$pp <- gen_surv_pp(out, simtp$time, sj) %>% array(dim = dim(simtp$time))
     cbind(simtp$time, simtp$pp)
     }
   sim_data[[ii]] <- stk_tt
@@ -5907,196 +5755,10 @@ for (ii in 1:I) {
     }
   }
 
+time = sim_data[[ii]][, 1:N]
 summary(mauc[,1])
 summary(sim_data[[ii]][, 1:10])
 #+end_src
-
-#+RESULTS:
-#+begin_example
-
-elapsed time to simulate item 1
-   user  system elapsed
-  0.148   0.004   0.153
-
-elapsed time to simulate item 2
-   user  system elapsed
-  0.133   0.003   0.137
-
-elapsed time to simulate item 3
-   user  system elapsed
-  0.154   0.015   0.169
-
-elapsed time to simulate item 4
-   user  system elapsed
-  0.145   0.003   0.147
-
-elapsed time to simulate item 5
-   user  system elapsed
-  0.135   0.002   0.138
-
-elapsed time to simulate item 6
-   user  system elapsed
-  0.134   0.003   0.136
-
-elapsed time to simulate item 7
-   user  system elapsed
-  0.140   0.003   0.144
-
-elapsed time to simulate item 8
-   user  system elapsed
-  0.139   0.004   0.143
-
-elapsed time to simulate item 9
-   user  system elapsed
-  0.139   0.003   0.142
-
-elapsed time to simulate item 10
-   user  system elapsed
-  0.153   0.005   0.161
-
-elapsed time to simulate item 11
-   user  system elapsed
-  0.143   0.004   0.147
-
-elapsed time to simulate item 12
-   user  system elapsed
-  0.135   0.003   0.138
-
-elapsed time to simulate item 13
-   user  system elapsed
-  0.136   0.003   0.140
-
-elapsed time to simulate item 14
-   user  system elapsed
-  0.136   0.004   0.139
-
-elapsed time to simulate item 15
-   user  system elapsed
-  0.135   0.003   0.139
-
-elapsed time to simulate item 16
-   user  system elapsed
-  0.135   0.003   0.138
-
-elapsed time to simulate item 17
-   user  system elapsed
-  0.276   0.050   0.327
-
-elapsed time to simulate item 18
-   user  system elapsed
-  0.150   0.004   0.153
-
-elapsed time to simulate item 19
-   user  system elapsed
-  0.135   0.002   0.138
-
-elapsed time to simulate item 20
-   user  system elapsed
-  0.137   0.003   0.141
-
-elapsed time to simulate item 21
-   user  system elapsed
-  0.138   0.002   0.141
-
-elapsed time to simulate item 22
-   user  system elapsed
-  0.138   0.003   0.141
-
-elapsed time to simulate item 23
-   user  system elapsed
-  0.137   0.002   0.140
-
-elapsed time to simulate item 24
-   user  system elapsed
-  0.149   0.004   0.153
-
-elapsed time to simulate item 25
-   user  system elapsed
-  0.179   0.004   0.183
-
-elapsed time to simulate item 26
-   user  system elapsed
-  0.136   0.003   0.139
-
-elapsed time to simulate item 27
-   user  system elapsed
-  0.133   0.003   0.136
-
-elapsed time to simulate item 28
-   user  system elapsed
-  0.134   0.003   0.138
-
-elapsed time to simulate item 29
-   user  system elapsed
-  0.135   0.003   0.137
-
-elapsed time to simulate item 30
-   user  system elapsed
-  0.137   0.003   0.140
-
-elapsed time to simulate item 31
-   user  system elapsed
-  0.135   0.003   0.139
-
-elapsed time to simulate item 32
-   user  system elapsed
-  0.135   0.003   0.138
-
-elapsed time to simulate item 33
-   user  system elapsed
-  0.139   0.004   0.143
-
-elapsed time to simulate item 34
-   user  system elapsed
-  0.137   0.003   0.141
-
-elapsed time to simulate item 35
-   user  system elapsed
-  0.136   0.003   0.140
-
-elapsed time to simulate item 36
-   user  system elapsed
-  0.136   0.004   0.139
-
-elapsed time to simulate item 37
-   user  system elapsed
-  0.145   0.004   0.150
-
-elapsed time to simulate item 38
-   user  system elapsed
-  0.149   0.003   0.153
-
-elapsed time to simulate item 39
-   user  system elapsed
-  0.140   0.004   0.144
-
-elapsed time to simulate item 40
-   user  system elapsed
-  0.139   0.003   0.143
-   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
- 0.6008  0.7401  0.7718  0.7704  0.8017  0.8888
-       V1                V2                  V3                 V4
- Min.   : 0.1216   Min.   : 0.006149   Min.   : 0.01047   Min.   : 0.02577
- 1st Qu.:13.2669   1st Qu.:13.406861   1st Qu.:13.18964   1st Qu.:13.17931
- Median :20.0876   Median :20.186556   Median :20.05341   Median :20.07753
- Mean   :17.1144   Mean   :18.267923   Mean   :17.13554   Mean   :17.52106
- 3rd Qu.:20.4748   3rd Qu.:20.667244   3rd Qu.:20.51831   3rd Qu.:20.57766
- Max.   :31.0000   Max.   :31.000000   Max.   :31.00000   Max.   :31.00000
-       V5                  V6                 V7                V8
- Min.   : 0.001447   Min.   : 0.05882   Min.   : 0.0184   Min.   : 0.01527
- 1st Qu.: 8.459800   1st Qu.: 8.72372   1st Qu.:13.2672   1st Qu.: 4.52964
- Median :13.552469   Median :13.66791   Median :20.1129   Median : 8.35317
- Mean   :14.040341   Mean   :14.68743   Mean   :17.7225   Mean   : 8.92112
- 3rd Qu.:20.161396   3rd Qu.:20.22287   3rd Qu.:20.5452   3rd Qu.:13.21041
- Max.   :31.000000   Max.   :31.00000   Max.   :31.0000   Max.   :20.62678
-       V9               V10
- Min.   : 0.0203   Min.   : 0.002942
- 1st Qu.: 8.4253   1st Qu.: 4.115752
- Median :13.4570   Median : 4.565881
- Mean   :13.5149   Mean   : 6.022391
- 3rd Qu.:20.1179   3rd Qu.: 8.374777
- Max.   :31.0000   Max.   :20.253700
-#+end_example
 
 
 #+begin_src R :results none

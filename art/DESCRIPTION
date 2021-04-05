@@ -1,7 +1,7 @@
 Package: art
 Type: Package
 Title: What the Package Does in One 'Title Case' Line
-Version: 0.1
+Version: 0.1.1
 Date: 2020-06-25
 Author: Jonghyun Yun
 Maintainer: Jonghyun Yun <jonghyun.yun@gmail.com>
