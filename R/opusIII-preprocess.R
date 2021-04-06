@@ -65,13 +65,8 @@ I = nrow(mt)
 N = ncol(mt)
 C = 2
 G = ncut #
-readr::write_csv(data.frame(I=I, N=N, C=C, G=G), "input/mvar.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mlen),"input/mlen.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mseg),"input/mseg.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mh),"input/mh.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mt),"input/mt.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mi),"input/mi.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mNA),"input/mNA.csv", col_names = FALSE)
+
+source("R/write-data.R")
 
 mtab_sj = t( apply(mseg, 1, function(x) tab_sj(x,G)) )
 
@@ -114,21 +109,4 @@ mu_w = matrix(0.0,I,2)
 sigma_w = matrix(sqrt(1.0),I,2)
 jump_w = matrix(0.5,I,2)
 
-readr::write_csv(as.data.frame(rbind(a_lambda,b_lambda,jump_lambda)),"input/pj_lambda.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_beta,sigma_beta,jump_beta)),"input/pj_beta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_theta,sigma_theta,jump_theta)),"input/pj_theta.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(a_sigma,b_sigma)),"input/pj_sigma.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_gamma,sigma_gamma,jump_gamma)),"input/pj_gamma.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_z,sigma_z,jump_z)),"input/pj_z.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(rbind(mu_w,sigma_w,jump_w)),"input/pj_w.csv", col_names = FALSE)
-
-df %>% group_by(item) %>% summarise(F = sum(resp == 0), T = sum(resp == 1)) %>% mutate(id_ = 1:num_item)
-
-pdf("figure/boxplot_ART.pdf")
-rt_boxp <- ggplot(df, aes(x=factor(resp),y=RT,fill=factor(resp)))+
-  geom_boxplot() + labs(title="RT by accuracy") + facet_wrap(~item)
-logrt_boxp <- ggplot(df, aes(x=factor(resp),y=log(RT),fill=factor(resp)))+
-  geom_boxplot() + labs(title="log RT by accuracy") + facet_wrap(~item)
-rt_boxp
-logrt_boxp
-dev.off(which = dev.cur())
+source("R/write-prior.R")

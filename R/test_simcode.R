@@ -64,6 +64,12 @@ auc_boxp <- ggplot(dd, aes(x=item,y=AUC,fill=factor(item))) +
 
 llike_boxp <- ggplot(data.frame(LogLike = mlike), aes(y=LogLike)) + geom_boxplot() + theme(legend.position = "none") + ggtitle(concat_summary(mlike,0)) + theme(plot.title = element_text(size=10))
 
+pdf(paste0(out_dir,"figure/cmetrics.pdf"))
+print(ll_boxp)
+print(auc_boxp)
+print(llike_boxp)
+dev.off()
+
 sink(paste0(out_dir,"analysis-output.txt"))
 
 cat("=============================\n")
@@ -78,9 +84,3 @@ cat("DIC1, DIC2\n")
 cat(paste0(round(mm$DIC1,2),","),round(mm$DIC2,2),"\n")
 
 sink()
-
-pdf(paste0(out_dir,"figure/cmetrics.pdf"))
-print(ll_boxp)
-print(auc_boxp)
-print(llike_boxp)
-dev.off()

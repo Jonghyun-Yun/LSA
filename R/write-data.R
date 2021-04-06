@@ -1,0 +1,7 @@
+readr::write_csv(data.frame(I = I, N = N, C = C, G = G), "input/mvar.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mlen), "input/mlen.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mseg), "input/mseg.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mh), "input/mh.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mt), "input/mt.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mi), "input/mi.csv", col_names = FALSE)
+readr::write_csv(as.data.frame(mNA), "input/mNA.csv", col_names = FALSE)

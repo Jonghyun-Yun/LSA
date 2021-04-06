@@ -69,13 +69,7 @@ N <- ncol(mt)
 C <- 2
 G <- ncut #
 
-readr::write_csv(data.frame(I = I, N = N, C = C, G = G), "input/mvar.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mlen), "input/mlen.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mseg), "input/mseg.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mh), "input/mh.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mt), "input/mt.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mi), "input/mi.csv", col_names = FALSE)
-readr::write_csv(as.data.frame(mNA), "input/mNA.csv", col_names = FALSE)
+source("R/write-data.R")
 
 mtab_sj <- t(apply(mseg, 1, function(x) tab_sj(x, G)))
 
@@ -122,20 +116,3 @@ sigma_w <- matrix(sqrt(1.0), I, 2)
 jump_w <- matrix(0.5, I, 2)
 
 source("R/write-prior.R")
-
-df %>%
-  group_by(item) %>%
-  summarise(F = sum(resp == 0), T = sum(resp == 1))
-
-pdf("figure/boxplot_ART.pdf")
-rt_boxp <- ggplot(df, aes(x = factor(resp), y = RT, fill = factor(resp))) +
-  geom_boxplot() +
-  labs(title = "RT by accuracy") +
-  facet_wrap(~item)
-logrt_boxp <- ggplot(df, aes(x = factor(resp), y = log(RT), fill = factor(resp))) +
-  geom_boxplot() +
-  labs(title = "log RT by accuracy") +
-  facet_wrap(~item)
-rt_boxp
-logrt_boxp
-dev.off(which = dev.cur())
