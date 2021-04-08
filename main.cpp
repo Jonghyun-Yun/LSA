@@ -35,6 +35,7 @@
 // typedef Eigen::Map<Eigen::VectorXd> MapVecd;
 // typedef Eigen::Block<Eigen::MatrixXd> BlkMatd;
 
+// use using instead!
 // map c++ array to Eigen
 typedef Eigen::Map<Eigen::MatrixXd> MapMatd;
 typedef Eigen::Map<Eigen::VectorXd> MapVecd;
