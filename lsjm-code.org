@@ -3365,8 +3365,8 @@ args <- commandArgs(trailingOnly = TRUE)
 double_z <- 0
 double_w <- 0
 
-  HAS_REF <- 0
-  ref_dir <- ""
+HAS_REF <- 0
+ref_dir <- ""
 
 if (length(args) == 0) {
   stop("At least one argument must be supplied (input file).n", call. = FALSE)
@@ -3376,8 +3376,8 @@ if (length(args) == 0) {
 } else if (length(args) >= 3) {
   # default output file
   num_chain <- as.numeric(args[2])
-  double_w = 1 * (args[3] == "1")
-  double_z = 1 * (args[4] == "1")
+  double_w <- 1 * (args[3] == "1")
+  double_z <- 1 * (args[4] == "1")
 } else if (length(args) == 1) {
   # default output file
   num_chain <- 3

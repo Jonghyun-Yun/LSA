@@ -291,3 +291,9 @@ mkdir -p ~/workspace/cache/lsjm-code
 mv .ccls-cache ~/workspace/cache/lsjm-code/
 ln -s ~/workspace/cache/lsjm-code/.ccls-cache
 #+END_SRC
+
+#+BEGIN_SRC sh
+mkdir -p ~/workspace/cache/art
+mv .ccls-cache ~/workspace/cache/art/
+ln -s ~/workspace/cache/art/.ccls-cache
+#+END_SRC
