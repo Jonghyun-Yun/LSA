@@ -5789,7 +5789,7 @@ source("R/draw_logloss_diff_by.R")
 
 #+RESULTS:
 
-** with simulated time V1
+** with simulated time Rcpp
 
 #+begin_src R :results none
 out_dir = "chessB_pn_ncut5_zero_beta_noinfo_lc2/"
@@ -6498,9 +6498,6 @@ tab_IY <- function(seg_g, G) {
 #+begin_src emacs-lisp
 (setq flycheck-checker-error-threshold 700)
 #+end_src
-
-#+RESULTS:
-: 700
 
 #+begin_src sh :eval no :tangle .lintr
 linters: with_defaults(line_length_linter(120), assignment_linter = NULL, object_name_linter = NULL)
