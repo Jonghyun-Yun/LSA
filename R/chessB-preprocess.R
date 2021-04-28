@@ -13,6 +13,8 @@ PPNR = chess[,1]
 dt = cbind(PPNR, chess[,grepl("BR[1-9]+", names(chess))]) %>% na.omit
 di = cbind(PPNR, chess[,grepl("B[1-9]+", names(chess))]) %>% filter(PPNR %in% dt$PPNR)
 
+delo = cbind(PPNR, chess['ELO']) %>% filter(PPNR %in% dt$PPNR)
+
 nitem = 40
 nperson = nrow(di)
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-out_dir="opusIII_pn_ncut5_zero_beta_noinfo_lc2/"
-prename="R/opusIII_noinfo-preprocess.R"
-initname="R/opusIII_pn-init.R"
+out_dir="duolingo_pn_ncut5_zero_beta_noinfo_lc2/"
+prename="R/duolingo_noinfo-preprocess.R"
+initname="R/duolingo_pn-init.R"
 n_chain=2
 
 echo "================================"
@@ -46,5 +46,3 @@ mv output/* $out_dir
 Rscript R/run-analysis.R $out_dir $n_chain
 echo "Outputs are moved to" $out_dir"."
 echo "================================"
-
-sh verbal.sh
