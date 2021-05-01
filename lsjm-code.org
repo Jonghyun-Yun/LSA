@@ -729,7 +729,7 @@ dev.off(which = dev.cur())
 #+end_src
 
 #+RESULTS:
-: null device 
+: null device
 :           1
 
 ** prior & jump
@@ -1030,7 +1030,7 @@ dev.off(which = dev.cur())
 #+end_src
 
 #+RESULTS:
-: null device 
+: null device
 :           1
 
 ** prior & jump
@@ -1363,6 +1363,9 @@ myacc = dit %>% group_by(item) %>% summarise(F = sum(resp == 0), T = sum(resp ==
 `summarise()` ungrouping output (override with `.groups` argument)
 #+end_src
 
+#+RESULTS:
+: Error: unexpected symbol in "`summarise()` ungrouping"
+
 #+begin_src R
 rt_boxp <- ggplot(dit, aes(x=factor(resp),y=time,fill=factor(resp)))+
   geom_boxplot() + labs(title="RT by accuracy") + facet_wrap(~item)
@@ -1379,15 +1382,14 @@ acc_plot <- ggplot(myacc, aes(x=item,y=accuracy)) +
 
 #+begin_src R
 pdf("figure/RTnACC.pdf")
-rt_boxp
-acc_plot
 logrt_boxp
+acc_plot
 dev.off(which = dev.cur())
 #+end_src
 
 #+RESULTS:
-: quartz
-:      2
+: null device
+:           1
 
 ** prior & jump
 This is to export hyper-parameters and jumping rule
@@ -2265,7 +2267,7 @@ tab0 = table(findInterval(time[resp == 0], sj), item[resp==0])
 tab1 = table(findInterval(time[resp == 1], sj), item[resp==1])
 sjtab = list(tab0,tab1)
   for (c in 1:2) {
-  checksj = checksj + sum(sjtab[[c]]==0) 
+  checksj = checksj + sum(sjtab[[c]]==0)
 }
 if (checksj > 0) {
 print(tab0)
@@ -2459,7 +2461,7 @@ dev.off(which = dev.cur())
 #+RESULTS:
 : null device
 :           1
-    
+
 ** prior & jump
 This is to export hyper-parameters and jumping rule
 #+begin_src R :results none :tangle R/chessB-preprocess.R
@@ -3501,10 +3503,13 @@ cat output/summary.csv
 #+end_src
 
 ** example to extract w0 and z0
+:PROPERTIES:
+:header-args:R: :tangle R/latent_post_mean.R
+:END:
 This is an example to extract the Procrustean matched coordinates of the latent space.
 #+begin_src R
-out_dir <- "chessB_pn/"
-num_chain <- 3
+out_dir <- "duolingo_pn_ncut5_zero_beta_noinfo_lc2/"
+num_chain <- 1
 HAS_REF <- 0
 
 source("R/Renviron.R")
@@ -3807,10 +3812,10 @@ my_procrustes <- function(Xstar, dlist, is_list = FALSE, bind_zw = FALSE, my_tra
     }
 
     adx <- z0dx | z1dx | w0dx | w1dx
-    
+
     xstar0 = rbind(w0star,z0star)
     xstar1 = rbind(w1star,z1star)
-    
+
     mm <- foreach(k = 1:num_samples) %dopar% {
       if (!bind_zw) {
         pout <- MCMCpack::procrustes(w0[, , k], w0star)
@@ -3821,7 +3826,7 @@ my_procrustes <- function(Xstar, dlist, is_list = FALSE, bind_zw = FALSE, my_tra
         w0[, , k] <- bout$X.new[1:num_w, ]
         z0[, , k] <- bout$X.new[(num_w+1):(num_w+num_z), ]
         }
-        
+
         if (!no_w1 & !bind_zw) {
           pout <- MCMCpack::procrustes(w1[, , k], w1star)
           w1[, , k] <- pout$X.new
@@ -4014,7 +4019,7 @@ dev.off(which = dev.cur())
 #+end_src
 
 #+RESULTS:
-: pdf 
+: pdf
 :   2
 
 [[pdf:figure/latent_space_med.pdf::1]]
@@ -4062,7 +4067,7 @@ dev.off(which = dev.cur())
 #+end_src
 
 #+RESULTS:
-: pdf 
+: pdf
 :   2
 
 
@@ -4095,7 +4100,7 @@ if (!HAS_REF) {
 #+end_src
 
 #+RESULTS:
-: pdf 
+: pdf
 :   2
 
 
@@ -4143,7 +4148,7 @@ dev.off(which = dev.cur())
 #+end_src
 
 #+RESULTS:
-: pdf 
+: pdf
 :   2
 
 [[pdf:figure/latent_space_mean.pdf]]
@@ -4172,7 +4177,7 @@ dev.off(which = dev.cur())
 #+end_src
 
 #+RESULTS:
-: pdf 
+: pdf
 :   2
 
 #+begin_src R
@@ -4223,7 +4228,7 @@ dev.off(which = dev.cur())
 #+end_src
 
 #+RESULTS:
-: pdf 
+: pdf
 :   2
 [[file:figure/beta_parcoord.pdf]]
 #+begin_src R :tangle R/visual-trace-plot.R
@@ -4236,7 +4241,7 @@ dev.off(which = dev.cur())
 #+end_src
 
 #+RESULTS:
-: pdf 
+: pdf
 :   2
 
 [[file:figure/theta_parcoord.pdf]]
@@ -4250,7 +4255,7 @@ dev.off(which = dev.cur())
 #+end_src
 
 #+RESULTS:
-: pdf 
+: pdf
 :   2
 
 [[file:figure/lambda_parcoord.pdf]]
@@ -4265,7 +4270,7 @@ dev.off(which = dev.cur())
 #+end_src
 
 #+RESULTS:
-: pdf 
+: pdf
 :   2
 
 [[pdf:figure/w_parcoord_plot.pdf::1]]
@@ -4279,7 +4284,7 @@ dev.off(which = dev.cur())
 #+end_src
 
 #+RESULTS:
-: pdf 
+: pdf
 :   2
 
 [[file:figure/dist_mcmc_trace_plot.pdf]]
@@ -4308,7 +4313,7 @@ dev.off(which = dev.cur())
 #+end_src
 
 #+RESULTS:
-: pdf 
+: pdf
 :   2
 
 [[file:figure/lambda_mcmc_trace_plot.pdf]]
@@ -4338,7 +4343,7 @@ dev.off(which = dev.cur())
 
 #+RESULTS:
 : character(0)
-: pdf 
+: pdf
 :   2
 
 [[file:figure/beta_mcmc_trace_plot.pdf]]
@@ -4357,7 +4362,7 @@ dev.off(which = dev.cur())
 #+end_src
 
 #+RESULTS:
-: pdf 
+: pdf
 :   2
 
 [[pdf:figure/theta_mcmc_trace_plot.pdf]]
@@ -4375,7 +4380,7 @@ dev.off(which = dev.cur())
 #+end_src
 
 #+RESULTS:
-: pdf 
+: pdf
 :   2
 
 [[file:figure/gamma_mcmc_trace_plot.pdf]]
@@ -4391,7 +4396,7 @@ dev.off(which = dev.cur())
 #+end_src
 
 #+RESULTS:
-: pdf 
+: pdf
 :   2
 
 [[file:figure/lp_sigma_mcmc_trace_plot.pdf]]
@@ -4407,7 +4412,7 @@ dev.off(which = dev.cur())
 #+end_src
 
 #+RESULTS:
-: pdf 
+: pdf
 :   2
 
 *** latent space trace
@@ -5138,7 +5143,7 @@ gen_surv_time <- function(out, sj, N, nn) {
 
   ## cat(cumhaz[, 1],"\n")
   ## cat(-logS[1],"\n")
-  
+
   for (kk in 1:N) {
     ss <- findInterval(-logS[kk], cumhaz[, kk])
     if (ss != mj) {
@@ -5425,10 +5430,10 @@ names(dd) = c("iter","item","LogLoss","AUC")
 
 save(dd, file = paste0(out_dir,"dll_auc.RData"))
 
-ll_boxp <- ggplot(dd, aes(x=item,y=LogLoss,fill=factor(item))) + 
+ll_boxp <- ggplot(dd, aes(x=item,y=LogLoss,fill=factor(item))) +
   geom_boxplot() + theme(legend.position = "none") + ylim(0, 1)
 
-auc_boxp <- ggplot(dd, aes(x=item,y=AUC,fill=factor(item))) + 
+auc_boxp <- ggplot(dd, aes(x=item,y=AUC,fill=factor(item))) +
   geom_boxplot() + theme(legend.position = "none") + ylim(0, 1)
 
 llike_boxp <- ggplot(data.frame(LogLike = mlike), aes(y=LogLike)) + geom_boxplot() + theme(legend.position = "none") + ggtitle(concat_summary(mlike,0)) + theme(plot.title = element_text(size=10))
@@ -5824,7 +5829,7 @@ for (out_dir in lout) {
 
 ## log loss using simulated time
 mll  <- mauc <- matrix(0, num_iter, I)
-  
+
 load(paste0(out_dir, "surv_sim.RData"))
 
 for (ii in 1:I) {
@@ -5864,7 +5869,7 @@ source("R/draw_logloss_diff_by.R")
 
 #+begin_src R :results none
 out_dir = "chessB_pn_ncut5_zero_beta_noinfo_lc2/"
-num_chain = 1; HAS_REF = 
+num_chain = 1; HAS_REF =
 #+end_src
 
 #+begin_src R
@@ -5943,10 +5948,10 @@ dll <- reshape2::melt(mll)
 dd = plyr::join(dll, dauc, by = c("Var1","Var2"))
 names(dd) = c("iter","item","LogLoss","AUC")
 
-ll_boxp <- ggplot(dd, aes(x=item,y=LogLoss,fill=factor(item))) + 
+ll_boxp <- ggplot(dd, aes(x=item,y=LogLoss,fill=factor(item))) +
   geom_boxplot() + theme(legend.position = "none") + ylim(0, 1)
 
-auc_boxp <- ggplot(dd, aes(x=item,y=AUC,fill=factor(item))) + 
+auc_boxp <- ggplot(dd, aes(x=item,y=AUC,fill=factor(item))) +
   geom_boxplot() + theme(legend.position = "none") + ylim(0, 1)
 
 pdf(paste0(out_dir,"figure/sim_cmetrics.pdf"))
@@ -6051,166 +6056,166 @@ cols(
 [36mℹ[39m Use [30m[47m[30m[47m`spec()`[47m[30m[49m[39m for the full column specifications.
 
 
-elapsed time to simulate item 2 
-   user  system elapsed 
-  0.280   0.051   0.331 
+elapsed time to simulate item 2
+   user  system elapsed
+  0.280   0.051   0.331
 
-elapsed time to simulate item 1 
-   user  system elapsed 
-  0.282   0.052   0.335 
+elapsed time to simulate item 1
+   user  system elapsed
+  0.282   0.052   0.335
 
-elapsed time to simulate item 3 
-   user  system elapsed 
-  0.278   0.042   0.320 
+elapsed time to simulate item 3
+   user  system elapsed
+  0.278   0.042   0.320
 
-elapsed time to simulate item 4 
-   user  system elapsed 
-  0.281   0.043   0.325 
+elapsed time to simulate item 4
+   user  system elapsed
+  0.281   0.043   0.325
 
-elapsed time to simulate item 5 
-   user  system elapsed 
-  0.274   0.038   0.312 
+elapsed time to simulate item 5
+   user  system elapsed
+  0.274   0.038   0.312
 
-elapsed time to simulate item 6 
-   user  system elapsed 
-  0.276   0.038   0.314 
+elapsed time to simulate item 6
+   user  system elapsed
+  0.276   0.038   0.314
 
-elapsed time to simulate item 7 
-   user  system elapsed 
-  0.323   0.061   0.384 
+elapsed time to simulate item 7
+   user  system elapsed
+  0.323   0.061   0.384
 
-elapsed time to simulate item 8 
-   user  system elapsed 
-  0.320   0.061   0.382 
+elapsed time to simulate item 8
+   user  system elapsed
+  0.320   0.061   0.382
 
-elapsed time to simulate item 10 
-   user  system elapsed 
-  0.265   0.028   0.292 
+elapsed time to simulate item 10
+   user  system elapsed
+  0.265   0.028   0.292
 
-elapsed time to simulate item 9 
-   user  system elapsed 
-  0.267   0.029   0.296 
+elapsed time to simulate item 9
+   user  system elapsed
+  0.267   0.029   0.296
 
-elapsed time to simulate item 12 
-   user  system elapsed 
-  0.271   0.038   0.310 
+elapsed time to simulate item 12
+   user  system elapsed
+  0.271   0.038   0.310
 
-elapsed time to simulate item 11 
-   user  system elapsed 
-  0.271   0.037   0.308 
+elapsed time to simulate item 11
+   user  system elapsed
+  0.271   0.037   0.308
 
-elapsed time to simulate item 13 
-   user  system elapsed 
-  0.265   0.024   0.290 
+elapsed time to simulate item 13
+   user  system elapsed
+  0.265   0.024   0.290
 
-elapsed time to simulate item 14 
-   user  system elapsed 
-  0.266   0.027   0.294 
+elapsed time to simulate item 14
+   user  system elapsed
+  0.266   0.027   0.294
 
-elapsed time to simulate item 16 
-   user  system elapsed 
-  0.246   0.007   0.253 
+elapsed time to simulate item 16
+   user  system elapsed
+  0.246   0.007   0.253
 
-elapsed time to simulate item 15 
-   user  system elapsed 
-  0.249   0.008   0.257 
+elapsed time to simulate item 15
+   user  system elapsed
+  0.249   0.008   0.257
 
-elapsed time to simulate item 18 
-   user  system elapsed 
-  0.256   0.020   0.277 
+elapsed time to simulate item 18
+   user  system elapsed
+  0.256   0.020   0.277
 
-elapsed time to simulate item 17 
-   user  system elapsed 
-  0.258   0.021   0.278 
+elapsed time to simulate item 17
+   user  system elapsed
+  0.258   0.021   0.278
 
-elapsed time to simulate item 20 
-   user  system elapsed 
-  0.258   0.021   0.280 
+elapsed time to simulate item 20
+   user  system elapsed
+  0.258   0.021   0.280
 
-elapsed time to simulate item 19 
-   user  system elapsed 
-  0.258   0.020   0.278 
+elapsed time to simulate item 19
+   user  system elapsed
+  0.258   0.020   0.278
 
-elapsed time to simulate item 21 
+elapsed time to simulate item 21
 
-elapsed time to simulate item 22 
-   user  system elapsed 
-  0.305   0.029   0.334 
-   user  system elapsed 
-  0.306   0.029   0.335 
+elapsed time to simulate item 22
+   user  system elapsed
+  0.305   0.029   0.334
+   user  system elapsed
+  0.306   0.029   0.335
 
-elapsed time to simulate item 23 
-   user  system elapsed 
-  0.245   0.002   0.248 
+elapsed time to simulate item 23
+   user  system elapsed
+  0.245   0.002   0.248
 
-elapsed time to simulate item 24 
-   user  system elapsed 
-  0.245   0.005   0.250 
+elapsed time to simulate item 24
+   user  system elapsed
+  0.245   0.005   0.250
 
-elapsed time to simulate item 25 
-   user  system elapsed 
-  0.243   0.003   0.246 
+elapsed time to simulate item 25
+   user  system elapsed
+  0.243   0.003   0.246
 
-elapsed time to simulate item 26 
-   user  system elapsed 
-  0.242   0.004   0.246 
+elapsed time to simulate item 26
+   user  system elapsed
+  0.242   0.004   0.246
 
-elapsed time to simulate item 27 
-   user  system elapsed 
-  0.243   0.003   0.247 
+elapsed time to simulate item 27
+   user  system elapsed
+  0.243   0.003   0.247
 
-elapsed time to simulate item 28 
-   user  system elapsed 
-  0.243   0.005   0.248 
+elapsed time to simulate item 28
+   user  system elapsed
+  0.243   0.005   0.248
 
-elapsed time to simulate item 29 
+elapsed time to simulate item 29
 
-elapsed time to simulate item 30 
-   user  system elapsed 
-  0.245   0.005   0.250 
-   user  system elapsed 
-  0.242   0.003   0.246 
+elapsed time to simulate item 30
+   user  system elapsed
+  0.245   0.005   0.250
+   user  system elapsed
+  0.242   0.003   0.246
 
-elapsed time to simulate item 32 
-   user  system elapsed 
-  0.244   0.004   0.249 
+elapsed time to simulate item 32
+   user  system elapsed
+  0.244   0.004   0.249
 
-elapsed time to simulate item 31 
-   user  system elapsed 
-  0.245   0.005   0.251 
+elapsed time to simulate item 31
+   user  system elapsed
+  0.245   0.005   0.251
 
-elapsed time to simulate item 34 
-   user  system elapsed 
-  0.244   0.003   0.248 
+elapsed time to simulate item 34
+   user  system elapsed
+  0.244   0.003   0.248
 
-elapsed time to simulate item 33 
-   user  system elapsed 
-  0.245   0.004   0.248 
+elapsed time to simulate item 33
+   user  system elapsed
+  0.245   0.004   0.248
 
-elapsed time to simulate item 36 
-   user  system elapsed 
-  0.297   0.018   0.315 
+elapsed time to simulate item 36
+   user  system elapsed
+  0.297   0.018   0.315
 
-elapsed time to simulate item 35 
-   user  system elapsed 
-  0.296   0.023   0.320 
+elapsed time to simulate item 35
+   user  system elapsed
+  0.296   0.023   0.320
 
-elapsed time to simulate item 38 
-   user  system elapsed 
-  0.242   0.002   0.244 
+elapsed time to simulate item 38
+   user  system elapsed
+  0.242   0.002   0.244
 
-elapsed time to simulate item 37 
-   user  system elapsed 
-  0.241   0.003   0.244 
+elapsed time to simulate item 37
+   user  system elapsed
+  0.241   0.003   0.244
 
-elapsed time to simulate item 40 
-   user  system elapsed 
-  0.242   0.003   0.245 
+elapsed time to simulate item 40
+   user  system elapsed
+  0.242   0.003   0.245
 
-elapsed time to simulate item 39 
-   user  system elapsed 
-  0.243   0.002   0.245 
-Plot(s) are saved in chessB_pn_ncut5_zero_beta_noinfo_lc2/ 
+elapsed time to simulate item 39
+   user  system elapsed
+  0.243   0.002   0.245
+Plot(s) are saved in chessB_pn_ncut5_zero_beta_noinfo_lc2/
 =================================
 #+end_example
 

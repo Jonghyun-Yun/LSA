@@ -48,10 +48,10 @@ my_procrustes <- function(Xstar, dlist, is_list = FALSE, bind_zw = FALSE, my_tra
     }
 
     adx <- z0dx | z1dx | w0dx | w1dx
-    
+
     xstar0 = rbind(w0star,z0star)
     xstar1 = rbind(w1star,z1star)
-    
+
     mm <- foreach(k = 1:num_samples) %dopar% {
       if (!bind_zw) {
         pout <- MCMCpack::procrustes(w0[, , k], w0star)
@@ -62,7 +62,7 @@ my_procrustes <- function(Xstar, dlist, is_list = FALSE, bind_zw = FALSE, my_tra
         w0[, , k] <- bout$X.new[1:num_w, ]
         z0[, , k] <- bout$X.new[(num_w+1):(num_w+num_z), ]
         }
-        
+
         if (!no_w1 & !bind_zw) {
           pout <- MCMCpack::procrustes(w1[, , k], w1star)
           w1[, , k] <- pout$X.new
@@ -217,7 +217,7 @@ gen_surv_time <- function(out, sj, N, nn) {
 
   ## cat(cumhaz[, 1],"\n")
   ## cat(-logS[1],"\n")
-  
+
   for (kk in 1:N) {
     ss <- findInterval(-logS[kk], cumhaz[, kk])
     if (ss != mj) {

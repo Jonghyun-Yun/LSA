@@ -56,10 +56,10 @@ names(dd) = c("iter","item","LogLoss","AUC")
 
 save(dd, file = paste0(out_dir,"dll_auc.RData"))
 
-ll_boxp <- ggplot(dd, aes(x=item,y=LogLoss,fill=factor(item))) + 
+ll_boxp <- ggplot(dd, aes(x=item,y=LogLoss,fill=factor(item))) +
   geom_boxplot() + theme(legend.position = "none") + ylim(0, 1)
 
-auc_boxp <- ggplot(dd, aes(x=item,y=AUC,fill=factor(item))) + 
+auc_boxp <- ggplot(dd, aes(x=item,y=AUC,fill=factor(item))) +
   geom_boxplot() + theme(legend.position = "none") + ylim(0, 1)
 
 llike_boxp <- ggplot(data.frame(LogLike = mlike), aes(y=LogLike)) + geom_boxplot() + theme(legend.position = "none") + ggtitle(concat_summary(mlike,0)) + theme(plot.title = element_text(size=10))

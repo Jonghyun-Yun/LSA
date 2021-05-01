@@ -35,10 +35,10 @@ dll <- reshape2::melt(mll)
 dd = plyr::join(dll, dauc, by = c("Var1","Var2"))
 names(dd) = c("iter","item","LogLoss","AUC")
 
-ll_boxp <- ggplot(dd, aes(x=item,y=LogLoss,fill=factor(item))) + 
+ll_boxp <- ggplot(dd, aes(x=item,y=LogLoss,fill=factor(item))) +
   geom_boxplot() + theme(legend.position = "none") + ylim(0, 1)
 
-auc_boxp <- ggplot(dd, aes(x=item,y=AUC,fill=factor(item))) + 
+auc_boxp <- ggplot(dd, aes(x=item,y=AUC,fill=factor(item))) +
   geom_boxplot() + theme(legend.position = "none") + ylim(0, 1)
 
 pdf(paste0(out_dir,"figure/sim_cmetrics.pdf"))
