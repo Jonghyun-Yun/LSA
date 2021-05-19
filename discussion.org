@@ -16,20 +16,37 @@
 #+latex_compiler: pdflatex
 # comment out for reveal.js
 # #+setupfile: ~/setup/my-theme-readtheorg.setup
-# #+setupfile: ~/org/latex_header.setup
-# #+setupfile: ~/org/orgmode_header.setup
+#+setupfile: ~/org/latex_header.setup
+#+setupfile: ~/org/orgmode_header.setup
 
 #+property: header-args :tangle
 #+property: header-args :eval never-export
 #+property: header-args:R :session *R-Org* :exports both :results output :noweb yes :eval nil
 
-* Updates
+* Updates :ATTACH:
+:PROPERTIES:
+:ID:       4dfb1c3d-cc63-4571-9232-fc3f6b4bb95d
+:NOTER_DOCUMENT: /Users/yunj/org/.attach/4d/fb1c3d-cc63-4571-9232-fc3f6b4bb95d/summary_simulation.pdf
+:NOTER_PAGE: 2
+:END:
 - Code debugging finished for MCMC sampler ($\beta, \theta$)
 - $\beta_{ic}$ is non-identifiable, dropped.
 - New posterior analysis is ready to look.
 - piecewise approximation segment number: back to 5 (was 2).
   - at a small # of segments, the latent space doesn't improve the fit to chessB data (log-loss).
-    See Figure [[fig:1]]
+    See Figure [[fig:ff12]]
+** my note
+:PROPERTIES:
+:NOTER_PAGE: (1 . 0.6106060606060606)
+:END:
+** base
+:PROPERTIES:
+:NOTER_PAGE: (1 . 0.6106060606060606)
+:END:
+
+
+
+
 * sample code
 #+name: tab:2
 #+caption: tab:2 caption
@@ -66,9 +83,9 @@ the smaller distance, the faster process
 |   2 | 3 | 4 |
 | 4 5 | 4 | 4 |
 
-goto Figure [[fig:1]]
+goto Figure [[fig:ff99]]
 \begin{align}
-\label{eq:2}
+\label{eq:my2}
 h_{i1}(t) &= \lambda_{i1}(t) \exp(\theta_{k1} - \gamma_{1} ||z_{k1} - w_{i1}||) \\
 h_{i0}(t) &= \lambda_{i0}(t) \exp(\theta_{k0} - \gamma_{0} ||z_{k0} - w_{i0}||) \\
 \end{align}
@@ -124,12 +141,12 @@ h_{i1}(t) &= \lambda_{i1}(t) \exp(\theta_{k1})\\
 h_{i0}(t) &= \lambda_{i0}(t) \exp(\theta_{k0})\\
 \end{align}
 
-referencing Equation2
-\ref{eq:2}
+referencing Equation2 \ref{eq:my2}
+table Table [[tab:ttt99]]
 
-#+name: fig:1
-#+caption: fig caption
-[[file:chessB_RTnACC.pdf]]
+#+name: fig:ff12
+#+caption: fig ff12 caption
+[[file:/Users/yunj/Dropbox/research/lsjm-art/my-diagram.png]]
 
 go to Table 2 [[tab:2]]
 go to Equation \ref{eq:1}.
@@ -148,6 +165,19 @@ cite:yun_r_parclip
 cite:yun_r_parclip
 
 
+#+name: fig:ff99
+#+caption: fig ff99 caption
+[[file:/Users/yunj/Dropbox/research/lsjm-art/my-diagram.png]]
+
+#+name: tab:ttt99
+#+caption: ttt99 caption
+|----+---|
+|  1 | 3 |
+|----+---|
+|  3 | 4 |
+| 24 | 4 |
+
+
 #+bibliography:~/Zotero/myref.bib
 #+PANDOC-CSL: /Users/yunj/Zotero/styles/cell.csl
 #+PANDOC_OPTIONS: number-sections:t
@@ -158,6 +188,9 @@ cite:yun_r_parclip
 
 # bibliographystyle:unsrt
 # bibliography:~/Zotero/myref.bib
+
+#+latex:\printbibliography
+#+CSL_STYLE: /Users/yunj/Zotero/styles/cell.csl
 
 #+begin_src emacs-lisp :exports none
 (add-to-list 'org-pandoc-valid-options 'citeproc)
