@@ -40,7 +40,7 @@ ymin <- min(z0[, 2], z1[, 2], w0[, 2], w1[, 2])
 xmax <- max(z0[, 1], z1[, 1], w0[, 1], w1[, 1])
 ymax <- max(z0[, 2], z1[, 2], w0[, 2], w1[, 2])
 
-z0 = z0[c(item_red_ind,item_blue_ind), ]
+z0 = z0[c(person_red_sample,person_blue_sample), ]
 
 myname <- c(c(item_red_ind,item_blue_ind), paste0("I.", 1:I))
 lsjmplot(z0, w0, xlim = c(xmin, xmax), ylim = c(ymin, ymax), myname)

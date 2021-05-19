@@ -11,8 +11,6 @@ for(ii in 1:I){
 start_time <- proc.time()
   stk_tt <- foreach(chain = 1:num_chain, .combine = "rbind") %do% {
     simtp <- art::rcpp_gen_surv(lambda, theta, z, w, gamma, param, ii)
-    ## out <- gethaz_item(mylist[[chain]], cname, ii, N, double_w, double_z)
-    ## simtp$pp <- gen_surv_pp(out, simtp$time, sj) %>% array(dim = dim(simtp$time))
     cbind(simtp$time, simtp$pp)
     }
   sim_data[[ii]] <- stk_tt
