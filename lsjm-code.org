@@ -5672,10 +5672,13 @@ source("R/draw_logloss_diff_by.R")
 #+RESULTS:
 
 ** with simulated time Rcpp
+Upon setting the output directory containing MCMC sample, ~R/postcheck.R~
+ simulate posterior predictive samples for each item in a form of a ~L~ by ~N~ matrix where ~L~ is a sample size and ~N~ is a number of subjects. These matrices are stored in  a list object ~sim_data~.
 
-#+begin_src R :results none
+#+begin_src R :results none :tangle R/postcheck_ex.R :noweb no-export :comments none
 out_dir = "chessB_pn_ncut5_zero_beta_noinfo_lc2/"
-num_chain = 1; HAS_REF =
+num_chain = 1; HAS_REF = 0
+<<gen_postpred>>
 #+end_src
 
 #+begin_src R
@@ -5714,6 +5717,7 @@ summary(mauc1[,1])
 summary(sim_data1[[ii]][, 1:10])
 #+end_src
 
+#+name: gen_postpred
 #+begin_src R :tangle R/postcheck.R
 source("R/Renviron.R")
 source("R/load-outputs.R")
@@ -5728,8 +5732,6 @@ for(ii in 1:I){
 start_time <- proc.time()
   stk_tt <- foreach(chain = 1:num_chain, .combine = "rbind") %do% {
     simtp <- art::rcpp_gen_surv(lambda, theta, z, w, gamma, param, ii)
-    ## out <- gethaz_item(mylist[[chain]], cname, ii, N, double_w, double_z)
-    ## simtp$pp <- gen_surv_pp(out, simtp$time, sj) %>% array(dim = dim(simtp$time))
     cbind(simtp$time, simtp$pp)
     }
   sim_data[[ii]] <- stk_tt
@@ -5743,6 +5745,7 @@ start_time <- proc.time()
 }
 #+end_src
 
+#+name: viz_postpred_metric
 #+begin_src R :tangle R/postcheck.R
 dll = t(mll)
 dauc = t(mauc)
@@ -5765,6 +5768,10 @@ print(ll_boxp)
 print(auc_boxp)
 dev.off()
 #+end_src
+
+#+RESULTS:
+: null device
+:           1
 
 #+begin_src R :results none
 out_dir="chessB_no_latent_ncut5_zero_beta_noinfo_lc2/"
@@ -5808,222 +5815,6 @@ cat("Plot(s) are saved in",out_dir,"\n")
 cat("=================================\n")
 }
 #+end_src
-
-#+RESULTS:
-#+begin_example
-
-[36m──[39m [1m[1mColumn specification[1m[22m [36m─────────────────────────────────────────────────────────────────────────────────[39m
-cols(
-  X1 = [32mcol_double()[39m,
-  X2 = [32mcol_double()[39m,
-  X3 = [32mcol_double()[39m,
-  X4 = [32mcol_double()[39m
-)
-
-
-[36m──[39m [1m[1mColumn specification[1m[22m [36m─────────────────────────────────────────────────────────────────────────────────[39m
-cols(
-  X1 = [32mcol_double()[39m
-)
-
-
-[36m──[39m [1m[1mColumn specification[1m[22m [36m─────────────────────────────────────────────────────────────────────────────────[39m
-cols(
-  .default = col_double()
-)
-[36mℹ[39m Use [30m[47m[30m[47m`spec()`[47m[30m[49m[39m for the full column specifications.
-
-
-[36m──[39m [1m[1mColumn specification[1m[22m [36m─────────────────────────────────────────────────────────────────────────────────[39m
-cols(
-  .default = col_double()
-)
-[36mℹ[39m Use [30m[47m[30m[47m`spec()`[47m[30m[49m[39m for the full column specifications.
-
-
-[36m──[39m [1m[1mColumn specification[1m[22m [36m─────────────────────────────────────────────────────────────────────────────────[39m
-cols(
-  .default = col_double()
-)
-[36mℹ[39m Use [30m[47m[30m[47m`spec()`[47m[30m[49m[39m for the full column specifications.
-
-
-[36m──[39m [1m[1mColumn specification[1m[22m [36m─────────────────────────────────────────────────────────────────────────────────[39m
-cols(
-  .default = col_double()
-)
-[36mℹ[39m Use [30m[47m[30m[47m`spec()`[47m[30m[49m[39m for the full column specifications.
-
-
-[36m──[39m [1m[1mColumn specification[1m[22m [36m─────────────────────────────────────────────────────────────────────────────────[39m
-cols(
-  .default = col_double()
-)
-[36mℹ[39m Use [30m[47m[30m[47m`spec()`[47m[30m[49m[39m for the full column specifications.
-
-
-elapsed time to simulate item 2
-   user  system elapsed
-  0.280   0.051   0.331
-
-elapsed time to simulate item 1
-   user  system elapsed
-  0.282   0.052   0.335
-
-elapsed time to simulate item 3
-   user  system elapsed
-  0.278   0.042   0.320
-
-elapsed time to simulate item 4
-   user  system elapsed
-  0.281   0.043   0.325
-
-elapsed time to simulate item 5
-   user  system elapsed
-  0.274   0.038   0.312
-
-elapsed time to simulate item 6
-   user  system elapsed
-  0.276   0.038   0.314
-
-elapsed time to simulate item 7
-   user  system elapsed
-  0.323   0.061   0.384
-
-elapsed time to simulate item 8
-   user  system elapsed
-  0.320   0.061   0.382
-
-elapsed time to simulate item 10
-   user  system elapsed
-  0.265   0.028   0.292
-
-elapsed time to simulate item 9
-   user  system elapsed
-  0.267   0.029   0.296
-
-elapsed time to simulate item 12
-   user  system elapsed
-  0.271   0.038   0.310
-
-elapsed time to simulate item 11
-   user  system elapsed
-  0.271   0.037   0.308
-
-elapsed time to simulate item 13
-   user  system elapsed
-  0.265   0.024   0.290
-
-elapsed time to simulate item 14
-   user  system elapsed
-  0.266   0.027   0.294
-
-elapsed time to simulate item 16
-   user  system elapsed
-  0.246   0.007   0.253
-
-elapsed time to simulate item 15
-   user  system elapsed
-  0.249   0.008   0.257
-
-elapsed time to simulate item 18
-   user  system elapsed
-  0.256   0.020   0.277
-
-elapsed time to simulate item 17
-   user  system elapsed
-  0.258   0.021   0.278
-
-elapsed time to simulate item 20
-   user  system elapsed
-  0.258   0.021   0.280
-
-elapsed time to simulate item 19
-   user  system elapsed
-  0.258   0.020   0.278
-
-elapsed time to simulate item 21
-
-elapsed time to simulate item 22
-   user  system elapsed
-  0.305   0.029   0.334
-   user  system elapsed
-  0.306   0.029   0.335
-
-elapsed time to simulate item 23
-   user  system elapsed
-  0.245   0.002   0.248
-
-elapsed time to simulate item 24
-   user  system elapsed
-  0.245   0.005   0.250
-
-elapsed time to simulate item 25
-   user  system elapsed
-  0.243   0.003   0.246
-
-elapsed time to simulate item 26
-   user  system elapsed
-  0.242   0.004   0.246
-
-elapsed time to simulate item 27
-   user  system elapsed
-  0.243   0.003   0.247
-
-elapsed time to simulate item 28
-   user  system elapsed
-  0.243   0.005   0.248
-
-elapsed time to simulate item 29
-
-elapsed time to simulate item 30
-   user  system elapsed
-  0.245   0.005   0.250
-   user  system elapsed
-  0.242   0.003   0.246
-
-elapsed time to simulate item 32
-   user  system elapsed
-  0.244   0.004   0.249
-
-elapsed time to simulate item 31
-   user  system elapsed
-  0.245   0.005   0.251
-
-elapsed time to simulate item 34
-   user  system elapsed
-  0.244   0.003   0.248
-
-elapsed time to simulate item 33
-   user  system elapsed
-  0.245   0.004   0.248
-
-elapsed time to simulate item 36
-   user  system elapsed
-  0.297   0.018   0.315
-
-elapsed time to simulate item 35
-   user  system elapsed
-  0.296   0.023   0.320
-
-elapsed time to simulate item 38
-   user  system elapsed
-  0.242   0.002   0.244
-
-elapsed time to simulate item 37
-   user  system elapsed
-  0.241   0.003   0.244
-
-elapsed time to simulate item 40
-   user  system elapsed
-  0.242   0.003   0.245
-
-elapsed time to simulate item 39
-   user  system elapsed
-  0.243   0.002   0.245
-Plot(s) are saved in chessB_pn_ncut5_zero_beta_noinfo_lc2/
-=================================
-#+end_example
 
 * custom functions
 #+begin_src R :tangle R/art-functions.R
