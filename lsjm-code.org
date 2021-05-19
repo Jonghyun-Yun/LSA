@@ -16,10 +16,6 @@
 #+property: header-args:jupyter-python :session *jupyter-lsjm* :kernel tf :async yes
 
 * References
-#+begin_src emacs-lisp :eval yes :exports none
-(add-hook 'org-export-before-parsing-hook 'orcp-citeproc)
-#+end_src
-
 #+bibliography: ~/Zotero/myref.bib
 #+pandoc_options: csl:~/Zotero/styles/chicago-author-date.csl
 
@@ -31,197 +27,6 @@
 #+latex: \renewcommand{\section}[2]{}%
 #+latex: \printbibliography[sorting=ydnt, heading=none, type=article] % for biblatex, comment out everything else
 #+latex: \endgroup
-* pseudo code
-** Initialize
-1. initialize $\lambda_{ic,g}$: I x N x 2
-** Update \lambda
-1. initialize $\log \lambda_{ic,g}$: I x N x 2
-2. for each i,k,c
-3. for each j
-4. the full conditional:
-\begin{align*}
-p(\lambda_{ic,j}| \cdot ) \propto & \lambda_{ic,j}^{\sum_{k=1}^{N} Y_{ik,j} = c} \exp[- \lambda_{ic,j} \sum_{k=1}^{N} I(T_{ik} > s_{j-1}) H_{ik,j} \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)]
-\pi(\lambda_{ic,j})
-\end{align*}
-where $H_{ik,j} = \min(T_{ik}, s_{j}) - s_{j-1}$.
-
-*** MH move (direct sampling is doable, dont do this)
-1. initialize $\log \lambda_{ic,g}$: I x N x 2
-2. for each i,k,c
-3. for each j
-4. Draw $\lambda_{ic,j}^{* } \sim N(\log \lambda_{ic,j}^{(t)}, jump_{\lambda_{ic,j}})$
-5. accept if $r > \log U(0,1)$
-\begin{align*}
-r = & \prod_{k=1}^{N}
-\frac{
-   (\lambda_{ic,j}^{* })^{I(Y_{ikc,g} = 1)} \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)\Lambda_{ic}(t)^{* }]}
-   {(\lambda_{ic,j}^{t})^{I(Y_{ikc,g} = 1)} \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{1}||z_{kc} - w_{i}||)\Lambda_{ic}(t)^{t}]} \\
-& \times
-  \frac{J(\lambda_{ic,j}^{(t)} -> \lambda_{ic,g}^{* })}{J(\lambda_{ic,g}^{* } -> \lambda_{ic,g}^{t})}
-\frac{\pi(\lambda_{ic,j}^{* })}{\pi(\lambda_{ic,g}^{(t)})} \\
-= & \prod_{k=1}^{N}
-  \frac{(\lambda_{ic,j}^{* })^{I(Y_{ikc,j} = 1)}}{(\lambda_{ic,j}^{t})^{I(Y_{ikc,j} = 1)}} \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)(\sum_{m=1}^{j} H_{ic,m}(\lambda_{ic,m}^{* } - \lambda_{ic,m}^{t}))] \\
-& \times
-\frac{\pi(\lambda_{ic,j}^{* })}{\pi(\lambda_{ic,j}^{(t)})}
- \frac{J(\lambda_{ic,j}^{(t)} -> \lambda_{ic,j}^{* })}{J(\lambda_{ic,j}^{* } -> \lambda_{ic,j}^{t})};
-\end{align*}
-
-if the event occurs before the $j$-th segment (g > j), then $\lambda_{ic,m}^{* } - \lambda_{ic,m}^{t} = 0$ for all $m=1,..,j$, so no contribution in the likelihood part.
-
-** Update \theta
-prior: $\theta_{kc} | \sigma^{2} ~ N(0,\sigma^2)$
-1. initialize $\theta_{kc}$: N x 2
-2. for each k,c
-3. Draw $\theta_{kc}^{* } \sim N(\theta_{kc}^{(t)}, jump_{\theta_{kc}})$
-4. accept if $\log r < \log U(0,1)$
-\begin{align*}
-r &= \prod_{i=1}^{I} \frac{
-   \exp(\beta_{ic} + \theta_{kc}^{* } - \gamma_{c}||z_{kc} - w_{i}||)
-   \exp[-\exp(\beta_{ic} + \theta_{kc}^{* } - \gamma_{c}||z_{kc} - w_{i}||)\Lambda_{ic}(t)]
-}{
-   \exp(\beta_{ic} + \theta_{kc}^{t} - \gamma_{c}||z_{kc} - w_{i}||)
-   \exp[-\exp(\beta_{ic} + \theta_{kc}^{t} - \gamma_{c}||z_{kc} - w_{i}||)\Lambda_{ic}(t) ]
-}
-\frac{\pi(\theta_{kc}^{* })}{\pi(\theta_{kc}^{* })}
-   \frac{J(\theta_{kc}^{t} -> \theta_{kc}^{* })}{J(\theta_{kc}^{* } -> \theta_{kc}^{t})} \\
-&=
-\frac{\exp(\theta_{kc}^{* })}{\exp(\theta_{kc}^{t})}
-\frac{\pi(\theta_{kc}^{* })}{\pi(\theta_{kc}^{t})}
-# \frac{J(\theta_{kc}^{t} -> \theta_{kc}^{* })}{J(\theta_{kc}^{* } -> \theta_{kc}^{t})}
-(\exp(\theta_{kc}^{* }) - \exp(\theta_{kc}^{t}))
-\exp[-\sum_{i=1}^{I} \Lambda_{ic}(t) \exp(\beta_{ic} - \gamma_{c}||z_{kc} - w_{i}||)]
-\end{align*}
-if $Y_{ikc} = 1$; otherwise
-\begin{align*}
-r = &
-\frac{\pi(\theta_{kc}^{* })}{\pi(\theta_{kc}^{t})}
-# \frac{J(\theta_{kc}^{t} -> \theta_{kc}^{* })}{J(\theta_{kc}^{* } -> \theta_{kc}^{t})}
-(\exp(\theta_{kc}^{* }) - \exp(\theta_{kc}^{t}))
-\exp[-\sum_{i=1}^{I} \Lambda_{ic}(t) \exp(\beta_{ic} - \gamma_{c}||z_{kc} - w_{i}||)]
-\end{align*}
-
-** Update \beta
-1. initialize $\beta_{ic}$: I x 2
-2. for each i,c
-3. Draw $\beta_{ic}^{* } \sim N(\\beta_{ic}^{(t)}, jump_{\beta_{ic}})$
-4. accept if $\log r < \log U(0,1)$
-\begin{align*}
-r &= \prod_{k=1}^{N} \frac{
-   \exp(\beta_{ic}^{* } + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)
-   \exp[-\exp(\beta_{ic}^{* } + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)\Lambda_{ic}(t)]
-}{
-   \exp(\beta_{ic}^{t} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)
-   \exp[-\exp(\beta_{ic}^{t} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}||)\Lambda_{ic}(t) ]
-}
-\frac{\pi(\beta_{ic}^{* })}{\pi(\beta_{ic}^{t})}
-   \frac{J(\beta_{kc}^{t} -> \beta_{kc}^{* })}{J(\beta_{kc}^{* } -> \beta_{kc}^{t})} \\
-&=
-\frac{\exp(\beta_{kc}^{* })}{\exp(\beta_{kc}^{t})}
-\frac{\pi(\beta_{kc}^{* })}{\pi(\beta_{kc}^{t})}
-\frac{J(\beta_{kc}^{t} -> \beta_{kc}^{* })}{J(\beta_{kc}^{* } -> \beta_{kc}^{t})}
-\exp[-\sum_{k=1}^{N} \Lambda_{ic}(t) \exp(\beta_{ic} - \gamma_{c}||z_{kc} - w_{i}||)(\exp(\beta_{kc}^{* }) - \exp(\beta_{kc}^{t}))]
-\end{align*}
-if $Y_{ikc} = 1$; otherwise
-\begin{align*}
-r =&
-\frac{\pi(\beta_{kc}^{* })}{\pi(\beta_{kc}^{t})}
-\frac{J(\beta_{kc}^{t} -> \beta_{kc}^{* })}{J(\beta_{kc}^{* } -> \beta_{kc}^{t})}
-\exp[-\sum_{k=1}^{N} \Lambda_{ic}(t) \exp(\beta_{ic} - \gamma_{c}||z_{kc} - w_{i}||)(\exp(\beta_{kc}^{* }) - \exp(\beta_{kc}^{t}))]
-\end{align*}
-** Update z
-1. initialize $z_{kc}$: N x 2
-2. for each k,c
-3. Draw $z_{ic}^{* } \sim N(z_{kc}^{(t)}, J_{z_{kc}})$
-4. accept if $\log r < \log U(0,1)$
-\begin{align*}
-r =& \prod_{i=1}^{I} \frac{
-   \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc}^{* } - w_{i}||)
-   \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc}^{* } - w_{i}||)\Lambda_{ic}(t_{ik})]
-}{
-   \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc}^{(t)} - w_{i}||)
-   \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc}^{(t)} - w_{i}||)\Lambda_{ic}(t_{ik}) ]
-} \\
-& \times
-\frac{\pi(z_{kc}^{* })}{\pi(z_{kc}^{(t)})}
-   \frac{J(z_{kc}^{(t)} -> z_{kc}^{* })}{J(z_{kc}^{* } -> z_{kc}^{(t)})} \\
-=&
-\frac{\pi(z_{kc}^{* })}{\pi(z_{kc}^{(t)})}
-# \frac{J(z_{kc}^{t} -> z_{kc}^{* })}{J(z_{kc}^{* } -> z_{kc}^{t})}
-\exp[-\gamma_{c}\sum_{i=1}^{I}
-(||z_{kc}^{* } - w_{i}||-||z_{kc}^{(t)} - w_{i}||)]\\
-&\times
-   \exp[-\exp(\theta_{kc}) \sum_{i=1}^{I}\Lambda_{ic}(t_ik)\exp(\beta_{ic}) \{\exp( - \gamma_{c}||z_{kc}^{* } - w_{i}||) - \exp(-\gamma_c||z_{kc}^{(t)} - w_{i}||)\}]
-\end{align*}
-if $Y_{ikc} = 1$; otherwise
-
-\begin{align*}
-r =&
-\frac{\pi(z_{kc}^{* })}{\pi(z_{kc}^{t})}
-\frac{J(z_{kc}^{t} -> z_{kc}^{* })}{J(z_{kc}^{* } -> z_{kc}^{t})}\\
-& \times
-   \exp[-\exp(\theta_{kc}) \sum_{i=1}^{I}\Lambda_{ic}(t_{ik})\exp(\beta_{ic}) \{\exp( - \gamma_{c}||z_{kc}^{* } - w_{i}||) - \exp(-\gamma_c||z_{kc}^{(t)} - w_{i}||)\}]
-\end{align*}
-** Update w
-1. initialize $w_{i}$: I
-2. for each I
-3. Draw $w_{i}^{* } \sim N(\w_i^{(t)}, jump_{w_i})$
-4. accept if $\log r < \log U(0,1)$
-\begin{align*}
-r = &\prod_{c=1}^{2} \prod_{k=1}^{N} \frac{
-   \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}^{* }||)
-   \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}^{* }||)\Lambda_{ic}(t)]
-}{
-   \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}^{t}||)
-   \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}||z_{kc} - w_{i}^{t}||)\Lambda_{ic}(t) ]
-}
-\frac{\pi(w_i^{* })}{\pi(w_i^{t})}
-   \frac{J(w_i^{t} -> w_i^{* })}{J(w_i^{* } -> w_i^{t})} \\
-=&
-\frac{\pi(w_i^{* })}{\pi(w_i^{t})}
-# \frac{J(w_i^{t} -> w_i^{* })}{J(w_i^{* } -> w_i^{t})}
-\exp[\sum_{c=1}^{2}\sum_{k=1}^{N} \gamma_{c}
-(||z_{kc} - w_{i}^{* }||-||z_{kc} - w_{i}^{t}||)] \\
-& \times \exp[-\sum_{c=1}^{2}\Lambda_{ic}(t)\exp(\beta_{ic}) \sum_{k=1}^{N}\exp(\theta_{kc})\{ \exp(- \gamma_{c}||z_{kc} - w_{i}^{* }||) - \exp(-\gamma_c ||z_{kc} - w_{i}^{t}||)\}]
-\end{align*}
-if $Y_{ikc} = 1$; otherwise
-
-\begin{align*}
-r & =
-\frac{\pi(w_i^{* })}{\pi(w_i^{t})}
-\frac{J(w_i^{t} -> w_i^{* })}{J(w_i^{* } -> w_i^{t})}\\
-& \times \exp[-\sum_{c=1}^{2}\Lambda_{ic}(t)\exp(\beta_{ic}) \sum_{k=1}^{N}\exp(\theta_{kc})\{ \exp(- \gamma_{c}||z_{kc} - w_{i}^{* }||) - \exp(-\gamma_c ||z_{kc} - w_{i}^{t}||)\}]
-\end{align*}
-
-** Update gamma
-1. initialize $\gamma_{c}$: 2
-2. for each c
-3. Draw $\gamma_{c}^{* } \sim \log N(\log \gamma_{c}^{(t)}, jump_{\gamma_{c}})$
-4. accept if $\min(\log r, 0) > \log U(0,1)$
-\begin{align*}
-r = & \prod_{i=1}^{I}\prod_{k=1}^{N} \frac{
-   \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}^{* }||z_{kc} - w_{i}||)
-   \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}^{* }||z_{kc} - w_{i}||)\Lambda_{ic}(t)]
-}{
-   \exp(\beta_{ic} + \theta_{kc} - \gamma_{c}^{t}||z_{kc} - w_{i}||)
-   \exp[-\exp(\beta_{ic} + \theta_{kc} - \gamma_{c}^{t}||z_{kc} - w_{i}||)\Lambda_{ic}(t) ]
-} \\
-& \times
-\frac{\pi(\gamma_{c}^{* })}{\pi(\gamma_c^{t})}
-   \frac{J(\gamma_{c}^{t} -> \gamma_{c}^{* })}{J(\gamma_{c}^{* } -> \gamma_{c}^{t})} \\
-=&
-\frac{\pi(w_i^{* })}{\pi(w_i^{t})}
-\frac{J(w_i^{t} -> w_i^{* })}{J(w_i^{* } -> w_i^{t})} \\
-& \times \exp[-\sum_{i=1}^{I}\sum_{k=1}^{N}\Lambda_{ic}(t)\exp(\beta_{ic} + \theta_{kc}) \{\exp( - \gamma_{c}^{* } ||z_{kc} - w_{i}||) -
- \exp( -\gamma_{c}^{t} ||z_{kc} - w_{i}||)\}] \\
-=&\frac{\pi(w_i^{* })}{\pi(w_i^{t})}
-\frac{J(w_i^{t} -> w_i^{* })}{J(w_i^{* } -> w_i^{t})}
-\exp[-\sum_{i=1}^{I}\sum_{k=1}^{N}\Lambda_{ic}(t) (RR_{c}^{*} - RR_{c})]
-\end{align*}
-
-If $Y_{ikc} = 1$,
-\[
-r = r \times \exp[-\sum_{i=1}^{I}\sum_{k=1}^{N} ||z_{kc} - w_{i}||(\gamma_{c}^* - \gamma_{c}^{t})]
-\]
 * prerequisite
 required package intallation scripts
 #+begin_src R
@@ -241,7 +46,7 @@ install.packages(c("ggplot2","ggrepel","fda","funFEM"))
 
 #+begin_src R :results none
 ## Rcpp::sourceCpp("comprisk.cpp")
-install.packages("art_0.1.tar.gz", repos = NULL, type="source")
+install.packages("art_0.1.2.tar.gz", repos = NULL, type="source")
 detach(package:art)
 library(art)
 #+end_src
@@ -1155,11 +960,15 @@ source("R/write-init.R")
 #+end_src
 
 * Duolingo
-** description
+- sentence tranlation test using Duolingo app
+- unlimited time: use 200s to censor response time. RT > 200s -> no response = incorrect
+- data has been pre-processed by "김현주 <hyunjookim11@naver.com>"
+
 #+begin_src R :results none
 source("R/duolingo-preprocess.R")
 source("R/duolingo-init.R")
 #+end_src
+** description
 
 #+begin_src R :results none :tangle R/duolingo-preprocess.R
 setwd("~/research/lsjm-art/lsjm-code")
@@ -3509,13 +3318,10 @@ cat output/summary.csv
 This is an example to extract the Procrustean matched coordinates of the latent space.
 #+begin_src R
 out_dir <- "duolingo_pn_ncut5_zero_beta_noinfo_lc2/"
-num_chain <- 1
+num_chain <- 2
 HAS_REF <- 0
 
 source("R/Renviron.R")
-#+end_src
-
-#+begin_src R
 source("R/load-outputs.R")
 
 z0 <- matched$z0
@@ -3524,6 +3330,38 @@ w0 <- matched$w0
 readr::write_csv(as.data.frame(w0), paste0(out_dir, "w0.csv"))
 readr::write_csv(as.data.frame(z0), paste0(out_dir, "z0.csv"))
 #+end_src
+
+#+RESULTS:
+#+begin_example
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────[39m
+cols(
+  X1 = [32mcol_double()[39m,
+  X2 = [32mcol_double()[39m,
+  X3 = [32mcol_double()[39m,
+  X4 = [32mcol_double()[39m
+)
+
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────[39m
+cols(
+  X1 = [32mcol_double()[39m
+)
+
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────[39m
+cols(
+  .default = col_double()
+)
+[36mℹ[39m Use [90m[40m[90m[40m`spec()`[40m[90m[49m[39m for the full column specifications.
+
+
+[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────[39m
+cols(
+  .default = col_double()
+)
+[36mℹ[39m Use [90m[40m[90m[40m`spec()`[40m[90m[49m[39m for the full column specifications.
+#+end_example
 
 ** Biclustering example
 :PROPERTIES:
