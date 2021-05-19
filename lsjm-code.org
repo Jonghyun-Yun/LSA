@@ -5673,12 +5673,16 @@ source("R/draw_logloss_diff_by.R")
 
 ** with simulated time Rcpp
 Upon setting the output directory containing MCMC sample, ~R/postcheck.R~
- simulate posterior predictive samples for each item in a form of a ~L~ by ~N~ matrix where ~L~ is a sample size and ~N~ is a number of subjects. These matrices are stored in  a list object ~sim_data~.
+ simulates posterior predictive samples for each item in a form of a ~L~ by ~2 * N~ matrix where ~L~ is a sample size and ~2 * N~ is a number of subjects. The first ~N~ columns are for simulated response time, and the second half is for simulated response. These matrices are stored in  a list object ~sim_data~.
 
 #+begin_src R :results none :tangle R/postcheck_ex.R :noweb no-export :comments none
 out_dir = "chessB_pn_ncut5_zero_beta_noinfo_lc2/"
 num_chain = 1; HAS_REF = 0
+
+## simulating samples
 <<gen_postpred>>
+
+## visualizing performance metrics
 <<viz_postpred_metric>>
 #+end_src
 

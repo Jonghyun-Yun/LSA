@@ -1,5 +1,7 @@
 out_dir = "chessB_pn_ncut5_zero_beta_noinfo_lc2/"
 num_chain = 1; HAS_REF = 0
+
+## simulating samples
 source("R/Renviron.R")
 source("R/load-outputs.R")
 source("R/wrap_param.R")
@@ -24,6 +26,8 @@ start_time <- proc.time()
   cat("\nelapsed time to simulate item", ii, "\n")
   print(proc.time() - start_time)
 }
+
+## visualizing performance metrics
 dll = t(mll)
 dauc = t(mauc)
 colnames(mauc) = colnames(mll) = row.names(mi) = 1:I
