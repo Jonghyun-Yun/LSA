@@ -5679,6 +5679,7 @@ Upon setting the output directory containing MCMC sample, ~R/postcheck.R~
 out_dir = "chessB_pn_ncut5_zero_beta_noinfo_lc2/"
 num_chain = 1; HAS_REF = 0
 <<gen_postpred>>
+<<viz_postpred_metric>>
 #+end_src
 
 #+begin_src R

@@ -24,3 +24,23 @@ start_time <- proc.time()
   cat("\nelapsed time to simulate item", ii, "\n")
   print(proc.time() - start_time)
 }
+dll = t(mll)
+dauc = t(mauc)
+colnames(mauc) = colnames(mll) = row.names(mi) = 1:I
+## row.names(dauc) = row.names(dll) = colnames(mi) = 1:num_iter
+dauc = reshape2::melt(mauc)
+dll <- reshape2::melt(mll)
+## mi_long <- reshape2::melt(t(mi))
+dd = plyr::join(dll, dauc, by = c("Var1","Var2"))
+names(dd) = c("iter","item","LogLoss","AUC")
+
+ll_boxp <- ggplot(dd, aes(x=item,y=LogLoss,fill=factor(item))) +
+  geom_boxplot() + theme(legend.position = "none") + ylim(0, 1)
+
+auc_boxp <- ggplot(dd, aes(x=item,y=AUC,fill=factor(item))) +
+  geom_boxplot() + theme(legend.position = "none") + ylim(0, 1)
+
+pdf(paste0(out_dir,"figure/sim_cmetrics.pdf"))
+print(ll_boxp)
+print(auc_boxp)
+dev.off()
