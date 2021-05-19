@@ -16,21 +16,7 @@ if (num_chain > 1) {
 cname <- names(posm)
 param <- getparam(posm, sj, i, k)
 
-library(tidyverse)
-library(art)
-library(coda)
-library(dplyr)
-library(stringr)
-library(magrittr)
-library(bayesplot)
-library(foreach)
-library(doParallel)
-##registerDoParallel(cores = detectCores() - 1)
-registerDoParallel(6)
-
-N <- 151
 myN <- max(100, N) # 151
-G <- 5
 # sj <- c(0, 5, 8, 12, 19, 201)
 maxt <- sj[G + 1] + 10
 num_seg <- 100
@@ -44,15 +30,33 @@ person_red_sample <- c(1, 2, 7, 19, 34, 52, 70, 72, 85, 111) # row index
 item_blue_ind <- c(2, 3, 4, 6, 9, 11, 16, 18)
 person_blue_sample <- c(10, 11, 12, 17, 24, 29, 47, 101, 141, 144) # row index
 
+# visualizing latent position of selected subjects
+z0 <- matched$z0
+z1 <- matched$z1
+w0 <- matched$w0
+w1 <- matched$w1
+xmin <- min(z0[, 1], z1[, 1], w0[, 1], w1[, 1])
+ymin <- min(z0[, 2], z1[, 2], w0[, 2], w1[, 2])
+xmax <- max(z0[, 1], z1[, 1], w0[, 1], w1[, 1])
+ymax <- max(z0[, 2], z1[, 2], w0[, 2], w1[, 2])
+
+z0 = z0[c(item_red_ind,item_blue_ind), ]
+
+myname <- c(c(item_red_ind,item_blue_ind), paste0("I.", 1:I))
+lsjmplot(z0, w0, xlim = c(xmin, xmax), ylim = c(ymin, ymax), myname)
+
+
 library(ggplot2)
 library(dplyr)
 
 # temp
 for (item in 1:2) {
-  CIF_T <- foreach(k = c(person_red_sample, person_blue_sample), .combine = "rbind") %do% {
+  CIF_T <- foreach(k = c(person_red_sample, person_blue_sample), .combine =
+                                                                   "rbind") %do% {
     c(0, cumcicurve(getparam(posm, sj, item, k), 1, 0, maxt, num_seg))
   }
-  CIF_F <- foreach(k = c(person_red_sample, person_blue_sample), .combine = "rbind") %do% {
+  CIF_F <- foreach(k = c(person_red_sample, person_blue_sample), .combine =
+                                                                   "rbind") %do% {
     c(0, cumcicurve(getparam(posm, sj, item, k), 0, 0, maxt, num_seg))
   }
   CIF_T <- data.frame(t(CIF_T), time)
