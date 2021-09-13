@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-out_dir="duolingo_pn_ncut5_zero_beta_noinfo_lc2/"
-prename="R/duolingo_noinfo-preprocess.R"
-initname="R/duolingo_pn-init.R"
+out_dir="chessB_new_sigma_update_pn_ncut5_zero_beta_noinfo_lc/"
+prename="R/chessB_noinfo-preprocess.R"
+initname="R/chessB_pn-init.R"
 n_chain=2
 
 echo "================================"
@@ -17,7 +17,7 @@ rm output/*
 rm input/*
 
 Rscript $prename
-cp input/{mvar,mlen,mseg,mh,mi,mt}.csv output/
+cp input/{mvar,mlen}.csv output/
 cp run.sh output/
 cp $prename output/
 cp $initname output/
@@ -25,7 +25,7 @@ cp $initname output/
 for ((v = 1; v <= $n_chain; v++))
 do
     Rscript $initname
-    ./main initialize parallel single_w single_z sparse latent gamma true single no_ars nonzero_theta zero_beta lambda_free $v 10000 10000 10
+    ./main initialize parallel single_w single_z full latent gamma true single no_ars nonzero_theta zero_beta lambda_free $v 10000 10000 10
 done
 ## explain comandline arguments:
  # continue initialize -> start new chains?
@@ -43,6 +43,6 @@ done
 
 mkdir -p $out_dir
 mv output/* $out_dir
-Rscript R/run-analysis.R $out_dir $n_chain
+Rscript R/run-analysis.R $out_dir $n_chain 0 0
 echo "Outputs are moved to" $out_dir"."
 echo "================================"

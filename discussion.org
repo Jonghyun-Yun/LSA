@@ -134,6 +134,8 @@ h_{i0}(t) &= \lambda_{i0}(t) \exp(\theta_{k0} - \gamma_{} ||z_{k} - w_{i}||) \\
 \end{align*}
 \[C = 2, a_{\sigma}=0.0001, b_{\sigma}=0.0001, \mu_{\gamma}=0, \text { and } \tau_{\gamma}^{}=2\]
 * New results with unknown $\gamma > 0$.
+Figure ff12 [[fig:ff12]]
+figure ff99 [[fig:ff99]]
 baseline model:
 \begin{align}
 \label{eq:1}

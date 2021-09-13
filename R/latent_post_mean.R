@@ -1,9 +1,8 @@
 out_dir <- "duolingo_pn_ncut5_zero_beta_noinfo_lc2/"
-num_chain <- 1
+num_chain <- 2
 HAS_REF <- 0
 
 source("R/Renviron.R")
-
 source("R/load-outputs.R")
 
 z0 <- matched$z0

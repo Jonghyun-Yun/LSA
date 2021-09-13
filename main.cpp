@@ -31,6 +31,7 @@
 #include "par_fun_lp.h"
 #include "ars.hpp"
 #include "logdensity.h"
+#include "update_sigma.h"
 
 // typedef Eigen::Map<Eigen::MatrixXd> MapMatd;
 // typedef Eigen::Map<Eigen::VectorXd> MapVecd;
@@ -56,12 +57,12 @@ const static Eigen::IOFormat CommaInitFmt(Eigen::StreamPrecision,
                                           Eigen::DontAlignCols, ", ", ", ", "",
                                           "", "", "\n");
 
-// NOTE: inline function may speed up the run time, but it may slow down the compilatoin time.
-// https://www.edureka.co/blog/inline-function-in-cpp/
-inline double update_sigma(const double& a_sigma, const double &b_sigma,
-                           const Eigen::MatrixXd &theta, const int &N, boost::ecuyer1988 &rng) {
-  return stan::math::sqrt(stan::math::inv_gamma_rng(a_sigma + 0.5 * N, b_sigma + 0.5 * theta.array().square().sum(), rng));
-}
+// // NOTE: inline function may speed up the run time, but it may slow down the compilatoin time.
+// // https://www.edureka.co/blog/inline-function-in-cpp/
+// inline double update_sigma(const double& a_sigma, const double &b_sigma,
+//                            const Eigen::MatrixXd &theta, const int &N, boost::ecuyer1988 &rng) {
+//   return stan::math::sqrt(stan::math::inv_gamma_rng(a_sigma + 0.5 * N, b_sigma + 0.5 * theta.array().square().sum(), rng));
+// }
 
 int main(int argc, const char *argv[]) {
 

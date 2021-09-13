@@ -2625,7 +2625,7 @@ init_z = 1*matrix(rnorm(2*2*N), ncol = 2);
 source("R/write-init.R")
 #+end_src
 
-* MATH: Korea_PISA2015                                              :ARCHIVE:
+* MATH: Korea_PISA2015
 ** notebook
 #+begin_src R
 source('R/pisa-KR-preprocess.R')
@@ -3266,7 +3266,8 @@ system(paste0("rsync -rv figure/*.pdf ", out_dir, "figure/"))
 
 set the output directory. run the chain of analytic tools. move the results to the output dir.
 #+begin_src R :results none
-out_dir="chessB_pn_ncut5_zero_beta_noinfo_lc2/"
+## out_dir="chessB_pn_ncut5_zero_beta_noinfo_lc2/"
+out_dir="chessB_new_sigma_update_pn_ncut5_zero_beta_noinfo_lc2/"
 ## out_dir="verbal_pn_ncut5_zero_beta_noinfo_lc2/"
 ## out_dir="opusIII_pn_ncut5_zero_beta_noinfo_lc2/"
 
@@ -6187,7 +6188,7 @@ devtools::build('~/Dropbox/research/lsjm-art/lsjm-code/art')
 #+end_src
 
 #+begin_src R
-install.packages("art_0.1.tar.gz", repos = NULL, type="source")
+install.packages("art_0.1.2.tar.gz", repos = NULL, type="source")
 library(art)
 #+end_src
 
