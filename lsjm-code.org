@@ -6229,6 +6229,11 @@ fun_segH = function(mt, sj) {
 }
 
 #+end_src
+* Send to draft
+#+begin_src sh
+duolingo_pn_ncut5_zero_beta_noinfo_lc2
+chessB_pn_ncut5_zero_beta_noinfo_lc2
+#+end_src
 * COMMENT Local Variables
 # Local Variables:
 # org-babel-default-header-args:R: ((:session . "*R-Org*") (:export . "both") (:results . "output replace"))
