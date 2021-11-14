@@ -5648,7 +5648,7 @@ Upon setting the output directory containing MCMC sample, ~R/postcheck.R~
 
 #+begin_src R :results none :tangle R/postcheck_ex.R :noweb no-export :comments none
 out_dir = "chessB_pn_ncut5_zero_beta_noinfo_lc2/"
-out_dir = "duolingo_pn_ncut5_zero_beta_noinfo_lc2/"
+## out_dir = "duolingo_pn_ncut5_zero_beta_noinfo_lc2/"
 num_chain = 1; HAS_REF = 0
 
 ## simulating samples
@@ -5733,19 +5733,47 @@ dauc = reshape2::melt(mauc)
 dll <- reshape2::melt(mll)
 ## mi_long <- reshape2::melt(t(mi))
 dd = plyr::join(dll, dauc, by = c("Var1","Var2"))
-names(dd) = c("iter","item","LogLoss","AUC")
+names(dd) = c("iter","item","Logloss","AUC")
+
+mytheme = theme(
+  legend.position = "none",
+  text = element_text(size = 35),
+  ## plot.title =  element_text(size = 20, hjust = 0.5),
+  ## axis.title = element_text(size = 15),
+  axis.text = element_text(size = 25)
+  ## panel.grid.minor = element_blank(),
+  ## panel.background = element_blank()
+  ##panel.border = element_blank()
+  ##panel.grid.major = element_blank()
+) +
+  scale_x_continuous(n.breaks = 2) +  scale_y_continuous(limits=c(0,1), breaks = c(0,0.5,1))
 
 ll_boxp <- ggplot(dd, aes(x=item,y=LogLoss,fill=factor(item))) +
-  geom_boxplot() + theme(legend.position = "none") + ylim(0, 1)
+  geom_boxplot() +
+  ## ylim(0, 1) +
+  mytheme +
+  scale_x_continuous(n.breaks = 2) + scale_y_continuous(limits=c(0,1), breaks = c(0,0.5,1)) +
+  labs(x = "Item", y = "Log-loss")
 
 auc_boxp <- ggplot(dd, aes(x=item,y=AUC,fill=factor(item))) +
-  geom_boxplot() + theme(legend.position = "none") + ylim(0, 1)
+  geom_boxplot() +
+  ## ylim(0, 1) +
+  mytheme +
+  scale_x_continuous(n.breaks = 2) +  scale_y_continuous(limits=c(0,1), breaks = c(0,0.5,1)) +
+  labs(x = "Item", y = "AUC")
 
 pdf(paste0(out_dir,"figure/sim_cmetrics.pdf"))
 print(ll_boxp)
 print(auc_boxp)
 dev.off()
 #+end_src
+
+#+RESULTS: viz_postpred_metric
+: Error: Can't add `scale_x_continuous(n.breaks = 2)` to a theme object.
+: [90mRun `rlang::last_error()` to see where the error occurred.[39m
+: Error in FUN(X[[i]], ...) : object 'LogLoss' not found
+: null device
+:           1
 
 #+RESULTS:
 : null device
