@@ -1,4 +1,5 @@
 out_dir = "chessB_pn_ncut5_zero_beta_noinfo_lc2/"
+out_dir = "duolingo_pn_ncut5_zero_beta_noinfo_lc2/"
 num_chain = 1; HAS_REF = 0
 
 ## simulating samples
@@ -9,6 +10,7 @@ source("R/wrap_param.R")
 sim_data <- list()
 len = diff(sj)
 num_chain = 1
+num_iter = min(unlist(lapply(mydf,  nrow)))
 mll  <- mauc <- matrix(0, num_iter, I)
 
 for(ii in 1:I){
