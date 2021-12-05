@@ -34,7 +34,7 @@ dll <- reshape2::melt(mll)
 dd = plyr::join(dll, dauc, by = c("Var1","Var2"))
 names(dd) = c("iter","item","LogLoss","AUC")
 
-mytheme = theme(
+mytheme = theme_bw() + theme(
   legend.position = "none",
   text = element_text(size = 35),
   ## plot.title =  element_text(size = 20, hjust = 0.5),
@@ -47,17 +47,17 @@ mytheme = theme(
 )
 
 ll_boxp <- ggplot(dd, aes(x=item,y=LogLoss,fill=factor(item))) +
-  geom_boxplot() +
+  geom_boxplot(outlier.size = 0.25) +
   ## ylim(0, 1) +
   mytheme +
-  scale_x_continuous(breaks = c(1,max(dd$item))) + scale_y_continuous(limits=c(0,1), breaks = c(0,0.5,1)) +
+  scale_x_continuous(breaks = c(1,max(dd$item)/2,max(dd$item))) + scale_y_continuous(limits=c(0,1), breaks = c(0,0.5,1)) +
   labs(x = "Item", y = "Log-loss")
 
 auc_boxp <- ggplot(dd, aes(x=item,y=AUC,fill=factor(item))) +
-  geom_boxplot() +
+  geom_boxplot(outlier.size = 0.25) +
   ## ylim(0, 1) +
   mytheme +
-  scale_x_continuous(breaks = c(1,max(dd$item))) +  scale_y_continuous(limits=c(0,1), breaks = c(0,0.5,1)) +
+  scale_x_continuous(breaks = c(1,max(dd$item)/2,max(dd$item))) +  scale_y_continuous(limits=c(0,1), breaks = c(0,0.5,1)) +
   labs(x = "Item", y = "AUC")
 
 pdf(paste0(out_dir,"figure/sim_cmetrics.pdf"))
