@@ -5768,8 +5768,23 @@ dev.off()
 #+end_src
 
 #+RESULTS: viz_postpred_metric
-: null device
-:           1
+: quartz
+:      2
+
+#+begin_src R
+library(ggsci)
+ll_boxp <- ggplot(dd, aes(x=item,y=LogLoss,fill=factor(item))) +
+  geom_boxplot(outlier.size = 0.25) +
+  ## ylim(0, 1) +
+  theme_sourcesans() +  theme(legend.position = "none") +
+  scale_x_continuous(breaks = c(1,max(dd$item)/2,max(dd$item))) + scale_y_continuous(limits=c(0,1), breaks = c(0,0.5,1)) +
+  labs(x = "Item", y = "Log-loss")
+ll_boxp
+#+end_src
+
+#+RESULTS:
+: Warning message:
+: This manual palette can handle a maximum of 12 values. You have supplied 18.
 
 #+begin_src R :results none
 out_dir="chessB_no_latent_ncut5_zero_beta_noinfo_lc2/"
