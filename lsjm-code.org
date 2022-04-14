@@ -1,6 +1,6 @@
 #+title: LSJM Code for accuracy and RT
-#+author: Jonghyun Yun
-#+email: jonghyun.yun@gmail.com
+#+author:
+#+email:
 
 #+options:   H:10 num:nil toc:nil \n:nil @:t ::t |:t ^:nil ^:{} -:t f:t *:t <:t ':nil -:nil pri:t
 #+options:   TeX:t LaTeX:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
