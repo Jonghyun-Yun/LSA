@@ -1,6 +1,6 @@
 #+title: LSJM Code for accuracy and RT
-#+author:
-#+email:
+#+author: Jonghyun Yun
+#+email: jonghyun.yun@gmail.com
 
 #+options:   H:10 num:nil toc:nil \n:nil @:t ::t |:t ^:nil ^:{} -:t f:t *:t <:t ':nil -:nil pri:t
 #+options:   TeX:t LaTeX:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
@@ -1312,6 +1312,27 @@ init_beta = 0*matrix(rnorm(2*I), ncol = 2);
 init_theta = 0*matrix(rnorm(2*N), ncol = 2);
 
 init_gamma = 1*matrix(c(1, -1), ncol = 1);
+
+init_w = 0*matrix(rnorm(2*2*I), ncol = 2);
+init_z = 0*matrix(rnorm(2*2*N), ncol = 2);
+
+source("R/write-init.R")
+#+end_src
+
+** Choose-a-move test B: pn Gamma(0) = 1, Gamma(1) = -1
+#+begin_src R :results none :tangle R/duolingo_np-init.R
+mvar = as.matrix( readr::read_csv("input/mvar.csv", col_names=F) )
+I = mvar[1]
+N = mvar[2]
+G = mvar[4]
+
+set.seed(as.numeric(Sys.time()))
+
+init_lambda = matrix(1, nrow = 2*I, ncol = G);
+init_beta = 0*matrix(rnorm(2*I), ncol = 2);
+init_theta = 0*matrix(rnorm(2*N), ncol = 2);
+
+init_gamma = 1*matrix(c(-1, 1), ncol = 1);
 
 init_w = 0*matrix(rnorm(2*2*I), ncol = 2);
 init_z = 0*matrix(rnorm(2*2*N), ncol = 2);
@@ -3096,11 +3117,11 @@ dev.off(which = dev.cur())
 
 * C++ MCMC output
 ** Shell to run C++
-#+begin_src sh :tangle run.sh
+#+begin_src sh :tangle duo_np_run.sh
 #!/usr/bin/env bash
-out_dir="duolingo_pn_ncut5_zero_beta_noinfo_lc2/"
+out_dir="duolingo_np_ncut5_zero_beta_noinfo_lc2/"
 prename="R/duolingo_noinfo-preprocess.R"
-initname="R/duolingo_pn-init.R"
+initname="R/duolingo_np-init.R"
 n_chain=2
 
 echo "================================"
@@ -3147,11 +3168,11 @@ echo "Outputs are moved to" $out_dir"."
 echo "================================"
 #+end_src
 
-#+begin_src R :tangle no
+#+begin_src sh :tangle chess_np_run.sh
 #!/usr/bin/env bash
-out_dir="chessB_double_no_ncut5_zero_beta_noinfo_lc2/"
+out_dir="chessB_double_np_ncut5_zero_beta_noinfo_lc2/"
 prename="R/chessB_noinfo-preprocess.R"
-initname="R/chessB_no_latent-init.R"
+initname="R/chessB_np-init.R"
 n_chain=2
 
 echo "================================"
@@ -3175,7 +3196,7 @@ cp $initname output/
 for ((v = 1; v <= $n_chain; v++))
 do
     Rscript $initname
-    ./main initialize parallel double_w double_z full no_latent no_gamma true both no_ars nonzero_theta zero_beta lambda_free $v 10000 10000 10
+    ./main initialize parallel single_w single_z full latent gamma true single no_ars nonzero_theta zero_beta lambda_free $v 10000 10000 10
 done
 ## explain comandline arguments:
  # continue initialize -> start new chains?
@@ -5768,23 +5789,8 @@ dev.off()
 #+end_src
 
 #+RESULTS: viz_postpred_metric
-: quartz
-:      2
-
-#+begin_src R
-library(ggsci)
-ll_boxp <- ggplot(dd, aes(x=item,y=LogLoss,fill=factor(item))) +
-  geom_boxplot(outlier.size = 0.25) +
-  ## ylim(0, 1) +
-  theme_sourcesans() +  theme(legend.position = "none") +
-  scale_x_continuous(breaks = c(1,max(dd$item)/2,max(dd$item))) + scale_y_continuous(limits=c(0,1), breaks = c(0,0.5,1)) +
-  labs(x = "Item", y = "Log-loss")
-ll_boxp
-#+end_src
-
-#+RESULTS:
-: Warning message:
-: This manual palette can handle a maximum of 12 values. You have supplied 18.
+: null device
+:           1
 
 #+begin_src R :results none
 out_dir="chessB_no_latent_ncut5_zero_beta_noinfo_lc2/"
