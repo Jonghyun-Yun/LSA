@@ -6,6 +6,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // cumcifun
 Rcpp::List cumcifun(Rcpp::List& param, bool T_F, double lower, double upper);
 RcppExport SEXP _art_cumcifun(SEXP paramSEXP, SEXP T_FSEXP, SEXP lowerSEXP, SEXP upperSEXP) {
