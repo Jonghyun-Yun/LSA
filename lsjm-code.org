@@ -3170,7 +3170,7 @@ echo "================================"
 
 #+begin_src sh :tangle chess_np_run.sh
 #!/usr/bin/env bash
-out_dir="chessB_double_np_ncut5_zero_beta_noinfo_lc2/"
+out_dir="chessB_np_ncut5_zero_beta_noinfo_lc2/"
 prename="R/chessB_noinfo-preprocess.R"
 initname="R/chessB_np-init.R"
 n_chain=2
@@ -3188,7 +3188,7 @@ rm output/*
 rm input/*
 
 Rscript $prename
-cp input/{mvar,mlen}.csv output/
+cp input/{mvar,mlen,mseg,mh,mi,mt}.csv output/
 cp run.sh output/
 cp $prename output/
 cp $initname output/
